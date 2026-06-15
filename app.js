@@ -27,15 +27,14 @@ const routeTrackerMiddleware = require("./Middleware/routeTracker.middleware");
 const socketMiddleware = require("./Middleware/socke.middlewar");
 // socket allowed only here
 app.use(
-  "/api/user",
-  routeTrackerMiddleware("USER_LOGIN_ROUTER"),
-  socketMiddleware,
-  userRoutes,
+    "/api/user",
+    routeTrackerMiddleware("USER_LOGIN_ROUTER"),
+    socketMiddleware,
+    userRoutes,
 );
-
 // health check
 app.get("/health", (_, res) => res.send("OK"));
 
 server.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+    console.log(`Server running on port ${process.env.PORT}`);
 });
