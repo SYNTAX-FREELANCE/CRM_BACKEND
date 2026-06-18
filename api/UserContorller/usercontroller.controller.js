@@ -1,228 +1,204 @@
+// controllers/auth.controller.js
+const jwt = require("jsonwebtoken");
+const authService = require("./usercontroller.service");
 const bcrypt = require("bcrypt");
 const {
-    insertUser,
-    findUserByEmail,
-    findUserByUsername,
-} = require("./usercontroller.service");
-const jwt = require("jsonwebtoken");
+  generateTokens,
+  generateAccessToken,
+} = require("../../Middleware/generateTokens");
+
 module.exports = {
-    // Register
-    RegisterUser: (req, res) => {
-        try {
-            const { user_name, user_email, password } = req.body;
+  // Login controller
 
-            // 1️ Validate input
-            if (!user_name || !user_email || !password) {
-                return res.status(400).json({
-                    success: 0,
-                    message: "Missing required fields",
-                });
+  login: (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({
+        success: 0,
+        message: "Missing required fields",
+      });
+    }
+
+    authService.findUserByUsername(username, (err, user) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({
+          success: 0,
+          message: "Something went wrong",
+        });
+      }
+
+      if (!user) {
+        return res.status(200).json({
+          success: 0,
+          message: "Invalid username or password",
+        });
+      }
+
+      bcrypt.compare(password, user.password, (err, match) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            success: 0,
+            message: "Something went wrong",
+          });
+        }
+
+        if (!match) {
+          return res.status(200).json({
+            success: 0,
+            message: "Invalid username or password",
+          });
+        }
+
+        const { accessToken, refreshToken } = generateTokens(user);
+
+        authService.storeRefreshToken(user.id, refreshToken, (storeErr) => {
+          if (storeErr) {
+            console.error(storeErr);
+          }
+        });
+
+        // Set HttpOnly cookies (NOT localStorage)
+        res.cookie("accessToken", accessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production", // HTTPS only in production
+          sameSite: "lax",
+          maxAge: 15 * 60 * 1000, // 15 minutes
+        });
+
+        res.cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+
+        //  Send only user info (NOT tokens - they're in cookies)
+        res.status(200).json({
+          success: 1,
+          message: "Login successful",
+          user: {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+          },
+        });
+      });
+    });
+  },
+
+  // Refresh token controller
+  refreshToken: (req, res) => {
+    const { refreshToken } = req.body;
+    console.log({
+      refreshToken,
+    });
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: 0,
+        message: "Refresh token required",
+      });
+    }
+
+    // Verify refresh token
+    jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET,
+      (err, decoded) => {
+        if (err) {
+          return res.status(401).json({
+            success: 0,
+            message: "Invalid refresh token",
+          });
+        }
+
+        // Check if refresh token exists
+        authService.findRefreshToken(
+          refreshToken,
+          decoded.userId,
+          (err, tokenRecord) => {
+            if (err || !tokenRecord) {
+              return res.status(401).json({
+                success: 0,
+                message: "Invalid refresh token",
+              });
             }
 
-            // 2️ Check if email already exists
-            findUserByEmail(user_email, (err, existingUser) => {
-                if (err) {
-                    console.error("findUserByEmail error:", err);
-                    return res.status(500).json({
-                        success: 0,
-                        message: "Something went wrong",
-                    });
-                }
-
-                if (existingUser) {
-                    return res.status(409).json({
-                        success: 0,
-                        message: "Email already exists",
-                    });
-                }
-
-                // 3️ Hash password
-                bcrypt.hash(password, 10, (err, hashedPassword) => {
-                    if (err) {
-                        console.error("bcrypt hash error:", err);
-                        return res.status(500).json({
-                            success: 0,
-                            message: "Something went wrong",
-                        });
-                    }
-
-                    // 4️ Insert user
-                    insertUser(
-                        {
-                            user_name,
-                            user_email,
-                            password: hashedPassword,
-                        },
-                        (err, user) => {
-                            if (err) {
-                                console.error("insertUser error:", err);
-                                return res.status(500).json({
-                                    success: 0,
-                                    message: "Something went wrong",
-                                });
-                            }
-
-                            return res.status(201).json({
-                                success: 1,
-                                message: "Registered successfully",
-                                data: user,
-                            });
-                        },
-                    );
+            // Get user data
+            authService.findUserById(decoded.userId, (err, user) => {
+              if (err || !user) {
+                return res.status(401).json({
+                  success: 0,
+                  message: "User not found",
                 });
+              }
+
+              // Generate new access token
+              // Generate new access token using middleware
+              const newAccessToken = generateAccessToken(user);
+
+              res.status(200).json({
+                success: 1,
+                message: "Token refreshed",
+                accessToken: newAccessToken,
+              });
             });
-        } catch (error) {
-            console.error("RegisterUser error:", error);
-            return res.status(500).json({
-                success: 0,
-                message: "Something went wrong",
-            });
+          },
+        );
+      },
+    );
+  },
+
+  // Logout controller
+  logout: (req, res) => {
+    const accessToken = req.cookies.accessToken;
+
+    if (!accessToken) {
+      return res.status(401).json({
+        success: 0,
+        message: "Access token required",
+      });
+    }
+
+    // Get userId from access token
+    jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+      if (err) {
+        return res.status(401).json({
+          success: 0,
+          message: "Invalid token",
+        });
+      }
+
+      // Revoke refresh token
+      authService.revokeRefreshToken(decoded.userId, (err) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            success: 0,
+            message: "Something went wrong",
+          });
         }
-    },
 
-    // Login
-    // loginUserDetail: (req, res) => {
-    //   try {
-    //     const { user_email, password } = req.body;
+        res.clearCookie("accessToken", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
 
-    //     if (!user_email || !password) {
-    //       return res.status(400).json({
-    //         success: 0,
-    //         message: "Missing required fields",
-    //       });
-    //     }
+        res.clearCookie("refreshToken", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
 
-    //     findUserByEmail(user_email, (err, user) => {
-    //       if (err) {
-    //         console.error("findUserByEmail error:", err);
-    //         return res.status(500).json({
-    //           success: 0,
-    //           message: "Something went wrong",
-    //         });
-    //       }
-
-    //       if (!user) {
-    //         return res.status(200).json({
-    //           success: 2,
-    //           message: "Invalid email or password",
-    //         });
-    //       }
-
-    //       bcrypt.compare(password, user.password, (err, match) => {
-    //         if (err) {
-    //           console.error("bcrypt compare error:", err);
-    //           return res.status(500).json({
-    //             success: 0,
-    //             message: "Something went wrong",
-    //           });
-    //         }
-
-    //         if (!match) {
-    //           return res.status(401).json({
-    //             success: 0,
-    //             message: "Invalid email or password",
-    //           });
-    //         }
-
-    //         // Optional socket event
-    //         if (req.io) {
-    //           req.io.emit("login-event", {
-    //             message: `${user.user_name} logged in`,
-    //           });
-    //         }
-
-    //         return res.status(200).json({
-    //           success: 1,
-    //           message: "Login successful",
-    //           data: {
-    //             user_id: user.user_id,
-    //             user_name: user.user_name,
-    //             user_email: user.user_email,
-    //             role: "user",
-    //           },
-    //         });
-    //       });
-    //     });
-    //   } catch (error) {
-    //     console.error("loginUserDetail error:", error);
-    //     return res.status(500).json({
-    //       success: 0,
-    //       message: "Something went wrong",
-    //     });
-    //   }
-    // },
-
-    loginUserDetail: (req, res) => {
-        try {
-            const { username, password } = req.body;
-
-            if (!username || !password) {
-                return res.status(400).json({
-                    success: 0,
-                    message: "Missing required fields",
-                });
-            }
-
-            findUserByUsername(username, (err, user) => {
-                if (err) {
-                    return res.status(500).json({
-                        success: 0,
-                        message: "Something went wrong",
-                    });
-                }
-
-                if (!user) {
-                    return res.status(401).json({
-                        success: 0,
-                        message: "Invalid username or password",
-                    });
-                }
-
-                bcrypt.compare(password, user.password, (err, match) => {
-                    if (err) {
-                        return res.status(500).json({
-                            success: 0,
-                            message: "Something went wrong",
-                        });
-                    }
-
-                    if (!match) {
-                        return res.status(401).json({
-                            success: 0,
-                            message: "Invalid username or password",
-                        });
-                    }
-
-                    const token = jwt.sign(
-                        {
-                            id: user.id,
-                            username: user.username,
-                            role: user.role,
-                        },
-                        process.env.JWT_SECRET,
-                        {
-                            expiresIn: "8h",
-                        },
-                    );
-
-                    return res.status(200).json({
-                        success: 1,
-                        message: "Login successful",
-                        token,
-                        data: {
-                            id: user.id,
-                            username: user.username,
-                            role: user.role,
-                        },
-                    });
-                });
-            });
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({
-                success: 0,
-                message: "Something went wrong",
-            });
-        }
-    },
+        res.status(200).json({
+          success: 1,
+          message: "Logged out successfully",
+        });
+      });
+    });
+  },
 };

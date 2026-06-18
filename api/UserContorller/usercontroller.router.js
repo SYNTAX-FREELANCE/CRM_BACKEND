@@ -1,13 +1,15 @@
-const {
-  loginUserDetail,
-  RegisterUser,
+// routes/auth.routes.js
+const express = require("express");
+const router = express.Router();
+const authController = require("./usercontroller.controller");
+const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+// const validateTokenController = require('../controllers/validateToken.controller');
 
-} = require("./usercontroller.controller");
+// Public routes
+router.post("/login", authController.login);
+router.post("/refresh-token", authController.refreshToken);
 
-const router = require("express").Router();
-
-router.post("/login", loginUserDetail);
-router.post("/signin", RegisterUser);
-
+// Protected routes (need access token)
+router.post("/logout", verifyAccessToken, authController.logout);
 
 module.exports = router;
