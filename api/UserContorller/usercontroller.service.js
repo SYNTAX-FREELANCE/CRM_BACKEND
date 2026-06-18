@@ -1,97 +1,187 @@
-const pool = require("../../dbconfig/dbconfig");
+// services/auth.service.js
+const db = require("../../dbconfig/dbconfig");
 
 module.exports = {
-    insertUser: (user, callback) => {
-        pool.query(
-            `INSERT INTO user_login (user_name, password, user_email, create_date, edit_date)
-       VALUES (?, ?, ?, NOW(), NOW())`,
-            [user.user_name, user.password, user.user_email],
-            (err, result) => {
-                if (err) {
-                    console.error("insertUser DB error:", err);
-                    return callback(err, null);
-                }
-
-                return callback(null, {
-                    user_id: result.insertId,
-                    user_name: user.user_name,
-                    user_email: user.user_email,
-                });
-            },
-        );
-    },
-
-    findUserByEmail: (email, callback) => {
-        pool.query(
-            "SELECT * FROM user_login WHERE user_email = ?",
-            [email],
-            (err, rows) => {
-                if (err) {
-                    console.error("findUserByEmail DB error:", err);
-                    return callback(err, null);
-                }
-
-                // return first row or undefined
-                return callback(null, rows[0]);
-            },
-        );
-    },
+    // Find user by username
     findUserByUsername: (username, callback) => {
-        pool.query(
+        db.query(
             "SELECT * FROM users WHERE username = ?",
             [username],
-            (err, results) => {
+            (err, result) => {
                 if (err) {
-                    return callback(err);
+                    return callback(err, null);
                 }
 
-                return callback(null, results[0]);
-            },
-        );
-    },
-
-    logLogin: (data, callback) => {
-        // Auto-close any dangling sessions that weren't closed cleanly
-        pool.query(
-            `UPDATE user_attendance 
-             SET logout_time = NOW(), 
-                 productivity_hours = ROUND(TIMESTAMPDIFF(SECOND, login_time, NOW()) / 3600, 2) 
-             WHERE user_id = ? AND logout_time IS NULL`,
-            [data.user_id],
-            (err) => {
-                if (err) {
-                    console.error("Auto-close dangling sessions DB error:", err);
+                if (!result || result.length === 0) {
+                    return callback(null, null);
                 }
 
-                // Insert new login session
-                pool.query(
-                    `INSERT INTO user_attendance (user_id, username, login_time) 
-                     VALUES (?, ?, NOW())`,
-                    [data.user_id, data.username],
-                    (err, result) => {
-                        if (err) {
-                            return callback(err);
-                        }
-                        return callback(null, result);
-                    }
-                );
+                callback(null, result[0]);
             }
         );
     },
 
-    logoutSession: (attendanceId, callback) => {
-        pool.query(
-            `UPDATE user_attendance 
-             SET logout_time = NOW(), 
-                 productivity_hours = ROUND(TIMESTAMPDIFF(SECOND, login_time, NOW()) / 3600, 2) 
-             WHERE id = ?`,
-            [attendanceId],
+    // Find user by username and password
+    findUserByUsernameAndPassword: (username, password, callback) => {
+        db.query(
+            "SELECT * FROM users WHERE username = ? AND password = ?",
+            [username, password],
             (err, result) => {
                 if (err) {
-                    return callback(err);
+                    return callback(err, null);
                 }
-                return callback(null, result);
+
+                if (!result || result.length === 0) {
+                    return callback(null, null);
+                }
+
+                callback(null, result[0]);
+            }
+        );
+    },
+
+    // Store refresh token in database
+    storeRefreshToken: (userId, refreshToken, callback) => {
+        db.query(
+            `
+             INSERT INTO user_tokens (user_id, refresh_token, refresh_token_expiry, revoked) 
+        VALUES (?, ?, NOW() + INTERVAL 7 DAY, FALSE)
+        ON DUPLICATE KEY UPDATE 
+            refresh_token = VALUES(refresh_token),
+            refresh_token_expiry = NOW() + INTERVAL 7 DAY,
+            revoked = FALSE
+            `,
+            [userId, refreshToken],
+            (err) => {
+                if (err) {
+                    return callback(err, null);
+                }
+
+                callback(null, { success: true });
+            }
+        );
+    },
+
+    // Find refresh token by token value
+    findRefreshToken: (refreshToken, userId, callback) => {
+        db.query(
+            "SELECT * FROM user_tokens WHERE refresh_token = ? AND user_id = ? AND revoked = FALSE",
+            [refreshToken, userId],
+            (err, result) => {
+                if (err) {
+                    return callback(err, null);
+                }
+
+                if (!result || result.length === 0) {
+                    return callback(null, null);
+                }
+
+                callback(null, result[0]);
+            }
+        );
+    },
+
+    // Get user by ID
+    findUserById: (userId, callback) => {
+        db.query(
+            "SELECT * FROM users WHERE id = ?",
+            [userId],
+            (err, result) => {
+                if (err) {
+                    return callback(err, null);
+                }
+
+                if (!result || result.length === 0) {
+                    return callback(null, null);
+                }
+
+                callback(null, result[0]);
+            }
+        );
+    },
+
+    // Revoke refresh token (logout)
+    revokeRefreshToken: (userId, callback) => {
+        db.query(
+            "UPDATE user_tokens SET revoked = TRUE WHERE user_id = ?",
+            [userId],
+            (err) => {
+                if (err) {
+                    return callback(err, null);
+                }
+
+                callback(null, { success: true });
+            }
+        );
+    },
+
+    // Validate token - get user by ID
+    getUserByIdForValidation: (userId, callback) => {
+        db.query(
+            "SELECT id, username, role FROM users WHERE id = ?",
+            [userId],
+            (err, result) => {
+                if (err) {
+                    return callback(err, null);
+                }
+
+                if (!result || result.length === 0) {
+                    return callback(null, null);
+                }
+
+                callback(null, result[0]);
             }
         );
     },
 };
+// =======
+//     logoutSession: (attendanceId, callback) => {
+//         pool.query(
+//             `UPDATE user_attendance 
+//              SET logout_time = NOW(), 
+//                  productivity_hours = ROUND(TIMESTAMPDIFF(SECOND, login_time, NOW()) / 3600, 2) 
+//              WHERE id = ?`,
+//             [attendanceId],
+//             (err, result) => {
+//                 if (err) {
+//                     return callback(err);
+//                 }
+//                 return callback(null, result);
+//             }
+//         );
+//     },
+// };
+// >>>>>>> f9862138face5df8a5abf85f3019f569585a6a39
+
+
+
+
+
+
+// =======
+//     logLogin: (data, callback) => {
+//         // Auto-close any dangling sessions that weren't closed cleanly
+//         pool.query(
+//             `UPDATE user_attendance 
+//              SET logout_time = NOW(), 
+//                  productivity_hours = ROUND(TIMESTAMPDIFF(SECOND, login_time, NOW()) / 3600, 2) 
+//              WHERE user_id = ? AND logout_time IS NULL`,
+//             [data.user_id],
+//             (err) => {
+//                 if (err) {
+//                     console.error("Auto-close dangling sessions DB error:", err);
+//                 }
+
+//                 // Insert new login session
+//                 pool.query(
+//                     `INSERT INTO user_attendance (user_id, username, login_time) 
+//                      VALUES (?, ?, NOW())`,
+//                     [data.user_id, data.username],
+//                     (err, result) => {
+//                         if (err) {
+//                             return callback(err);
+//                         }
+//                         return callback(null, result);
+//                     }
+//                 );
+// >>>>>>> f9862138face5df8a5abf85f3019f569585a6a39
