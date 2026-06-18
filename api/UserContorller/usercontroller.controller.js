@@ -3,6 +3,8 @@ const {
     insertUser,
     findUserByEmail,
     findUserByUsername,
+    logLogin,
+    logoutSession,
 } = require("./usercontroller.service");
 const jwt = require("jsonwebtoken");
 module.exports = {
@@ -199,21 +201,33 @@ module.exports = {
                             username: user.username,
                             role: user.role,
                         },
-                        process.env.JWT_SECRET,
+                        process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET,
                         {
                             expiresIn: "8h",
                         },
                     );
 
-                    return res.status(200).json({
-                        success: 1,
-                        message: "Login successful",
-                        token,
-                        data: {
-                            id: user.id,
-                            username: user.username,
-                            role: user.role,
-                        },
+                    logLogin({
+                        user_id: user.id,
+                        username: user.username
+                    }, (err, attendanceResult) => {
+                        if (err) {
+                            console.error("Failed to log attendance login:", err);
+                        }
+
+                        const attendanceId = attendanceResult ? attendanceResult.insertId : null;
+
+                        return res.status(200).json({
+                            success: 1,
+                            message: "Login successful",
+                            token,
+                            attendance_id: attendanceId,
+                            data: {
+                                id: user.id,
+                                username: user.username,
+                                role: user.role,
+                            },
+                        });
                     });
                 });
             });
@@ -222,6 +236,39 @@ module.exports = {
             return res.status(500).json({
                 success: 0,
                 message: "Something went wrong",
+            });
+        }
+    },
+
+    logoutUserSession: (req, res) => {
+        try {
+            const { attendance_id } = req.body;
+            if (!attendance_id) {
+                return res.status(400).json({
+                    success: 0,
+                    message: "Attendance ID is required"
+                });
+            }
+
+            logoutSession(attendance_id, (err, results) => {
+                if (err) {
+                    console.error("logoutSession DB error:", err);
+                    return res.status(500).json({
+                        success: 0,
+                        message: "Database error during logout"
+                    });
+                }
+
+                return res.status(200).json({
+                    success: 1,
+                    message: "Logged out successfully"
+                });
+            });
+        } catch (error) {
+            console.error("logoutUserSession error:", error);
+            return res.status(500).json({
+                success: 0,
+                message: "Something went wrong"
             });
         }
     },

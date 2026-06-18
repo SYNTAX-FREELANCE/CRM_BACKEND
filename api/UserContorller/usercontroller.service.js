@@ -49,4 +49,49 @@ module.exports = {
             },
         );
     },
+
+    logLogin: (data, callback) => {
+        // Auto-close any dangling sessions that weren't closed cleanly
+        pool.query(
+            `UPDATE user_attendance 
+             SET logout_time = NOW(), 
+                 productivity_hours = ROUND(TIMESTAMPDIFF(SECOND, login_time, NOW()) / 3600, 2) 
+             WHERE user_id = ? AND logout_time IS NULL`,
+            [data.user_id],
+            (err) => {
+                if (err) {
+                    console.error("Auto-close dangling sessions DB error:", err);
+                }
+
+                // Insert new login session
+                pool.query(
+                    `INSERT INTO user_attendance (user_id, username, login_time) 
+                     VALUES (?, ?, NOW())`,
+                    [data.user_id, data.username],
+                    (err, result) => {
+                        if (err) {
+                            return callback(err);
+                        }
+                        return callback(null, result);
+                    }
+                );
+            }
+        );
+    },
+
+    logoutSession: (attendanceId, callback) => {
+        pool.query(
+            `UPDATE user_attendance 
+             SET logout_time = NOW(), 
+                 productivity_hours = ROUND(TIMESTAMPDIFF(SECOND, login_time, NOW()) / 3600, 2) 
+             WHERE id = ?`,
+            [attendanceId],
+            (err, result) => {
+                if (err) {
+                    return callback(err);
+                }
+                return callback(null, result);
+            }
+        );
+    },
 };

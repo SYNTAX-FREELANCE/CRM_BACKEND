@@ -35,6 +35,15 @@ app.use(
 // health check
 app.get("/health", (_, res) => res.send("OK"));
 
+const authMiddleware = require("./Middleware/auth.middleware");
+// validate access token endpoint
+app.get("/api/validateAccessToken", authMiddleware, (req, res) => {
+    return res.status(200).json({
+        isValidToken: true,
+        user: req.user,
+    });
+});
+
 server.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`);
 });
