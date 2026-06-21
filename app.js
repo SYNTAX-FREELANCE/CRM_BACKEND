@@ -26,6 +26,11 @@ initSocket(server);
 
 // routes
 const userRoutes = require("./api/UserContorller/usercontroller.router");
+const employeemaster = require("./api/EmployeeMaster/employeemaster.router");
+const rolemaster = require("./api/RoleMaster/roleMaster.router");
+const statusmaster = require("./api/StatusCreation/statusMaster.routes");
+const companymaster = require("./api/CompanyMaster/companyMaster.routes");
+const qualificationmaster = require("./api/QualificationMaster/qualification.router");
 const routeTrackerMiddleware = require("./Middleware/routeTracker.middleware");
 const socketMiddleware = require("./Middleware/socke.middlewar");
 const validateToken = require('./Validate/validateToken')
@@ -38,21 +43,52 @@ app.use(
     userRoutes,
 );
 
+app.use(
+    "/api/employee",
+    routeTrackerMiddleware("EMPLOYEE_REGISTER_ROUTER"),
+    socketMiddleware,
+    employeemaster,
+);
+
+
+app.use(
+    "/api/rolemast",
+    routeTrackerMiddleware("ROLE_MASTER_ROUTER"),
+    socketMiddleware,
+    rolemaster,
+);
+
+
+app.use(
+    "/api/statusmast",
+    routeTrackerMiddleware("STATUS_MASTER_ROUTER"),
+    socketMiddleware,
+    statusmaster,
+);
+
+
+app.use(
+    "/api/companimast",
+    routeTrackerMiddleware("COMPANY_MASTER_ROUTER"),
+    socketMiddleware,
+    companymaster,
+);
+
+
+app.use(
+    "/api/qualimast",
+    routeTrackerMiddleware("QUALIFICATION_MASTER_ROUTER"),
+    socketMiddleware,
+    qualificationmaster,
+);
+
 // health check
 app.get("/health", (_, res) => res.send("OK"));
+
 app.get("/api/validate-token",
     routeTrackerMiddleware("VALIDAE_ROUTE"),
-    verifyAccessToken
-    ,validateToken);
+    verifyAccessToken,validateToken);
 
-const authMiddleware = require("./Middleware/auth.middleware");
-// validate access token endpoint
-app.get("/api/validateAccessToken", authMiddleware, (req, res) => {
-    return res.status(200).json({
-        isValidToken: true,
-        user: req.user,
-    });
-});
 
 server.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`);
