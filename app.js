@@ -4,7 +4,7 @@ const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const path = require("path");
-const cookieParser = require("cookie-parser"); 
+const cookieParser = require("cookie-parser");
 
 
 const corsConfig = require("./config/cors");
@@ -31,6 +31,9 @@ const rolemaster = require("./api/RoleMaster/roleMaster.router");
 const statusmaster = require("./api/StatusCreation/statusMaster.routes");
 const companymaster = require("./api/CompanyMaster/companyMaster.routes");
 const qualificationmaster = require("./api/QualificationMaster/qualification.router");
+const modulemaster = require("./api/ModuleMaster/moduleMaster.router");
+const submodulemaster = require("./api/SubmoduleMaster/submoduleMaster.router");
+const menumaster = require("./api/MenuMaster/menuMaster.router");
 const routeTrackerMiddleware = require("./Middleware/routeTracker.middleware");
 const socketMiddleware = require("./Middleware/socke.middlewar");
 const validateToken = require('./Validate/validateToken')
@@ -82,12 +85,33 @@ app.use(
     qualificationmaster,
 );
 
+app.use(
+    "/api/modulemast",
+    routeTrackerMiddleware("MODULE_MASTER_ROUTER"),
+    socketMiddleware,
+    modulemaster,
+);
+
+app.use(
+    "/api/submodulemast",
+    routeTrackerMiddleware("SUBMODULE_MASTER_ROUTER"),
+    socketMiddleware,
+    submodulemaster,
+);
+
+app.use(
+    "/api/menumaster",
+    routeTrackerMiddleware("MENU_MASTER_ROUTER"),
+    socketMiddleware,
+    menumaster,
+);
+
 // health check
 app.get("/health", (_, res) => res.send("OK"));
 
 app.get("/api/validate-token",
     routeTrackerMiddleware("VALIDAE_ROUTE"),
-    verifyAccessToken,validateToken);
+    verifyAccessToken, validateToken);
 
 
 server.listen(process.env.PORT, () => {
