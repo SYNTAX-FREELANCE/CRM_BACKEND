@@ -6,12 +6,11 @@ module.exports = {
     createMenu: (menuData, callback) => {
         pool.query(
             `INSERT INTO menus 
-            (menu_name, module_id, submodule_id, is_active, created_at, created_user)
-            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
+            (menu_name, module_id, is_active, created_at, created_user)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)`,
             [
                 menuData.menu_name,
                 menuData.module_id,
-                menuData.submodule_id || null,
                 menuData.is_active,
                 menuData.created_user
             ],
@@ -27,12 +26,11 @@ module.exports = {
     // ==================== GET ALL MENUS ====================
     getAllMenus: (callback) => {
         pool.query(
-            `SELECT mn.menu_id, mn.menu_name, mn.module_id, mn.submodule_id, mn.is_active, 
+            `SELECT mn.menu_id, mn.menu_name, mn.module_id, mn.is_active, 
                     mn.created_at, mn.updated_at, mn.created_user, mn.updated_user, 
-                    md.module_name, sb.submodule_name 
+                    md.module_name 
             FROM menus mn
             LEFT JOIN modules md ON mn.module_id = md.module_id
-            LEFT JOIN submodules sb ON mn.submodule_id = sb.submodule_id
             ORDER BY mn.created_at DESC`,
             [],
             (err, result) => {
@@ -47,12 +45,11 @@ module.exports = {
     // ==================== GET MENU BY ID ====================
     getMenuById: (menuId, callback) => {
         pool.query(
-            `SELECT mn.menu_id, mn.menu_name, mn.module_id, mn.submodule_id, mn.is_active, 
+            `SELECT mn.menu_id, mn.menu_name, mn.module_id, mn.is_active, 
                     mn.created_at, mn.updated_at, mn.created_user, mn.updated_user, 
-                    md.module_name, sb.submodule_name 
+                    md.module_name 
             FROM menus mn
             LEFT JOIN modules md ON mn.module_id = md.module_id
-            LEFT JOIN submodules sb ON mn.submodule_id = sb.submodule_id
             WHERE mn.menu_id = ?`,
             [menuId],
             (err, result) => {
@@ -73,13 +70,12 @@ module.exports = {
     updateMenu: (menuId, menuData, callback) => {
         pool.query(
             `UPDATE menus 
-            SET menu_name = ?, module_id = ?, submodule_id = ?, is_active = ?, 
+            SET menu_name = ?, module_id = ?, is_active = ?, 
                 updated_at = CURRENT_TIMESTAMP, updated_user = ?
             WHERE menu_id = ?`,
             [
                 menuData.menu_name,
                 menuData.module_id,
-                menuData.submodule_id || null,
                 menuData.is_active,
                 menuData.updated_user,
                 menuId
@@ -112,12 +108,11 @@ module.exports = {
     // ==================== GET ACTIVE MENUS ONLY ====================
     getActiveMenus: (callback) => {
         pool.query(
-            `SELECT mn.menu_id, mn.menu_name, mn.module_id, mn.submodule_id, mn.is_active, 
+            `SELECT mn.menu_id, mn.menu_name, mn.module_id, mn.is_active, 
                     mn.created_at, mn.updated_at, mn.created_user, mn.updated_user, 
-                    md.module_name, sb.submodule_name 
+                    md.module_name 
             FROM menus mn
             LEFT JOIN modules md ON mn.module_id = md.module_id
-            LEFT JOIN submodules sb ON mn.submodule_id = sb.submodule_id
             WHERE mn.is_active = 1
             ORDER BY mn.menu_name ASC`,
             [],

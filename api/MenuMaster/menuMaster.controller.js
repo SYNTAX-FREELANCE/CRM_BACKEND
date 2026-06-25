@@ -5,10 +5,9 @@ module.exports = {
     // ==================== CREATE MENU ====================
     createMenu: (req, res) => {
         try {
-            const { menu_name, menuName, module_id, moduleId, submodule_id, submoduleId, isActive, is_active } = req.body;
+            const { menu_name, menuName, module_id, moduleId, isActive, is_active } = req.body;
             const finalMenuName = menu_name || menuName;
             const finalModuleId = module_id || moduleId;
-            const finalSubmoduleId = submodule_id || submoduleId;
             const finalIsActive = (isActive !== undefined) ? isActive : is_active;
 
             // Validation
@@ -30,7 +29,6 @@ module.exports = {
             const menuData = {
                 menu_name: finalMenuName.trim(),
                 module_id: finalModuleId,
-                submodule_id: finalSubmoduleId || null,
                 is_active: finalIsActive !== undefined ? finalIsActive : 1,
                 created_user: req.user ? req.user.id : null
             };
@@ -129,10 +127,9 @@ module.exports = {
     updateMenu: (req, res) => {
         try {
             const { menuId } = req.params;
-            const { menu_name, menuName, module_id, moduleId, submodule_id, submoduleId, isActive, is_active } = req.body;
+            const { menu_name, menuName, module_id, moduleId, isActive, is_active } = req.body;
             const finalMenuName = menu_name || menuName;
             const finalModuleId = module_id || moduleId;
-            const finalSubmoduleId = submodule_id || submoduleId;
             const finalIsActive = (isActive !== undefined) ? isActive : is_active;
 
             // Validation
@@ -153,7 +150,6 @@ module.exports = {
             const menuData = {
                 menu_name: finalMenuName.trim(),
                 module_id: finalModuleId,
-                submodule_id: finalSubmoduleId || null,
                 is_active: finalIsActive !== undefined ? finalIsActive : 1,
                 updated_user: req.user ? req.user.id : null
             };

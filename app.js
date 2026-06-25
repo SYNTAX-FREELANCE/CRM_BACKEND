@@ -29,11 +29,16 @@ const userRoutes = require("./api/UserContorller/usercontroller.router");
 const employeemaster = require("./api/EmployeeMaster/employeemaster.router");
 const rolemaster = require("./api/RoleMaster/roleMaster.router");
 const statusmaster = require("./api/StatusCreation/statusMaster.routes");
+const leadmaster = require("./api/LeadMaster/leadMaster.router");
+const vehicletypemaster = require("./api/VehicleTypeMaster/vehicleTypeMaster.router");
+const insurancecompanymaster = require("./api/InsuranceCompany/insuranceCompany.router");
 const companymaster = require("./api/CompanyMaster/companyMaster.routes");
 const qualificationmaster = require("./api/QualificationMaster/qualification.router");
 const modulemaster = require("./api/ModuleMaster/moduleMaster.router");
 const submodulemaster = require("./api/SubmoduleMaster/submoduleMaster.router");
 const menumaster = require("./api/MenuMaster/menuMaster.router");
+const userRights = require("./api/UserRights/userRights.router");
+const userInfo = require("./api/UserInfo/userInfo.router");
 const routeTrackerMiddleware = require("./Middleware/routeTracker.middleware");
 const socketMiddleware = require("./Middleware/socke.middlewar");
 const validateToken = require('./Validate/validateToken')
@@ -71,6 +76,30 @@ app.use(
 
 
 app.use(
+    "/api/leadmast",
+    routeTrackerMiddleware("LEAD_MASTER_ROUTER"),
+    socketMiddleware,
+    leadmaster,
+);
+
+
+app.use(
+    "/api/vehicletype",
+    routeTrackerMiddleware("VEHICLE_TYPE_MASTER_ROUTER"),
+    socketMiddleware,
+    vehicletypemaster,
+);
+
+
+app.use(
+    "/api/insurancecompany",
+    routeTrackerMiddleware("INSURANCE_COMPANY_MASTER_ROUTER"),
+    socketMiddleware,
+    insurancecompanymaster,
+);
+
+
+app.use(
     "/api/companimast",
     routeTrackerMiddleware("COMPANY_MASTER_ROUTER"),
     socketMiddleware,
@@ -104,6 +133,20 @@ app.use(
     routeTrackerMiddleware("MENU_MASTER_ROUTER"),
     socketMiddleware,
     menumaster,
+);
+
+app.use(
+    "/api/userrights",
+    routeTrackerMiddleware("USER_RIGHT_MASTER_ROUTER"),
+    socketMiddleware,
+    userRights,
+);
+
+app.use(
+    "/api/userinfo",
+    routeTrackerMiddleware("USER_INFO_ROUTER"),
+    socketMiddleware,
+    userInfo,
 );
 
 // health check
