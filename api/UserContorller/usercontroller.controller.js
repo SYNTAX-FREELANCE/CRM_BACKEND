@@ -19,6 +19,8 @@ module.exports = {
       });
     }
 
+    
+    
     authService.findUserByUsername(username, (err, user) => {
       if (err) {
         console.error(err);
@@ -28,6 +30,7 @@ module.exports = {
         });
       }
 
+      
       if (!user) {
         return res.status(200).json({
           success: 0,
@@ -79,9 +82,9 @@ module.exports = {
           success: 1,
           message: "Login successful",
           user: {
-            id: user.id,
-            username: user.username,
-            role: user.role,
+            id: user.user_id,
+            username: user.name,
+            role: user.role_name,
           },
         });
       });
