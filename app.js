@@ -148,11 +148,16 @@ app.use(
     routeTrackerMiddleware("USER_INFO_ROUTER"),
     socketMiddleware,
     userInfo,
+);
+app.use(
     "/api/customer",
     routeTrackerMiddleware("CUSTOMER_MASTER_ROUTER"),
     socketMiddleware,
     customermaster,
 );
+
+
+
 
 // health check
 app.get("/health", (_, res) => res.send("OK"));
