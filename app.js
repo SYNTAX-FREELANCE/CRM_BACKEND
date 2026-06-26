@@ -39,6 +39,7 @@ const submodulemaster = require("./api/SubmoduleMaster/submoduleMaster.router");
 const menumaster = require("./api/MenuMaster/menuMaster.router");
 const userRights = require("./api/UserRights/userRights.router");
 const userInfo = require("./api/UserInfo/userInfo.router");
+const customermaster = require("./api/CustomerMaster/customermaster.router");
 const routeTrackerMiddleware = require("./Middleware/routeTracker.middleware");
 const socketMiddleware = require("./Middleware/socke.middlewar");
 const validateToken = require('./Validate/validateToken')
@@ -147,6 +148,10 @@ app.use(
     routeTrackerMiddleware("USER_INFO_ROUTER"),
     socketMiddleware,
     userInfo,
+    "/api/customer",
+    routeTrackerMiddleware("CUSTOMER_MASTER_ROUTER"),
+    socketMiddleware,
+    customermaster,
 );
 
 // health check
