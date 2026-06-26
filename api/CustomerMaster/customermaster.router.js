@@ -38,6 +38,8 @@ router.delete("/delete-vehicle/:vehicleId", verifyAccessToken, customerControlle
 // Get customer by ID
 router.get("/getbyid/:customerId", verifyAccessToken, customerController.getCustomerById);
 
+router.get("/new-customer/:month", verifyAccessToken, customerController.getNewCustomers);
+
 // Get vehicle by ID
 router.get("/getbyid-vehicle/:vehicleId", verifyAccessToken, customerController.getVehicleById);
 

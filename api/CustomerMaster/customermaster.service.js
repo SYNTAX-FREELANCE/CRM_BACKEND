@@ -9,7 +9,7 @@ module.exports = {
       (customer_name, mobile_number_1, mobile_number_2, email, address, city, district, state, pincode, is_active, created_by)
       VALUES ?
     `;
-    
+
     // Prepare values as an array of arrays
     const values = customersArray.map((cust) => [
       cust.customer_name,
@@ -22,7 +22,7 @@ module.exports = {
       cust.state || null,
       cust.pincode || null,
       cust.is_active !== undefined ? cust.is_active : 1,
-      cust.created_by || null
+      cust.created_by || null,
     ]);
 
     pool.query(query, [values], (err, result) => {
@@ -40,7 +40,7 @@ module.exports = {
       (customer_name, mobile_number_1, mobile_number_2, email, address, city, district, state, pincode, is_active, created_by)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    
+
     pool.query(
       query,
       [
@@ -54,14 +54,14 @@ module.exports = {
         cust.state || null,
         cust.pincode || null,
         cust.is_active !== undefined ? cust.is_active : 1,
-        cust.created_by || null
+        cust.created_by || null,
       ],
       (err, result) => {
         if (err) {
           return callback(err, null);
         }
         callback(null, result);
-      }
+      },
     );
   },
 
@@ -71,7 +71,7 @@ module.exports = {
       SELECT * FROM customers 
       ORDER BY created_at DESC
     `;
-    
+
     pool.query(query, [], (err, results) => {
       if (err) {
         return callback(err, null);
@@ -86,7 +86,7 @@ module.exports = {
       DELETE FROM customers 
       WHERE customer_id = ?
     `;
-    
+
     pool.query(query, [customerId], (err, result) => {
       if (err) {
         return callback(err, null);
@@ -102,7 +102,7 @@ module.exports = {
       (customer_id, registration_number, rto, registration_data, model, vechile_maker, engine_number, chassis_number, vechile_class, vehicle_category, fuel_type, seat_capacity)
       VALUES ?
     `;
-    
+
     const values = vehiclesArray.map((v) => [
       v.customer_id,
       v.registration_number,
@@ -115,7 +115,7 @@ module.exports = {
       v.vechile_class || null,
       v.vehicle_category || null,
       v.fuel_type || null,
-      v.seat_capacity || null
+      v.seat_capacity || null,
     ]);
 
     pool.query(query, [values], (err, result) => {
@@ -134,7 +134,7 @@ module.exports = {
       LEFT JOIN customers c ON v.customer_id = c.customer_id
       ORDER BY v.created_at DESC
     `;
-    
+
     pool.query(query, [], (err, results) => {
       if (err) {
         return callback(err, null);
@@ -149,7 +149,7 @@ module.exports = {
       DELETE FROM vehicles 
       WHERE vehicle_id = ?
     `;
-    
+
     pool.query(query, [vehicleId], (err, result) => {
       if (err) {
         return callback(err, null);
@@ -166,17 +166,19 @@ module.exports = {
       await connection.beginTransaction();
 
       // 1. Get all unique mobile numbers from the batch
-      const mobileNumbers = [...new Set(combinedRows.map(row => row.customer.mobile_number_1))];
-      
+      const mobileNumbers = [
+        ...new Set(combinedRows.map((row) => row.customer.mobile_number_1)),
+      ];
+
       // 2. Query the DB to check which mobile numbers already exist
       const customerMap = new Map(); // mobile_number_1 -> customer_id
-      
+
       if (mobileNumbers.length > 0) {
         const [existing] = await connection.query(
           "SELECT customer_id, mobile_number_1 FROM customers WHERE mobile_number_1 IN (?)",
-          [mobileNumbers]
+          [mobileNumbers],
         );
-        existing.forEach(row => {
+        existing.forEach((row) => {
           customerMap.set(row.mobile_number_1, row.customer_id);
         });
       }
@@ -185,7 +187,7 @@ module.exports = {
       const newCustomersToInsert = [];
       const insertedMobileSet = new Set();
 
-      combinedRows.forEach(row => {
+      combinedRows.forEach((row) => {
         const mob = row.customer.mobile_number_1;
         if (!customerMap.has(mob) && !insertedMobileSet.has(mob)) {
           newCustomersToInsert.push(row.customer);
@@ -210,48 +212,82 @@ module.exports = {
             cust.state || null,
             cust.pincode || null,
             cust.is_active !== undefined ? cust.is_active : 1,
-            cust.created_by || null
-          ]
+            cust.created_by || null,
+          ],
         );
         customerMap.set(cust.mobile_number_1, result.insertId);
       }
 
       // 5. Insert the vehicles linked to correct customer IDs.
-      const vehiclesToInsert = combinedRows.map(row => {
+      const vehiclesToInsert = combinedRows.map((row) => {
         const custId = customerMap.get(row.customer.mobile_number_1);
+        // return [
+        //   custId,
+        //   row.vehicle.registration_number,
+        //   row.vehicle.rto || null,
+        //   row.vehicle.registration_data || null,
+        //   row.vehicle.model || null,
+        //   row.vehicle.vechile_maker || null,
+        //   row.vehicle.engine_number || null,
+        //   row.vehicle.chassis_number || null,
+        //   row.vehicle.vechile_class || null,
+        //   row.vehicle.vehicle_category || null,
+        //   row.vehicle.fuel_type || null,
+        //   row.vehicle.seat_capacity || null,
+        // ];
         return [
           custId,
           row.vehicle.registration_number,
           row.vehicle.rto || null,
           row.vehicle.registration_data || null,
           row.vehicle.model || null,
-          row.vehicle.vechile_maker || null,
+          row.vehicle.vehicle_maker || null,
           row.vehicle.engine_number || null,
           row.vehicle.chassis_number || null,
-          row.vehicle.vechile_class || null,
+          row.vehicle.vehicle_class || null,
           row.vehicle.vehicle_category || null,
           row.vehicle.fuel_type || null,
-          row.vehicle.seat_capacity || null
+          row.vehicle.seat_capacity || null,
         ];
       });
 
       let insertedVehiclesCount = 0;
       if (vehiclesToInsert.length > 0) {
+        // const [vehResult] = await connection.query(
+        //   `INSERT INTO vehicles
+        //    (customer_id, registration_number, rto, registration_data, model, vechile_maker, engine_number, chassis_number, vechile_class, vehicle_category, fuel_type, seat_capacity)
+        //    VALUES ?`,
+        //   [vehiclesToInsert]
+        // );
+
         const [vehResult] = await connection.query(
-          `INSERT INTO vehicles 
-           (customer_id, registration_number, rto, registration_data, model, vechile_maker, engine_number, chassis_number, vechile_class, vehicle_category, fuel_type, seat_capacity)
-           VALUES ?`,
-          [vehiclesToInsert]
+          `INSERT INTO vehicles
+   (
+     customer_id,
+     registration_number,
+     rto,
+     registration_date,
+     model,
+     vehicle_maker,
+     engine_number,
+     chassis_number,
+     vehicle_class,
+     vehicle_category,
+     fuel_type,
+     seat_capacity
+   )
+   VALUES ?`,
+          [vehiclesToInsert],
         );
         insertedVehiclesCount = vehResult.affectedRows;
       }
 
       await connection.commit();
-      
+
       return {
         insertedCustomers: newCustomersToInsert.length,
         insertedVehicles: insertedVehiclesCount,
-        totalRows: combinedRows.length
+        totalRows: combinedRows.length,
       };
     } catch (err) {
       await connection.rollback();
@@ -274,6 +310,35 @@ module.exports = {
       callback(null, results[0] || null);
     });
   },
+ getNewCustomers: (month, callback) => {
+    const query = `
+      SELECT
+    c.customer_id,
+    c.customer_name,
+    c.mobile_number_1,
+    v.vehicle_id,
+    v.registration_number,
+    v.registration_date,
+    DATE_ADD(v.registration_date, INTERVAL 1 YEAR) AS expiry_date
+FROM customers c
+INNER JOIN vehicles v
+    ON c.customer_id = v.customer_id
+LEFT JOIN leads l
+    ON l.customer_id = c.customer_id
+    AND l.vehicle_id = v.vehicle_id
+WHERE
+    MONTH(DATE_ADD(v.registration_date, INTERVAL 1 YEAR)) = ?
+    AND l.lead_id IS NULL;
+    `;
+    pool.query(query, [month], (err, results) => {
+      if (err) {
+        return callback(err, null);
+      }
+      callback(null, results[0] || null);
+    });
+  },
+
+  
 
   // ==================== GET VEHICLE BY ID ====================
   getVehicleById: (vehicleId, callback) => {
@@ -312,14 +377,14 @@ module.exports = {
         cust.state || null,
         cust.pincode || null,
         cust.is_active !== undefined ? cust.is_active : 1,
-        customerId
+        customerId,
       ],
       (err, result) => {
         if (err) {
           return callback(err, null);
         }
         callback(null, result);
-      }
+      },
     );
   },
 
@@ -347,14 +412,14 @@ module.exports = {
         v.vehicle_category || null,
         v.fuel_type || null,
         v.seat_capacity || null,
-        vehicleId
+        vehicleId,
       ],
       (err, result) => {
         if (err) {
           return callback(err, null);
         }
         callback(null, result);
-      }
+      },
     );
-  }
+  },
 };
