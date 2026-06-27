@@ -5,7 +5,7 @@ module.exports = {
     // ==================== CREATE ROLE ====================
     createRole: (req, res) => {
         try {
-            const { role_name, role_description, is_default,alias ,isActive} = req.body;
+            const { role_name, role_description, is_default, alias, isActive } = req.body;
 
             // Validation
             if (!role_name || role_name.trim() === "") {
@@ -19,7 +19,7 @@ module.exports = {
             const roleData = {
                 role_name: role_name.trim(),
                 role_description: role_description || null,
-                alias: alias ,
+                alias: alias,
                 is_active: isActive
             };
 
@@ -119,7 +119,7 @@ module.exports = {
     updateRole: (req, res) => {
         try {
             const { roleId } = req.params;
-            const { role_name, role_description, alias ,isActive} = req.body;
+            const { role_name, role_description, alias, isActive } = req.body;
 
             // Validation
             if (!role_name || role_name.trim() === "") {
@@ -132,7 +132,7 @@ module.exports = {
             const roleData = {
                 role_name: role_name.trim(),
                 role_description: role_description || null,
-                alias: alias ,
+                alias: alias,
                 is_active: isActive
             };
 

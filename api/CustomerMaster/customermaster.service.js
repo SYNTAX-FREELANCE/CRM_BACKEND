@@ -310,7 +310,9 @@ module.exports = {
       callback(null, results[0] || null);
     });
   },
- getNewCustomers: (month, callback) => {
+  getNewCustomers: (month, callback) => {
+    console.log(month);
+
     const query = `
       SELECT
     c.customer_id,
@@ -319,6 +321,7 @@ module.exports = {
     v.vehicle_id,
     v.registration_number,
     v.registration_date,
+    v.vehicle_category,
     DATE_ADD(v.registration_date, INTERVAL 1 YEAR) AS expiry_date
 FROM customers c
 INNER JOIN vehicles v
@@ -334,11 +337,11 @@ WHERE
       if (err) {
         return callback(err, null);
       }
-      callback(null, results[0] || null);
+      callback(null, results || null);
     });
   },
 
-  
+
 
   // ==================== GET VEHICLE BY ID ====================
   getVehicleById: (vehicleId, callback) => {
@@ -420,6 +423,34 @@ WHERE
         }
         callback(null, result);
       },
+    );
+  },
+  CreateNewLead: (values, callback) => {
+
+    pool.query(
+      `INSERT INTO leads (
+                customer_id,
+                vehicle_id,
+                policy_id,
+                status_id,
+                lead_priority,
+                assigned_to,
+                assigned_date,
+                is_assigned,
+                lead_source,
+                remarks,
+                created_by
+            )
+            VALUES ?`,
+      [
+        values
+      ],
+      (err, result) => {
+        if (err) {
+          return callback(err, null);
+        }
+        callback(null, result);
+      }
     );
   },
 };
