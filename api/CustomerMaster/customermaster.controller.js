@@ -567,6 +567,46 @@ module.exports = {
     }
   },
 
+ getNewCustomers: (req, res) => {
+    try {
+      const { month } = req.params;
+      if (!month) {
+        return res.status(400).json({
+          success: 0,
+          message: "Select Months."
+        });
+      }
+
+      customerService.getNewCustomers(month, (err, result) => {
+        if (err) {
+          console.error("getCustomerById error:", err);
+          return res.status(500).json({
+            success: 0,
+            message: "Database error occurred."
+          });
+        }
+        if (!result) {
+          return res.status(404).json({
+            success: 0,
+            message: "Customer not found."
+          });
+        }
+        return res.status(200).json({
+          success: 1,
+          data: result
+        });
+      });
+    } catch (error) {
+      console.error("getCustomerById error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong."
+      });
+    }
+  },
+
+  
+
   // ==================== GET VEHICLE BY ID ====================
   getVehicleById: (req, res) => {
     try {
