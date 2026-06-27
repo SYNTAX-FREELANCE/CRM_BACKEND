@@ -44,7 +44,6 @@ module.exports = {
       const userData = {
         name: name,
         age: age ? parseInt(age) : null,
-        gender: gender || null,
         qualification_id: qualification_id,
         date_of_join: date_of_join || null,
         experience: experience || null,
@@ -54,7 +53,7 @@ module.exports = {
         company_id: company_id,
         role_id: role_id,
         user_status: user_status,
-        is_active: user_status,
+        is_active: is_active,
       };
 
       // Step 1: Create user in users_master + users table (creates auth account)
@@ -248,7 +247,6 @@ module.exports = {
       const userData = {
         name: name,
         age: age ? parseInt(age) : null,
-        gender: gender || null,
         qualification_id: qualification_id || null,
         date_of_join: date_of_join || null,
         experience: experience || null,

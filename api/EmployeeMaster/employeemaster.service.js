@@ -21,15 +21,14 @@ module.exports = {
         // Step 2: Insert into users_master
         pool.query(
           `INSERT INTO users_master 
-                    (employee_id, name, age,gender, qualification_id, date_of_join, 
+                    (employee_id, name, age, qualification_id, date_of_join, 
                      experience, mobile_number_1, mobile_number_2, aadhar_number, 
                      company_id, role_id, user_status, is_active)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             nextEmployeeId,
             userData.name,
             userData.age,
-            userData.gender,
             userData.qualification_id,
             userData.date_of_join,
             userData.experience,
@@ -168,7 +167,6 @@ module.exports = {
          SET  
              name = ?, 
              age = ?, 
-             gender = ?, 
              qualification_id = ?, 
              date_of_join = ?, 
              experience = ?, 
@@ -184,7 +182,6 @@ module.exports = {
       [
         userData.name,
         userData.age,
-        userData.gender, // Added missing gender
         userData.qualification_id,
         userData.date_of_join,
         userData.experience,
