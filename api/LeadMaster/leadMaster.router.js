@@ -19,3 +19,4 @@ router.get("/getbyid/:leadSlno", verifyAccessToken, leadMasterController.getLead
 router.patch("/update/:leadSlno", verifyAccessToken, leadMasterController.updateLead);
 
 module.exports = router;
+
