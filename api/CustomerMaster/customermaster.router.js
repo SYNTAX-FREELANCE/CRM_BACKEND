@@ -49,4 +49,8 @@ router.patch("/update/:customerId", verifyAccessToken, customerController.update
 // Update vehicle
 router.patch("/update-vehicle/:vehicleId", verifyAccessToken, customerController.updateVehicle);
 
+
+//new lead insert 
+router.post("/allocate-customer", verifyAccessToken, customerController.CreateNewLead);
+
 module.exports = router;

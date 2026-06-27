@@ -54,7 +54,7 @@ module.exports = {
         console.error("Error reading excel file:", readErr);
         // Delete file from disk
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        
+
         return res.status(400).json({
           success: 0,
           message: "Failed to read Excel file. The file may be corrupt."
@@ -63,7 +63,7 @@ module.exports = {
 
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      
+
       // Parse rows into JSON objects
       const rawRows = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
 
@@ -180,7 +180,7 @@ module.exports = {
       if (validCombinedRows.length > 0) {
         try {
           const result = await customerService.insertBulkCombined(validCombinedRows);
-          
+
           return res.status(200).json({
             success: 1,
             message: `Successfully processed file. Mapped and inserted ${result.insertedCustomers} customer(s) and ${result.insertedVehicles} vehicle(s).`,
@@ -337,7 +337,7 @@ module.exports = {
 
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      
+
       // Parse rows
       const rawRows = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
 
@@ -567,7 +567,7 @@ module.exports = {
     }
   },
 
- getNewCustomers: (req, res) => {
+  getNewCustomers: (req, res) => {
     try {
       const { month } = req.params;
       if (!month) {
@@ -605,7 +605,7 @@ module.exports = {
     }
   },
 
-  
+
 
   // ==================== GET VEHICLE BY ID ====================
   getVehicleById: (req, res) => {
@@ -754,5 +754,59 @@ module.exports = {
         message: "Something went wrong."
       });
     }
-  }
+  },
+  CreateNewLead: (req, res) => {
+    try {
+      const { allocations } = req.body;
+
+      // Validation
+      if (!allocations || allocations.length === 0) {
+        return res.status(200).json({
+          success: 0,
+          message: "No data to Allocate"
+        });
+      }
+
+      console.log(allocations);
+      
+
+      const values = allocations.map((item) => [
+        item.customer_id,
+        item.vehicle_id,
+        item.policy_id,
+        item.status_id,
+        item.lead_priority,
+        item.assigned_to,
+        item.assigned_date,
+        item.is_assigned,
+        item.lead_source,
+        item.remarks,
+        item.created_by,
+      ]);
+
+
+      // Step 1: Create role in role_master table
+      customerService.CreateNewLead(values, (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            success: 0,
+            message: "Something went wrong while creating role"
+          });
+        }
+
+        return res.status(200).json({
+          success: 1,
+          message: "Role created successfully",
+        });
+      });
+    } catch (error) {
+      console.error("createRole error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong"
+      });
+    }
+  },
+
 };
