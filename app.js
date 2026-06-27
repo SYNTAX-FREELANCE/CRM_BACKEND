@@ -40,6 +40,7 @@ const menumaster = require("./api/MenuMaster/menuMaster.router");
 const userRights = require("./api/UserRights/userRights.router");
 const userInfo = require("./api/UserInfo/userInfo.router");
 const customermaster = require("./api/CustomerMaster/customermaster.router");
+const leaddetails = require("./api/LeadDetail/leads.router");
 const routeTrackerMiddleware = require("./Middleware/routeTracker.middleware");
 const socketMiddleware = require("./Middleware/socke.middlewar");
 const validateToken = require('./Validate/validateToken')
@@ -154,6 +155,14 @@ app.use(
     routeTrackerMiddleware("CUSTOMER_MASTER_ROUTER"),
     socketMiddleware,
     customermaster,
+);
+
+
+app.use(
+    "/api/lead",
+    routeTrackerMiddleware("LEAD_DETAIL_ROUTER"),
+    socketMiddleware,
+    leaddetails,
 );
 
 
