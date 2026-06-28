@@ -797,7 +797,7 @@ module.exports = {
 
         return res.status(200).json({
           success: 1,
-          message: "Role created successfully",
+          message: "Allocate Successfully created successfully",
         });
       });
     } catch (error) {
