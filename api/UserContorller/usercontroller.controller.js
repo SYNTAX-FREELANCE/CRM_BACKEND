@@ -77,16 +77,32 @@ module.exports = {
           maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
-        //  Send only user info (NOT tokens - they're in cookies)
-        res.status(200).json({
-          success: 1,
-          message: "Login successful",
-          user: {
-            id: user.user_id,
-            username: user.name,
-            role: user.role_name,
+        // Log login session in user_attendance
+        authService.logLogin(
+          {
+            user_id: user.user_id,
+            username: user.username,
           },
-        });
+          (logErr, attendanceResult) => {
+            if (logErr) {
+              console.error("Failed to log attendance login:", logErr);
+            }
+
+            const attendanceId = attendanceResult ? attendanceResult.insertId : null;
+
+            //  Send only user info (NOT tokens - they're in cookies) and attendance_id
+            return res.status(200).json({
+              success: 1,
+              message: "Login successful",
+              user: {
+                id: user.user_id,
+                username: user.name,
+                role: user.role_name,
+              },
+              attendance_id: attendanceId,
+            });
+          }
+        );
       });
     });
   },
@@ -174,6 +190,8 @@ module.exports = {
         });
       }
 
+      const { attendance_id } = req.body;
+
       // Revoke refresh token
       authService.revokeRefreshToken(decoded.userId, (err) => {
         if (err) {
@@ -196,10 +214,22 @@ module.exports = {
           sameSite: "lax",
         });
 
-        res.status(200).json({
-          success: 1,
-          message: "Logged out successfully",
-        });
+        if (attendance_id) {
+          authService.logoutSession(attendance_id, (logoutErr) => {
+            if (logoutErr) {
+              console.error("Failed to log attendance logout:", logoutErr);
+            }
+            return res.status(200).json({
+              success: 1,
+              message: "Logged out successfully",
+            });
+          });
+        } else {
+          return res.status(200).json({
+            success: 1,
+            message: "Logged out successfully",
+          });
+        }
       });
     });
   },
