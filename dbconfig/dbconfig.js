@@ -8,40 +8,19 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+   timezone: "+05:30"
 });
 
-// Test the connection
+// Test the connection only
 pool.getConnection((err, conn) => {
   if (err) {
-    console.error(" MySQL connection error:", err.message);
+    console.error("MySQL connection error:", err.message);
     process.exit(1);
   }
-  console.log(` MySQL Connected: ${conn.config.host}`);
 
-  const createTableQuery = `
-    CREATE TABLE IF NOT EXISTS user_rights (
-      user_rights_slno INT NOT NULL AUTO_INCREMENT,
-      role_slno INT DEFAULT '0',
-      module_slno INT DEFAULT '0',
-      menu_slno INT DEFAULT '0',
-      Active_status INT DEFAULT '0',
-      create_user INT DEFAULT '0',
-      create_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-      edit_user INT DEFAULT '0',
-      edit_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      PRIMARY KEY (user_rights_slno)
-    );
-  `;
-
-  conn.query(createTableQuery, (tableErr) => {
-    if (tableErr) {
-      console.error(" Error creating user_rights table:", tableErr.message);
-    } else {
-      console.log(" Verified/Created user_rights table successfully");
-    }
-    conn.release();
-  });
+  console.log(`MySQL Connected: ${conn.config.host}`);
+  conn.release();
 });
 
 module.exports = pool;
