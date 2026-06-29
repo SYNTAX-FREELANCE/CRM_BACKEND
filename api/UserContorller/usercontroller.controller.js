@@ -326,4 +326,50 @@ module.exports = {
       });
     }
   },
+
+  changePassword: (req, res) => {
+    try {
+      const { password, confirmPassword } = req.body;
+      const userId = req.user.id;
+
+      if (!password || !confirmPassword) {
+        return res.status(400).json({
+          success: 0,
+          message: "Missing required fields",
+        });
+      }
+
+      if (password !== confirmPassword) {
+        return res.status(400).json({
+          success: 0,
+          message: "Passwords do not match",
+        });
+      }
+
+      // Hash the password
+      const salt = bcrypt.genSaltSync(10);
+      const encryptedPassword = bcrypt.hashSync(password, salt);
+
+      authService.changePassword(userId, encryptedPassword, (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            success: 0,
+            message: "Something went wrong",
+          });
+        }
+
+        return res.status(200).json({
+          success: 1,
+          message: "Password changed successfully",
+        });
+      });
+    } catch (error) {
+      console.error("changePassword error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong",
+      });
+    }
+  },
 };

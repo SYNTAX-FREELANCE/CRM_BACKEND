@@ -137,4 +137,18 @@ module.exports = {
             }
         );
     },
+
+    // Change user password
+    changePassword: (userId, hashedPassword, callback) => {
+        db.query(
+            "UPDATE users SET password = ? WHERE id = ?",
+            [hashedPassword, userId],
+            (err, result) => {
+                if (err) {
+                    return callback(err, null);
+                }
+                callback(null, result);
+            }
+        );
+    },
 };
