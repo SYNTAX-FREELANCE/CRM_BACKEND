@@ -21,7 +21,7 @@ module.exports = {
   // ==================== GET ALL LEAD STATUSES ====================
   getAllLeads: (callback) => {
     pool.query(
-      `SELECT status_id, status_name, display_order, is_active ,requires_followup
+      `SELECT status_id, status_name, display_order, is_active ,requires_followup,is_call_required,is_policy_required
             FROM lead_status_master 
             ORDER BY display_order ASC`,
       [],
@@ -37,7 +37,7 @@ module.exports = {
   // ==================== GET LEAD STATUS BY ID ====================
   getLeadById: (statusId, callback) => {
     pool.query(
-      `SELECT status_id, status_name, display_order, is_active ,requires_followup
+      `SELECT status_id, status_name, display_order, is_active ,requires_followup,is_call_required,is_policy_required
             FROM lead_status_master 
             WHERE status_id = ?`,
       [statusId],
