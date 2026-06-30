@@ -23,8 +23,14 @@ router.post(
   customerController.uploadVehicleFile
 );
 
+// Create customer
+router.post("/create", verifyAccessToken, customerController.createCustomer);
+
 // Get all customers
 router.get("/getall", verifyAccessToken, customerController.getAllCustomers);
+
+// Create vehicle
+router.post("/create-vehicle", verifyAccessToken, customerController.createVehicle);
 
 // Get all vehicles
 router.get("/getall-vehicles", verifyAccessToken, customerController.getAllVehicles);
