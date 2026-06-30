@@ -20,7 +20,7 @@ app.use("/uploads", express.static("C:/uploads"));
 app.use(cors(corsConfig));
 app.use(cookieParser());
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true }));
 // init socket
 initSocket(server);
 

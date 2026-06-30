@@ -19,8 +19,8 @@ module.exports = {
       });
     }
 
-    
-    
+
+
     authService.findUserByUsername(username, (err, user) => {
       if (err) {
         console.error(err);
@@ -30,7 +30,7 @@ module.exports = {
         });
       }
 
-      
+
       if (!user) {
         return res.status(200).json({
           success: 0,
@@ -67,7 +67,7 @@ module.exports = {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production", // HTTPS only in production
           sameSite: "lax",
-          maxAge: 15 * 60 * 1000, // 15 minutes
+          maxAge: 2 * 60 * 1000, // 15 minutes
         });
 
         res.cookie("refreshToken", refreshToken, {
@@ -77,11 +77,26 @@ module.exports = {
           maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
+        // res.cookie("accessToken", accessToken, {
+        //   httpOnly: true,
+        //   secure: true,
+        //   sameSite: "none",
+        //   maxAge: 15 * 60 * 1000,
+        // });
+
+        // res.cookie("refreshToken", refreshToken, {
+        //   httpOnly: true,
+        //   secure: true,
+        //   sameSite: "none",
+        //   maxAge: 7 * 24 * 60 * 60 * 1000,
+        // });
+
         // Log login session in user_attendance
         authService.logLogin(
           {
             user_id: user.user_id,
             username: user.username,
+            system_ip: (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').replace('::ffff:', ''),
           },
           (logErr, attendanceResult) => {
             if (logErr) {
@@ -109,7 +124,7 @@ module.exports = {
 
   // Refresh token controller
   refreshToken: (req, res) => {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
     console.log({
       refreshToken,
     });
@@ -155,13 +170,24 @@ module.exports = {
               }
 
               // Generate new access token
-              // Generate new access token using middleware
               const newAccessToken = generateAccessToken(user);
+              res.cookie("accessToken", newAccessToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                maxAge: 2 * 60 * 1000,
+              });
+
+              res.cookie("accessToken", newAccessToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                maxAge: 2 * 60 * 1000, // 15 minutes
+              });
 
               res.status(200).json({
                 success: 1,
                 message: "Token refreshed",
-                accessToken: newAccessToken,
               });
             });
           },
@@ -244,7 +270,7 @@ module.exports = {
         });
       }
 
-      findUserByUsername(username, (err, user) => {
+      authService.findUserByUsername(username, (err, user) => {
         if (err) {
           return res.status(500).json({
             success: 0,
@@ -286,10 +312,11 @@ module.exports = {
             },
           );
 
-          logLogin(
+          authService.logLogin(
             {
               user_id: user.id,
               username: user.username,
+              system_ip: (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '').replace('::ffff:', ''),
             },
             (err, attendanceResult) => {
               if (err) {
@@ -334,7 +361,7 @@ module.exports = {
         });
       }
 
-      logoutSession(attendance_id, (err, results) => {
+      authService.logoutSession(attendance_id, (err, results) => {
         if (err) {
           console.error("logoutSession DB error:", err);
           return res.status(500).json({

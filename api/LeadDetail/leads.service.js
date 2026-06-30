@@ -1011,7 +1011,121 @@ LIMIT 20;
         });
       });
     });
-  }
+  },
+
+  getAdminDashboardCounts: (fromDate, toDate, callback) => {
+
+    const params = [];
+    let where = "";
+
+    if (fromDate && toDate) {
+      where = "WHERE DATE(l.created_at) BETWEEN ? AND ?";
+      params.push(fromDate, toDate);
+    }
+
+    const sql = `
+        SELECT
+            COUNT(l.lead_id) AS totalUploaded,
+
+            SUM(CASE
+                WHEN l.is_locked = 1 THEN 1
+                ELSE 0
+            END) AS totalFetched,
+
+            SUM(CASE
+                WHEN l.work_status = 'PENDING' THEN 1
+                ELSE 0
+            END) AS totalPending,
+
+            SUM(CASE
+                WHEN l.work_status = 'IN_PROGRESS' THEN 1
+                ELSE 0
+            END) AS totalInProgress,
+
+            SUM(CASE
+                WHEN l.work_status = 'COMPLETED' THEN 1
+                ELSE 0
+            END) AS totalCompleted,
+
+            SUM(CASE
+                WHEN l.status_id = 1 THEN 1
+                ELSE 0
+            END) AS totalNew,
+
+            SUM(CASE
+                WHEN l.status_id = 2 THEN 1
+                ELSE 0
+            END) AS totalCallback,
+
+            SUM(CASE
+                WHEN l.status_id = 3 THEN 1
+                ELSE 0
+            END) AS totalQuote,
+
+            SUM(CASE
+                WHEN l.status_id = 4 THEN 1
+                ELSE 0
+            END) AS totalAppointment,
+
+            SUM(CASE
+                WHEN l.status_id = 5 THEN 1
+                ELSE 0
+            END) AS totalSold,
+
+            SUM(CASE
+                WHEN l.status_id = 6 THEN 1
+                ELSE 0
+            END) AS totalLost
+
+        FROM leads l
+
+        ${where};
+    `;
+
+    pool.query(sql, params, (err, result) => {
+      if (err) return callback(err);
+      callback(null, result[0]);
+    });
+  },
+
+  getEmployyeeRecentAcivity: (callback) => {
+
+    const sql = `
+SELECT
+    lsh.history_id,
+    lsh.lead_id,
+    lsm.status_name,
+    lsh.remarks,
+    lsh.status_change_reason,
+    um.name,
+    lsh.changed_at
+FROM lead_status_history lsh
+
+INNER JOIN lead_status_master lsm
+    ON lsh.new_status_id = lsm.status_id
+
+LEFT JOIN users_master um
+    ON lsh.changed_by = um.user_id
+
+INNER JOIN leads l
+    ON lsh.lead_id = l.lead_id
+
+ORDER BY lsh.changed_at DESC
+LIMIT 10
+`;
+
+    pool.query(
+      sql,
+      [],
+
+      (err, result) => {
+        if (err) return callback(err);
+        callback(null, result);
+      }
+    );
+
+  },
+
 };
 
 
