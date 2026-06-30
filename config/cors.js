@@ -1,6 +1,7 @@
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",").map((origin) =>
   origin.trim(),
 );
+
 module.exports = {
   origin: (origin, callback) => {
     // allow server-to-server / postman

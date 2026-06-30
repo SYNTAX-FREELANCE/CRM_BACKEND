@@ -67,7 +67,7 @@ module.exports = {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production", // HTTPS only in production
           sameSite: "lax",
-          maxAge: 15 * 60 * 1000, // 15 minutes
+          maxAge: 2 * 60 * 1000, // 15 minutes
         });
 
         res.cookie("refreshToken", refreshToken, {
@@ -76,6 +76,20 @@ module.exports = {
           sameSite: "lax",
           maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
+
+        // res.cookie("accessToken", accessToken, {
+        //   httpOnly: true,
+        //   secure: true,
+        //   sameSite: "none",
+        //   maxAge: 15 * 60 * 1000,
+        // });
+
+        // res.cookie("refreshToken", refreshToken, {
+        //   httpOnly: true,
+        //   secure: true,
+        //   sameSite: "none",
+        //   maxAge: 7 * 24 * 60 * 60 * 1000,
+        // });
 
         // Log login session in user_attendance
         authService.logLogin(
@@ -157,6 +171,12 @@ module.exports = {
 
               // Generate new access token
               const newAccessToken = generateAccessToken(user);
+              res.cookie("accessToken", newAccessToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                maxAge: 2 * 60 * 1000,
+              });
 
               res.cookie("accessToken", newAccessToken, {
                 httpOnly: true,
@@ -168,7 +188,6 @@ module.exports = {
               res.status(200).json({
                 success: 1,
                 message: "Token refreshed",
-                accessToken: newAccessToken,
               });
             });
           },

@@ -303,7 +303,51 @@ module.exports = {
 
     });
 
-  }
+  },
+  getAdminDashboardCounts: (req, res) => {
+
+    const { from, to } = req.body;
+
+    leadservie.getAdminDashboardCounts(
+      from,
+      to,
+      (err, result) => {
+
+        if (err) {
+          console.log(err);
+
+          return res.status(500).json({
+            success: 0,
+            message: "Database Error",
+          });
+        }
+
+        return res.status(200).json({
+          success: 1,
+          data: result,
+        });
+
+      }
+    );
+
+  },
+  getEmployeeRecentAcivity: (req, res) => {
+    leadservie.getEmployyeeRecentAcivity((err, result) => {
+      if (err) {
+        console.log(err);
+
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        data: result,
+      });
+
+    });
+  },
 
 
 
