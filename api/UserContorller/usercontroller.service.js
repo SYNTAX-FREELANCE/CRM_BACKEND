@@ -155,8 +155,8 @@ module.exports = {
     // Log user login in attendance table
     logLogin: (data, callback) => {
         db.query(
-            "INSERT INTO user_attendance (user_id, username, login_time, shift_status) VALUES (?, ?, NOW(), 'Active')",
-            [data.user_id, data.username],
+            "INSERT INTO user_attendance (user_id, username, login_time, shift_status, system_ip) VALUES (?, ?, NOW(), 'Active', ?)",
+            [data.user_id, data.username, data.system_ip],
             (err, result) => {
                 if (err) {
                     return callback(err, null);
