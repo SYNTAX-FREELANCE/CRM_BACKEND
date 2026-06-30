@@ -137,4 +137,50 @@ module.exports = {
             }
         );
     },
+
+    // Change user password
+    changePassword: (userId, hashedPassword, callback) => {
+        db.query(
+            "UPDATE users SET password = ? WHERE id = ?",
+            [hashedPassword, userId],
+            (err, result) => {
+                if (err) {
+                    return callback(err, null);
+                }
+                callback(null, result);
+            }
+        );
+    },
+
+    // Log user login in attendance table
+    logLogin: (data, callback) => {
+        db.query(
+            "INSERT INTO user_attendance (user_id, username, login_time, shift_status) VALUES (?, ?, NOW(), 'Active')",
+            [data.user_id, data.username],
+            (err, result) => {
+                if (err) {
+                    return callback(err, null);
+                }
+                callback(null, result);
+            }
+        );
+    },
+
+    // Log user logout in attendance table and calculate productivity hours
+    logoutSession: (attendance_id, callback) => {
+        db.query(
+            `UPDATE user_attendance 
+             SET logout_time = NOW(), 
+                 productivity_hours = LEAST(999.99, ROUND(TIMESTAMPDIFF(SECOND, login_time, NOW()) / 3600.0, 2)),
+                 shift_status = 'Logged Out' 
+             WHERE id = ?`,
+            [attendance_id],
+            (err, result) => {
+                if (err) {
+                    return callback(err, null);
+                }
+                callback(null, result);
+            }
+        );
+    },
 };
