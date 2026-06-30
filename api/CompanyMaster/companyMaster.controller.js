@@ -5,7 +5,7 @@ module.exports = {
     // ==================== CREATE COMPANY ====================
     createCompany: (req, res) => {
         try {
-            const { company_name, company_address, company_location, company_email,isActive } = req.body;
+            const { company_name, company_address, company_location, company_email, isActive } = req.body;
 
             // Validation
             if (!company_name || company_name.trim() === "") {

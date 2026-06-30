@@ -99,7 +99,7 @@ module.exports = {
   insertBulkVehicles: (vehiclesArray, callback) => {
     const query = `
       INSERT INTO vehicles 
-      (customer_id, registration_number, rto, registration_data, model, vechile_maker, engine_number, chassis_number, vechile_class, vehicle_category, fuel_type, seat_capacity)
+      (customer_id, registration_number, rto, registration_date, model, vehicle_maker, engine_number, chassis_number, vehicle_class, vehicle_category, fuel_type, seat_capacity)
       VALUES ?
     `;
 
@@ -107,12 +107,12 @@ module.exports = {
       v.customer_id,
       v.registration_number,
       v.rto || null,
-      v.registration_data || null,
+      v.registration_date || null,
       v.model || null,
-      v.vechile_maker || null,
+      v.vehicle_maker || null,
       v.engine_number || null,
       v.chassis_number || null,
-      v.vechile_class || null,
+      v.vehicle_class || null,
       v.vehicle_category || null,
       v.fuel_type || null,
       v.seat_capacity || null,
@@ -239,7 +239,7 @@ module.exports = {
           custId,
           row.vehicle.registration_number,
           row.vehicle.rto || null,
-          row.vehicle.registration_data || null,
+          row.vehicle.registration_date || null,
           row.vehicle.model || null,
           row.vehicle.vehicle_maker || null,
           row.vehicle.engine_number || null,
@@ -261,6 +261,7 @@ module.exports = {
         // );
 
         const [vehResult] = await connection.query(
+
           `INSERT INTO vehicles
    (
      customer_id,
@@ -391,13 +392,47 @@ WHERE
     );
   },
 
+  // ==================== CREATE SINGLE VEHICLE ====================
+  createVehicle: (v, callback) => {
+    const query = `
+      INSERT INTO vehicles 
+      (customer_id, registration_number, rto, registration_date, model, vehicle_maker, engine_number, chassis_number, vehicle_class, vehicle_category, fuel_type, seat_capacity, edited_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    pool.query(
+      query,
+      [
+        v.customer_id,
+        v.registration_number,
+        v.rto || null,
+        v.registration_date || null,
+        v.model || null,
+        v.vehicle_maker || null,
+        v.engine_number || null,
+        v.chassis_number || null,
+        v.vehicle_class || null,
+        v.vehicle_category || null,
+        v.fuel_type || null,
+        v.seat_capacity || null,
+        v.edited_by || null
+      ],
+      (err, result) => {
+        if (err) {
+          return callback(err, null);
+        }
+        callback(null, result);
+      }
+    );
+  },
+
   // ==================== UPDATE VEHICLE ====================
   updateVehicle: (vehicleId, v, callback) => {
     const query = `
       UPDATE vehicles 
-      SET customer_id = ?, registration_number = ?, rto = ?, registration_data = ?, 
-          model = ?, vechile_maker = ?, engine_number = ?, chassis_number = ?, 
-          vechile_class = ?, vehicle_category = ?, fuel_type = ?, seat_capacity = ?
+      SET customer_id = ?, registration_number = ?, rto = ?, registration_date = ?, 
+          model = ?, vehicle_maker = ?, engine_number = ?, chassis_number = ?, 
+          vehicle_class = ?, vehicle_category = ?, fuel_type = ?, seat_capacity = ?
       WHERE vehicle_id = ?
     `;
     pool.query(
@@ -406,12 +441,12 @@ WHERE
         v.customer_id,
         v.registration_number,
         v.rto || null,
-        v.registration_data || null,
+        v.registration_date || null,
         v.model || null,
-        v.vechile_maker || null,
+        v.vehicle_maker || null,
         v.engine_number || null,
         v.chassis_number || null,
-        v.vechile_class || null,
+        v.vehicle_class || null,
         v.vehicle_category || null,
         v.fuel_type || null,
         v.seat_capacity || null,

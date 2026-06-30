@@ -28,13 +28,6 @@ module.exports = {
   // Fetch performance metrics for employee
   getEmployeePerformance: (req, res) => {
     const { employeeId } = req.params;
-    const range = req.query.range || "monthly"; // weekly, monthly, datewise
-    const options = {
-      date: req.query.date || null,
-      fromDate: req.query.fromDate || null,
-      toDate: req.query.toDate || null
-    };
-
     if (!employeeId) {
       return res.status(400).json({
         success: 0,
@@ -42,7 +35,7 @@ module.exports = {
       });
     }
 
-    userInfoService.getEmployeePerformance(employeeId, range, options, (err, results) => {
+    userInfoService.getEmployeePerformance(employeeId, (err, results) => {
       if (err) {
         console.error("getEmployeePerformance error:", err);
         return res.status(500).json({
@@ -53,6 +46,31 @@ module.exports = {
       return res.status(200).json({
         success: 1,
         data: results
+      });
+    });
+  },
+
+  // Fetch check-in/out and productivity hours for employee
+  getAttendanceByDate: (req, res) => {
+    const { userId, date } = req.query;
+    if (!userId || !date) {
+      return res.status(400).json({
+        success: 0,
+        message: "User ID and Date are required"
+      });
+    }
+
+    userInfoService.getAttendanceByDate(userId, date, (err, result) => {
+      if (err) {
+        console.error("getAttendanceByDate error:", err);
+        return res.status(500).json({
+          success: 0,
+          message: "Failed to retrieve attendance details"
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        data: result
       });
     });
   }

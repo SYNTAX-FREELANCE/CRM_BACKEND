@@ -87,7 +87,7 @@ module.exports = {
   // ==================== DELETE COMPANY (SOFT DELETE) ====================
   deleteCompany: (companyId, callback) => {
     pool.query(
-      `UPDATE company_master 
+      `UPDATE companies 
             SET is_active = 0, updated_at = CURRENT_TIMESTAMP 
             WHERE company_id = ?`,
       [companyId],
@@ -103,7 +103,7 @@ module.exports = {
   // ==================== GET ACTIVE COMPANIES ONLY ====================
   getActiveCompanies: (callback) => {
     pool.query(
-      `SELECT * FROM company_master 
+      `SELECT * FROM companies 
             WHERE is_active = 1
             ORDER BY company_name ASC`,
       [],
