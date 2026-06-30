@@ -10,4 +10,7 @@ router.get("/employees", verifyAccessToken, userInfoController.getEmployees);
 // 2. Fetch selected employee's performance (calls, appointments, callbacks)
 router.get("/performance/:employeeId", verifyAccessToken, userInfoController.getEmployeePerformance);
 
+// 3. Fetch attendance check in/out times by user ID and date
+router.get("/attendance", verifyAccessToken, userInfoController.getAttendanceByDate);
+
 module.exports = router;
