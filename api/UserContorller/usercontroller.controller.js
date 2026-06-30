@@ -77,16 +77,32 @@ module.exports = {
           maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
-        //  Send only user info (NOT tokens - they're in cookies)
-        res.status(200).json({
-          success: 1,
-          message: "Login successful",
-          user: {
-            id: user.user_id,
-            username: user.name,
-            role: user.role_name,
+        // Log login session in user_attendance
+        authService.logLogin(
+          {
+            user_id: user.user_id,
+            username: user.username,
           },
-        });
+          (logErr, attendanceResult) => {
+            if (logErr) {
+              console.error("Failed to log attendance login:", logErr);
+            }
+
+            const attendanceId = attendanceResult ? attendanceResult.insertId : null;
+
+            //  Send only user info (NOT tokens - they're in cookies) and attendance_id
+            return res.status(200).json({
+              success: 1,
+              message: "Login successful",
+              user: {
+                id: user.user_id,
+                username: user.name,
+                role: user.role_name,
+              },
+              attendance_id: attendanceId,
+            });
+          }
+        );
       });
     });
   },
@@ -174,6 +190,8 @@ module.exports = {
         });
       }
 
+      const { attendance_id } = req.body;
+
       // Revoke refresh token
       authService.revokeRefreshToken(decoded.userId, (err) => {
         if (err) {
@@ -196,10 +214,22 @@ module.exports = {
           sameSite: "lax",
         });
 
-        res.status(200).json({
-          success: 1,
-          message: "Logged out successfully",
-        });
+        if (attendance_id) {
+          authService.logoutSession(attendance_id, (logoutErr) => {
+            if (logoutErr) {
+              console.error("Failed to log attendance logout:", logoutErr);
+            }
+            return res.status(200).json({
+              success: 1,
+              message: "Logged out successfully",
+            });
+          });
+        } else {
+          return res.status(200).json({
+            success: 1,
+            message: "Logged out successfully",
+          });
+        }
       });
     });
   },
@@ -320,6 +350,52 @@ module.exports = {
       });
     } catch (error) {
       console.error("logoutUserSession error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong",
+      });
+    }
+  },
+
+  changePassword: (req, res) => {
+    try {
+      const { password, confirmPassword } = req.body;
+      const userId = req.user.id;
+
+      if (!password || !confirmPassword) {
+        return res.status(400).json({
+          success: 0,
+          message: "Missing required fields",
+        });
+      }
+
+      if (password !== confirmPassword) {
+        return res.status(400).json({
+          success: 0,
+          message: "Passwords do not match",
+        });
+      }
+
+      // Hash the password
+      const salt = bcrypt.genSaltSync(10);
+      const encryptedPassword = bcrypt.hashSync(password, salt);
+
+      authService.changePassword(userId, encryptedPassword, (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            success: 0,
+            message: "Something went wrong",
+          });
+        }
+
+        return res.status(200).json({
+          success: 1,
+          message: "Password changed successfully",
+        });
+      });
+    } catch (error) {
+      console.error("changePassword error:", error);
       return res.status(500).json({
         success: 0,
         message: "Something went wrong",
