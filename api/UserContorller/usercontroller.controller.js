@@ -67,7 +67,7 @@ module.exports = {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production", // HTTPS only in production
           sameSite: "lax",
-          maxAge: 2 * 60 * 1000, // 15 minutes
+          maxAge: 15 * 60 * 1000, // 15 minutes
         });
 
         res.cookie("refreshToken", refreshToken, {
@@ -124,10 +124,8 @@ module.exports = {
 
   // Refresh token controller
   refreshToken: (req, res) => {
-    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
-    console.log({
-      refreshToken,
-    });
+    const refreshToken = req.cookies.refreshToken;
+
 
     if (!refreshToken) {
       return res.status(401).json({
@@ -171,18 +169,12 @@ module.exports = {
 
               // Generate new access token
               const newAccessToken = generateAccessToken(user);
-              res.cookie("accessToken", newAccessToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                maxAge: 2 * 60 * 1000,
-              });
 
               res.cookie("accessToken", newAccessToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
-                maxAge: 2 * 60 * 1000, // 15 minutes
+                maxAge: 15 * 60 * 1000,
               });
 
               res.status(200).json({
