@@ -44,7 +44,7 @@ module.exports = {
       const data = req.body;
 
       console.log({
-        data
+        data,
       });
 
       if (!data.lead_id) {
@@ -61,58 +61,66 @@ module.exports = {
             message: "Failed to update lead",
           });
         }
-
-        // Function to save status history
-        const saveHistory = () => {
-          leadservie.updateLeadStatusHistory(data, (err) => {
-            if (err) {
-              return res.status(500).json({
-                success: 0,
-                message: "Failed to save status history",
-              });
-            }
-
-            return res.status(200).json({
-              success: 1,
-              message: "Lead updated successfully",
+        leadservie.updateEmployeeBatchStatus(data, (err) => {
+          if (err) {
+            return res.status(500).json({
+              success: 0,
+              message: "Failed to update employee batch",
             });
-          });
-        };
-
-        const savePolicy = (next) => {
-          if (Number(data.policyrequierd) !== 1) {
-            return next();
           }
-          leadservie.updateLeadPolicy(data, (err) => {
-            if (err) {
-              console.log(err);
 
-              return res.status(500).json({
-                success: 0,
-                message: "Failed to save policy",
+          // Function to save status history
+          const saveHistory = () => {
+            leadservie.updateLeadStatusHistory(data, (err) => {
+              if (err) {
+                return res.status(500).json({
+                  success: 0,
+                  message: "Failed to save status history",
+                });
+              }
+
+              return res.status(200).json({
+                success: 1,
+                message: "Lead updated successfully",
               });
-            }
+            });
+          };
 
-            next();
-          });
-        };
-
-        // 2. Save Follow-up only if required
-        if (Number(data.requires_followup) === 1) {
-          leadservie.updateLeadFollowupDetail(data, (err) => {
-            if (err) {
-              return res.status(500).json({
-                success: 0,
-                message: "Failed to save follow-up",
-              });
+          const savePolicy = (next) => {
+            if (Number(data.policyrequierd) !== 1) {
+              return next();
             }
-            // 3. Save History
+            leadservie.updateLeadPolicy(data, (err) => {
+              if (err) {
+                console.log(err);
+
+                return res.status(500).json({
+                  success: 0,
+                  message: "Failed to save policy",
+                });
+              }
+
+              next();
+            });
+          };
+
+          // 2. Save Follow-up only if required
+          if (Number(data.requires_followup) === 1) {
+            leadservie.updateLeadFollowupDetail(data, (err) => {
+              if (err) {
+                return res.status(500).json({
+                  success: 0,
+                  message: "Failed to save follow-up",
+                });
+              }
+              // 3. Save History
+              savePolicy(saveHistory);
+            });
+          } else {
+            // No follow-up required, directly save history
             savePolicy(saveHistory);
-          });
-        } else {
-          // No follow-up required, directly save history
-          savePolicy(saveHistory);
-        }
+          }
+        });
       });
     } catch (error) {
       console.error(error);
@@ -233,58 +241,50 @@ module.exports = {
       });
     }
     leadservie.getDashboardReminders(empid, (err, result) => {
-
       if (err) {
         console.log(err);
 
         return res.status(500).json({
           success: 0,
-          message: "Database Error"
+          message: "Database Error",
         });
       }
 
       return res.status(200).json({
         success: 1,
         message: "Dashboard Reminder Fetched Successfully",
-        data: result
+        data: result,
       });
-
     });
-
   },
   searchCRM: (req, res) => {
-
     const search = req.query.q?.trim();
 
     if (!search) {
       return res.status(400).json({
         success: false,
-        message: "Search text is required"
+        message: "Search text is required",
       });
     }
 
     leadservie.searchCRM(search, (err, result) => {
-
       if (err) {
         console.log(err);
         return res.status(500).json({
           success: 0,
-          message: "Database Error"
+          message: "Database Error",
         });
       }
 
       return res.json({
         success: 1,
         count: result.length,
-        data: result
+        data: result,
       });
-
     });
-
   },
 
   getCustomerDetails: (req, res) => {
-
     const customerId = req.params.customerId;
     leadservie.getCustomerDetails(customerId, (err, result) => {
       if (err) {
@@ -292,44 +292,34 @@ module.exports = {
 
         return res.status(500).json({
           success: 0,
-          message: "Database Error"
+          message: "Database Error",
         });
       }
 
       return res.json({
         success: 1,
-        data: result
+        data: result,
       });
-
     });
-
   },
   getAdminDashboardCounts: (req, res) => {
-
     const { from, to } = req.body;
 
-    leadservie.getAdminDashboardCounts(
-      from,
-      to,
-      (err, result) => {
+    leadservie.getAdminDashboardCounts(from, to, (err, result) => {
+      if (err) {
+        console.log(err);
 
-        if (err) {
-          console.log(err);
-
-          return res.status(500).json({
-            success: 0,
-            message: "Database Error",
-          });
-        }
-
-        return res.status(200).json({
-          success: 1,
-          data: result,
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
         });
-
       }
-    );
 
+      return res.status(200).json({
+        success: 1,
+        data: result,
+      });
+    });
   },
   getEmployeeRecentAcivity: (req, res) => {
     leadservie.getEmployyeeRecentAcivity((err, result) => {
@@ -345,13 +335,37 @@ module.exports = {
         success: 1,
         data: result,
       });
-
     });
   },
+  getActiveEmployees: (req, res) => {
+    leadservie.getActiveEmployees((err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
 
+      return res.status(200).json({
+        success: 1,
+        data: result,
+      });
+    });
+  },
+  getEmployeeBatchDetail: (req, res) => {
+    const empid = req.params.empid;
 
-
-
-
+    leadservie.getEmployeeBatchDetail(empid, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        data: result,
+      });
+    });
+  },
 };
-
