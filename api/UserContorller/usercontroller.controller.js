@@ -67,7 +67,7 @@ module.exports = {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production", // HTTPS only in production
           sameSite: "lax",
-          maxAge: 2 * 60 * 1000, // 15 minutes
+          maxAge: 15 * 60 * 1000, // 15 minutes
         });
 
         res.cookie("refreshToken", refreshToken, {
@@ -175,14 +175,7 @@ module.exports = {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
-                maxAge: 2 * 60 * 1000,
-              });
-
-              res.cookie("accessToken", newAccessToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                maxAge: 2 * 60 * 1000, // 15 minutes
+                maxAge: 15 * 60 * 1000,
               });
 
               res.status(200).json({
