@@ -5,42 +5,89 @@ module.exports = {
   // Fetch all employees with optional filters
   getAllEmployees: (filters, callback) => {
     let query = `
-      SELECT 
-        um.user_id, 
-        um.employee_id, 
-        um.name, 
-        um.age, 
-        um.date_of_join, 
-        um.experience, 
-        um.mobile_number_1, 
-        um.is_active, 
-        um.company_id,
-        um.role_id,
-        c.company_name, 
-        r.role_name
-      FROM users_master um
-      LEFT JOIN companies c ON um.company_id = c.company_id
-      LEFT JOIN roles r ON um.role_id = r.role_id
-      WHERE um.is_active = 1
-    `;
-    const params = [];
+     SELECT
+    um.user_id,
+    um.employee_id,
+    um.name,
+    um.gender,
+    um.mobile_number_1,
+    um.date_of_join,
+    um.experience,
 
-    if (filters.emp_id) {
-      query += ` AND um.employee_id LIKE ?`;
-      params.push(`%${filters.emp_id}%`);
-    }
-    if (filters.name) {
-      query += ` AND um.name LIKE ?`;
-      params.push(`%${filters.name}%`);
-    }
-    if (filters.company_id) {
-      query += ` AND um.company_id = ?`;
-      params.push(filters.company_id);
-    }
+    c.company_name,
+    r.role_name,
 
-    query += ` ORDER BY um.name ASC`;
+    COUNT(l.lead_id) AS total_assigned,
 
-    pool.query(query, params, (err, results) => {
+    SUM(
+        CASE
+            WHEN l.work_status <> 'PENDING'
+            THEN 1
+            ELSE 0
+        END
+    ) AS total_fetched,
+
+    SUM(
+        CASE
+            WHEN l.status_id = 5
+            THEN 1
+            ELSE 0
+        END
+    ) AS total_sold,
+
+    SUM(
+        CASE
+            WHEN l.status_id = 6
+            THEN 1
+            ELSE 0
+        END
+    ) AS total_lost
+
+FROM users_master um
+
+LEFT JOIN companies c
+    ON c.company_id = um.company_id
+
+LEFT JOIN roles r
+    ON r.role_id = um.role_id
+
+LEFT JOIN leads l
+    ON l.assigned_to = um.user_id
+
+WHERE
+    um.is_active = 1
+
+GROUP BY
+    um.user_id,
+    um.employee_id,
+    um.name,
+    um.gender,
+    um.mobile_number_1,
+    um.date_of_join,
+    um.experience,
+    c.company_name,
+    r.role_name
+
+ORDER BY
+    um.name;`;
+    // const params = [];
+
+    // if (filters.emp_id) {
+    //   query += ` AND um.employee_id LIKE ?`;
+    //   params.push(`%${filters.emp_id}%`);
+    // }
+    // if (filters.name) {
+    //   query += ` AND um.name LIKE ?`;
+    //   params.push(`%${filters.name}%`);
+    // }
+    // if (filters.company_id) {
+    //   query += ` AND um.company_id = ?`;
+    //   params.push(filters.company_id);
+    // }
+
+    // query += ` ORDER BY um.name ASC`;
+
+    pool.query(query, [], (err, results) => {
       if (err) {
         return callback(err, null);
       }

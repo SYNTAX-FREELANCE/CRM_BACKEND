@@ -124,10 +124,8 @@ module.exports = {
 
   // Refresh token controller
   refreshToken: (req, res) => {
-    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
-    console.log({
-      refreshToken,
-    });
+    const refreshToken = req.cookies.refreshToken;
+
 
     if (!refreshToken) {
       return res.status(401).json({
@@ -171,6 +169,7 @@ module.exports = {
 
               // Generate new access token
               const newAccessToken = generateAccessToken(user);
+
               res.cookie("accessToken", newAccessToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
