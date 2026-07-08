@@ -1,6 +1,11 @@
 const pool = require("../../dbconfig/dbconfig");
-const { getCustomer, getVehicles, getLeads, getFollowups, getStatusHistory } = require("./helper");
-
+const {
+  getCustomer,
+  getVehicles,
+  getLeads,
+  getFollowups,
+  getStatusHistory,
+} = require("./helper");
 
 const query = (sql, values = []) => {
   return new Promise((resolve, reject) => {
@@ -10,7 +15,6 @@ const query = (sql, values = []) => {
     });
   });
 };
-
 
 module.exports = {
   getFreshCalls: (empid, callback) => {
@@ -55,13 +59,12 @@ module.exports = {
                 const allow = control.allow_next_batch || 0;
                 const force = control.force_unlock || 0;
 
-                // STEP 2: CHECK ACTIVE BATCH
                 connection.query(
                   `SELECT COUNT(*) AS activeCount
-                   FROM leads
-                   WHERE assigned_to = ?
-                     AND work_status = 'IN_PROGRESS'
-                     AND is_locked = 1`,
+                  FROM leads
+                  WHERE assigned_to = ?
+                    AND work_status = 'IN_PROGRESS'
+                    AND is_locked = 1`,
                   [empid],
                   (err, activeRes) => {
                     if (err) {
@@ -73,138 +76,66 @@ module.exports = {
 
                     const activeCount = activeRes?.[0]?.activeCount || 0;
 
-                    //  BLOCK IF ACTIVE BATCH EXISTS
+                    // BLOCK IF ACTIVE LEADS EXIST
                     if (activeCount > 0 && allow !== 1 && force !== 1) {
                       return connection.rollback(() => {
                         connection.release();
                         callback(null, {
                           success: 0,
                           message: "Complete current leads first",
-                          data: []
+                          data: [],
                         });
                       });
                     }
-                    // BLOCK IF ACTIVE BATCH EXISTS
-                    //                 if (activeCount > 0 && allow !== 1 && force !== 1) {
-                    //                   const activeBatchQuery = `
-                    //     SELECT
-                    //         l.lead_id,
-                    //         l.status_id,
-                    //         ls.status_name,
-                    //         l.lead_priority,
-                    //         l.lead_source,
-                    //         l.work_status,
-
-                    //         c.customer_id,
-                    //         c.customer_name,
-                    //         c.mobile_number_1,
-                    //         c.mobile_number_2,
-                    //         c.email,
-                    //         c.address,
-                    //         c.city,
-                    //         c.district,
-                    //         c.state,
-
-                    //         v.vehicle_id,
-                    //         v.registration_number,
-                    //         v.model,
-                    //         v.vehicle_maker,
-                    //         v.engine_number,
-                    //         v.chassis_number,
-
-                    //         p.policy_id,
-                    //         p.policy_number,
-                    //         p.policy_type,
-                    //         p.start_date,
-                    //         p.expiry_date,
-                    //         p.premium_amount
-
-                    //     FROM leads l
-                    //     INNER JOIN customers c ON c.customer_id = l.customer_id
-                    //     INNER JOIN vehicles v ON v.vehicle_id = l.vehicle_id
-                    //     LEFT JOIN policies p ON p.policy_id = l.policy_id
-                    //     INNER JOIN lead_status_master ls ON ls.status_id = l.status_id
-
-                    //     WHERE l.assigned_to = ?
-                    //       AND l.work_status = 'IN_PROGRESS'
-                    //       AND l.is_locked = 1
-
-                    //     ORDER BY l.assigned_date ASC;
-                    // `;
-
-                    //                   return connection.query(
-                    //                     activeBatchQuery,
-                    //                     [empid],
-                    //                     (err, leads) => {
-                    //                       if (err) {
-                    //                         return connection.rollback(() => {
-                    //                           connection.release();
-                    //                           callback(err);
-                    //                         });
-                    //                       }
-
-                    //                       return connection.commit(() => {
-                    //                         connection.release();
-
-                    //                         callback(null, {
-                    //                           success: 1,
-                    //                           message:
-                    //                             "Complete the Batch Befor Fetching New One",
-                    //                           data: leads,
-                    //                         });
-                    //                       });
-                    //                     },
-                    //                   );
-                    //                 }
 
                     // STEP 3: FETCH NEXT 10 LEADS
                     const fetchQuery = `
-                      SELECT
-                        l.lead_id,
-                        l.status_id,
-                        ls.status_name,
-                        l.lead_priority,
-                        l.lead_source,
-                        l.work_status,
+      SELECT
+        l.lead_id,
+        l.status_id,
+        ls.status_name,
+        l.lead_priority,
+        l.lead_source,
+        l.work_status,
 
-                        c.customer_id,
-                        c.customer_name,
-                        c.mobile_number_1,
-                        c.mobile_number_2,
-                        c.email,
-                        c.address,
-                        c.city,
-                        c.district,
-                        c.state,
+        c.customer_id,
+        c.customer_name,
+        c.mobile_number_1,
+        c.mobile_number_2,
+        c.email,
+        c.address,
+        c.city,
+        c.district,
+        c.state,
 
-                        v.vehicle_id,
-                        v.registration_number,
-                        v.model,
-                        v.vehicle_maker,
-                        v.engine_number,
-                        v.chassis_number,
+        v.vehicle_id,
+        v.registration_number,
+        v.model,
+        v.vehicle_maker,
+        v.engine_number,
+        v.chassis_number,
 
-                        p.policy_id,
-                        p.policy_number,
-                        p.policy_type,
-                        p.start_date,
-                        p.expiry_date,
-                        p.premium_amount
+        p.policy_id,
+        p.policy_number,
+        p.policy_type,
+        p.start_date,
+        p.expiry_date,
+        p.premium_amount
 
-                      FROM leads l
-                      INNER JOIN customers c ON c.customer_id = l.customer_id
-                      INNER JOIN vehicles v ON v.vehicle_id = l.vehicle_id
-                      LEFT JOIN policies p ON p.policy_id = l.policy_id
-                      INNER JOIN lead_status_master ls ON ls.status_id = l.status_id
+      FROM leads l
+      INNER JOIN customers c ON c.customer_id = l.customer_id
+      INNER JOIN vehicles v ON v.vehicle_id = l.vehicle_id
+      LEFT JOIN policies p ON p.policy_id = l.policy_id
+      INNER JOIN lead_status_master ls ON ls.status_id = l.status_id
 
-                      WHERE l.assigned_to = ?
-                        AND l.status_id = 1
-                        AND l.work_status = 'PENDING'
-                        AND l.is_locked = 0
+      WHERE l.assigned_to = ?
+        AND l.status_id = 1
+        AND l.work_status = 'PENDING'
+        AND l.is_locked = 0
 
-                      ORDER BY l.created_at ASC
-                      LIMIT 10
-                    `;
+      ORDER BY l.created_at ASC
+      LIMIT 10
+    `;
 
                     connection.query(fetchQuery, [empid], (err, leads) => {
                       if (err) {
@@ -227,13 +158,13 @@ module.exports = {
 
                       const leadIds = leads.map((l) => l.lead_id);
 
-                      // STEP 4: LOCK LEADS + MARK IN PROGRESS
+                      // STEP 4: LOCK LEADS
                       connection.query(
                         `UPDATE leads
-                                                SET is_locked = 1,
-                                                    work_status = 'IN_PROGRESS',
-                                                    assigned_date = NOW()
-                                                WHERE lead_id IN (?)`,
+         SET is_locked = 1,
+             work_status = 'IN_PROGRESS',
+             assigned_date = NOW()
+         WHERE lead_id IN (?)`,
                         [leadIds],
                         (err) => {
                           if (err) {
@@ -242,16 +173,14 @@ module.exports = {
                               callback(err);
                             });
                           }
-                          // STEP 5: RESET CONTROL FLAGS AFTER BATCH ALLOCATION
+
+                          // STEP 5: GET NEXT BATCH NUMBER
                           connection.query(
-                            `UPDATE system_controls
-                                                            SET allow_next_batch = 0,
-                                                                force_unlock = 0,
-                                                                batch_active = 1,
-                                                                active_batch_ids = ?
-                                                            WHERE empid = ?`,
-                            [JSON.stringify(leadIds), empid],
-                            (err) => {
+                            `SELECT COALESCE(MAX(batch_no),0)+1 AS batchNo
+             FROM employee_active_batches
+             WHERE empid = ?`,
+                            [empid],
+                            (err, batchResult) => {
                               if (err) {
                                 return connection.rollback(() => {
                                   connection.release();
@@ -259,18 +188,60 @@ module.exports = {
                                 });
                               }
 
-                              connection.commit((err) => {
-                                connection.release();
+                              const batchNo = batchResult[0].batchNo;
 
-                                if (err) return callback(err);
+                              // STEP 6: SAVE ACTIVE BATCH
+                              const values = leadIds.map((leadId) => [
+                                empid,
+                                leadId,
+                                batchNo,
+                                "ACTIVE",
+                              ]);
 
-                                return callback(null, {
-                                  success: 1,
-                                  message:
-                                    "Next 10 leads assigned successfully",
-                                  data: leads,
-                                });
-                              });
+                              connection.query(
+                                `INSERT INTO employee_active_batches
+                (empid, lead_id, batch_no, status)
+                VALUES ?`,
+                                [values],
+                                (err) => {
+                                  if (err) {
+                                    return connection.rollback(() => {
+                                      connection.release();
+                                      callback(err);
+                                    });
+                                  }
+
+                                  // STEP 7: RESET CONTROL FLAGS
+                                  connection.query(
+                                    `UPDATE system_controls
+                     SET allow_next_batch = 0,
+                         force_unlock = 0
+                     WHERE empid = ?`,
+                                    [empid],
+                                    (err) => {
+                                      if (err) {
+                                        return connection.rollback(() => {
+                                          connection.release();
+                                          callback(err);
+                                        });
+                                      }
+
+                                      connection.commit((err) => {
+                                        connection.release();
+
+                                        if (err) return callback(err);
+
+                                        callback(null, {
+                                          success: 1,
+                                          message:
+                                            "Next 10 leads assigned successfully",
+                                          data: leads,
+                                        });
+                                      });
+                                    },
+                                  );
+                                },
+                              );
                             },
                           );
                         },
@@ -428,6 +399,20 @@ module.exports = {
     );
   },
 
+  updateEmployeeBatchStatus: (data, callback) => {
+    pool.query(
+      `UPDATE employee_active_batches
+     SET status = 'COMPLETED'
+     WHERE empid = ?
+       AND lead_id = ?
+       AND status = 'ACTIVE'`,
+      [data.created_by, data.lead_id],
+      (err, result) => {
+        if (err) return callback(err);
+        callback(null, result);
+      },
+    );
+  },
   getLeadHistory: (leadid, callback) => {
     pool.query(
       `
@@ -544,12 +529,10 @@ WHERE
         if (err) return callback(err);
 
         callback(null, result);
-      }
+      },
     );
   },
   getDashboardCount: (empid, callback) => {
-
-
     pool.query(
       `SELECT
     lsm.status_id,
@@ -565,205 +548,17 @@ GROUP BY
     lsm.display_order
 ORDER BY
     lsm.display_order`,
-      [
-        empid
-      ],
+      [empid],
       (err, result) => {
         if (err) return callback(err);
 
         callback(null, result);
-      }
+      },
     );
   },
 
-  // getDashboardReminders: async (empid, callback) => {
-
-  //   try {
-
-  //     const summaryQuery = `
-  //               SELECT
-
-  //                   SUM(
-  //                       CASE
-  //                           WHEN lf.next_followup_date < NOW()
-  //                           THEN 1 ELSE 0
-  //                       END
-  //                   ) AS overdue,
-
-  //                   SUM(
-  //                       CASE
-  //                           WHEN lf.next_followup_date >= CURDATE()
-  //                           AND lf.next_followup_date < CURDATE() + INTERVAL 1 DAY
-  //                           THEN 1 ELSE 0
-  //                       END
-  //                   ) AS today,
-
-  //                   SUM(
-  //                       CASE
-  //                           WHEN lf.next_followup_date >= CURDATE() + INTERVAL 1 DAY
-  //                           AND lf.next_followup_date < CURDATE() + INTERVAL 2 DAY
-  //                           THEN 1 ELSE 0
-  //                       END
-  //                   ) AS tomorrow,
-
-  //                   SUM(
-  //                       CASE
-  //                           WHEN lf.next_followup_date >= CURDATE() + INTERVAL 2 DAY
-  //                           AND lf.next_followup_date < CURDATE() + INTERVAL 8 DAY
-  //                           THEN 1 ELSE 0
-  //                       END
-  //                   ) AS next7days
-
-  //               FROM lead_followups lf
-
-  //               INNER JOIN leads l
-  //                   ON l.lead_id = lf.lead_id
-
-  //               WHERE l.assigned_to = ?;
-  //           `;
-
-
-  //     const followupQuery = `
-  //               SELECT
-
-  //                   lf.followup_id,
-  //                   lf.lead_id,
-
-  //                   c.customer_name,
-  //                   c.mobile_number_1,
-  //                   c.mobile_number_2,
-  //                   c.address,
-  //                   c.city,
-
-  //                   v.registration_number,
-  //                   v.model,
-  //                   v.fuel_type,
-  //                   v.vehicle_category,
-
-  //                   lsm.status_name,
-
-  //                   lf.call_outcome,
-  //                   lf.remarks,
-  //                   lf.next_followup_date,
-
-  //                   TIME_FORMAT(
-  //                       lf.next_followup_date,
-  //                       '%h:%i %p'
-  //                   ) AS followup_time,
-
-  //                   CASE
-
-  //                       WHEN lsm.status_name='CALLBACK'
-  //                           THEN 'Callback'
-
-  //                       WHEN lsm.status_name='APPOINMENT'
-  //                           THEN 'Appointment'
-
-  //                       WHEN lsm.status_name='QUOTE'
-  //                           THEN 'Quote'
-
-  //                       WHEN lsm.status_name='SOLD'
-  //                           THEN 'Policy Sold'
-
-  //                       WHEN lsm.status_name='LOST'
-  //                           THEN 'Lost Lead'
-
-  //                       ELSE lsm.status_name
-
-  //                   END AS action
-
-  //               FROM lead_followups lf
-
-  //               INNER JOIN leads l
-  //                   ON l.lead_id = lf.lead_id
-
-  //               INNER JOIN customers c
-  //                   ON c.customer_id = l.customer_id
-
-  //               INNER JOIN vehicles v
-  //                   ON v.vehicle_id = l.vehicle_id
-
-  //               INNER JOIN lead_status_master lsm
-  //                   ON lsm.status_id = lf.status_id
-
-  //               WHERE
-
-  //                   l.assigned_to = ?
-
-  //                   AND
-  //                   (
-  //                       lf.next_followup_date < NOW()
-
-  //                       OR
-
-  //                       (
-  //                           lf.next_followup_date >= CURDATE()
-  //                           AND lf.next_followup_date < CURDATE() + INTERVAL 8 DAY
-  //                       )
-  //                   )
-
-  //               ORDER BY lf.next_followup_date ASC;
-  //           `;
-
-  //     const [summary, rows] = await Promise.all([
-  //       query(summaryQuery, [empid]),
-  //       query(followupQuery, [empid])
-  //     ]);
-
-  //     const overdue = [];
-  //     const today = [];
-  //     const tomorrow = [];
-  //     const upcoming = [];
-
-  //     const now = new Date();
-
-  //     const todayStart = new Date();
-  //     todayStart.setHours(0, 0, 0, 0);
-
-  //     const tomorrowStart = new Date(todayStart);
-  //     tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-
-  //     const dayAfterTomorrow = new Date(todayStart);
-  //     dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
-
-  //     rows.forEach((row) => {
-  //       const followupDate = new Date(row.next_followup_date);
-  //       if (followupDate < now) {
-  //         overdue.push(row);
-  //       }
-  //       else if (
-  //         followupDate >= todayStart &&
-  //         followupDate < tomorrowStart
-  //       ) {
-  //         today.push(row);
-  //       }
-  //       else if (
-  //         followupDate >= tomorrowStart &&
-  //         followupDate < dayAfterTomorrow
-  //       ) {
-  //         tomorrow.push(row);
-  //       }
-  //       else {
-  //         upcoming.push(row);
-  //       }
-  //     });
-
-  //     callback(null, {
-  //       summary: summary[0],
-  //       overdue,
-  //       today,
-  //       tomorrow,
-  //       upcoming
-  //     });
-  //   }
-  //   catch (err) {
-  //     callback(err);
-  //   }
-  // }
-
   getDashboardReminders: async (empid, callback) => {
     try {
-
       const summaryQuery = `
       SELECT
         SUM(CASE WHEN DATE(lf.next_followup_date) < CURDATE() THEN 1 ELSE 0 END) AS overdue,
@@ -835,7 +630,7 @@ ORDER BY
 
       const [summary, rows] = await Promise.all([
         query(summaryQuery, [empid]),
-        query(followupQuery, [empid])
+        query(followupQuery, [empid]),
       ]);
 
       //  NO JS DATE LOGIC (ONLY BUCKET)
@@ -844,7 +639,7 @@ ORDER BY
       const tomorrow = [];
       const upcoming = [];
 
-      rows.forEach(row => {
+      rows.forEach((row) => {
         switch (row.bucket) {
           case "overdue":
             overdue.push(row);
@@ -865,15 +660,13 @@ ORDER BY
         overdue,
         today,
         tomorrow,
-        upcoming
+        upcoming,
       });
-
     } catch (err) {
       callback(err);
     }
   },
   searchCRM: (search, callback) => {
-
     const sql = `
 SELECT DISTINCT
 
@@ -934,61 +727,44 @@ LIMIT 20;
 
     pool.query(
       sql,
-      [
-        search,
-        search,
-        search,
-        search,
-
-        search,
-        search,
-        search,
-        search
-      ],
+      [search, search, search, search, search, search, search, search],
 
       (err, result) => {
         if (err) return callback(err);
         callback(null, result);
-      }
+      },
     );
-
   },
 
   getCustomerDetails: (customerId, callback) => {
     pool.getConnection((err, connection) => {
-
       if (err) return callback(err);
 
       getCustomer(connection, customerId, (err, customer) => {
-
         if (err) {
           connection.release();
           return callback(err);
         }
 
         getVehicles(connection, customerId, (err, vehicles) => {
-
           if (err) {
             connection.release();
             return callback(err);
           }
 
           getLeads(connection, customerId, (err, leads) => {
-
             if (err) {
               connection.release();
               return callback(err);
             }
 
             getFollowups(connection, customerId, (err, followups) => {
-
               if (err) {
                 connection.release();
                 return callback(err);
               }
 
               getStatusHistory(connection, customerId, (err, statusHistory) => {
-
                 connection.release();
 
                 if (err) {
@@ -1001,7 +777,7 @@ LIMIT 20;
                   vehicles: vehicles || [],
                   leads: leads || [],
                   followups: followups || [],
-                  statusHistory: statusHistory || []
+                  statusHistory: statusHistory || [],
                 };
 
                 return callback(null, result);
@@ -1014,7 +790,6 @@ LIMIT 20;
   },
 
   getAdminDashboardCounts: (fromDate, toDate, callback) => {
-
     const params = [];
     let where = "";
 
@@ -1089,7 +864,6 @@ LIMIT 20;
   },
 
   getEmployyeeRecentAcivity: (callback) => {
-
     const sql = `
 SELECT
     lsh.history_id,
@@ -1121,12 +895,121 @@ LIMIT 10
       (err, result) => {
         if (err) return callback(err);
         callback(null, result);
-      }
+      },
     );
-
   },
+  getActiveEmployees: (callback) => {
+    pool.query(
+      `
+    SELECT
+        u.user_id,
+        u.employee_id,
+        u.name,
+        r.role_name,
 
+        MAX(eab.batch_no) AS current_batch,
+
+        COUNT(
+            CASE
+                WHEN eab.status='ACTIVE'
+                THEN eab.lead_id
+            END
+        ) AS pending_leads,
+
+        MIN(eab.assigned_at) AS batch_assigned_at
+
+    FROM employee_active_batches eab
+
+    INNER JOIN users_master u
+        ON u.user_id = eab.empid
+
+    LEFT JOIN roles r
+        ON r.role_id = u.role_id
+
+    WHERE eab.status='ACTIVE'
+
+    GROUP BY
+        u.user_id,
+        u.employee_id,
+        u.name,
+        r.role_name
+
+    ORDER BY batch_assigned_at ASC
+    `,
+      (err, result) => {
+        if (err) return callback(err);
+
+        callback(null, result);
+      },
+    );
+  },
+  getEmployeeBatchDetail: (empid, callback) => {
+    pool.query(
+      `
+SELECT
+
+u.user_id,
+u.employee_id,
+u.name,
+r.role_name,
+
+eab.batch_no,
+eab.assigned_at,
+
+l.lead_id,
+l.work_status,
+l.lead_priority,
+l.lead_source,
+l.remarks,
+
+c.customer_id,
+c.customer_name,
+c.mobile_number_1,
+c.mobile_number_2,
+c.city,
+c.district,
+c.state,
+
+v.vehicle_id,
+v.registration_number,
+v.vehicle_maker,
+v.model,
+v.engine_number,
+v.chassis_number
+
+FROM employee_active_batches eab
+
+INNER JOIN users_master u
+ON u.user_id=eab.empid
+
+LEFT JOIN roles r
+ON r.role_id=u.role_id
+
+INNER JOIN leads l
+ON l.lead_id=eab.lead_id
+
+INNER JOIN customers c
+ON c.customer_id=l.customer_id
+
+INNER JOIN vehicles v
+ON v.vehicle_id=l.vehicle_id
+
+WHERE
+eab.empid=?
+AND eab.status='ACTIVE'
+
+ORDER BY
+eab.batch_no,
+eab.assigned_at,
+l.lead_id
+
+`,
+      [empid],
+      (err, result) => {
+        if (err) return callback(err);
+
+        callback(null, result);
+      },
+    );
+  },
 };
-
-
-
