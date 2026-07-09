@@ -69,7 +69,7 @@ GROUP BY
     r.role_name
 
 ORDER BY
-    um.name;`;
+    um.name`;
     // const params = [];
 
     // if (filters.emp_id) {

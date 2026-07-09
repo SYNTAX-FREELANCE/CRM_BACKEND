@@ -1123,8 +1123,74 @@ LIMIT 10
         callback(null, result);
       }
     );
-
   },
+
+
+  getAssignEmployeeDtl: (callback) => {
+    const sql = `
+            SELECT
+                l.lead_id,
+                l.work_status,
+                l.lead_priority,
+                l.assigned_date,
+                l.lead_source,
+                l.remarks,
+
+                -- Customer Details
+                c.customer_id,
+                c.customer_name,
+                c.mobile_number_1,
+                c.mobile_number_2,
+                c.email,
+                c.address,
+                c.city,
+                c.district,
+                c.state,
+                c.pincode,
+
+                -- Vehicle Details
+                v.vehicle_id,
+                v.registration_number,
+                v.make,
+                v.model,
+                v.manufacture_year,
+                v.vehicle_maker,
+                v.vehicle_class,
+                v.vehicle_category,
+                v.fuel_type,
+
+                -- Employee Details
+                um.user_id,
+                um.employee_id,
+                um.name AS employee_name,
+                um.mobile_number_1 AS employee_mobile
+            FROM leads l
+
+            INNER JOIN customers c
+                ON c.customer_id = l.customer_id
+
+            LEFT JOIN vehicles v
+                ON v.vehicle_id = l.vehicle_id
+
+            LEFT JOIN users_master um
+                ON um.user_id = l.assigned_to
+
+            WHERE
+                l.is_assigned = 1
+                AND l.assigned_to IS NOT NULL
+                AND l.work_status IN ('PENDING','IN_PROGRESS')
+
+            ORDER BY l.assigned_date DESC`;
+    pool.query(
+      sql,
+      [],
+      (err, result) => {
+        if (err) return callback(err);
+        callback(null, result);
+      }
+    );
+  },
+
 
 };
 

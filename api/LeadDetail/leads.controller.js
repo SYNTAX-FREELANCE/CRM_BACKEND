@@ -348,6 +348,28 @@ module.exports = {
 
     });
   },
+  getAssignEmployeeDtl: (req, res) => {
+    leadservie.getAssignEmployeeDtl((err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+      if (result && result?.length === 0) {
+        return res.status(200).json({
+          success: 2,
+          message: "No Assign Detail Found",
+          data: [],
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        data: result,
+      });
+
+    });
+  },
 
 
 

@@ -30,4 +30,6 @@ router.post("/admin-count", verifyAccessToken, leacontroller.getAdminDashboardCo
 
 router.get("/employee-recent-activity", verifyAccessToken, leacontroller.getEmployeeRecentAcivity);
 
+router.get('/employee/assigndtl', verifyAccessToken, leacontroller.getAssignEmployeeDtl)
+
 module.exports = router;

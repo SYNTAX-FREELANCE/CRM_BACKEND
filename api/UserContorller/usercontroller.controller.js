@@ -177,6 +177,13 @@ module.exports = {
                 maxAge: 15 * 60 * 1000,
               });
 
+              // res.cookie("accessToken", newAccessToken, {
+              //   httpOnly: true,
+              //   secure: true,
+              //   sameSite: "none",
+              //   maxAge: 15 * 60 * 1000,
+              // });
+
               res.status(200).json({
                 success: 1,
                 message: "Token refreshed",
