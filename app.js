@@ -41,10 +41,13 @@ const userRights = require("./api/UserRights/userRights.router");
 const userInfo = require("./api/UserInfo/userInfo.router");
 const customermaster = require("./api/CustomerMaster/customermaster.router");
 const leaddetails = require("./api/LeadDetail/leads.router");
+const usermoduelright = require("./api/UserModuleRights/roleModuleRights.router");
 const routeTrackerMiddleware = require("./Middleware/routeTracker.middleware");
 const socketMiddleware = require("./Middleware/socke.middlewar");
 const validateToken = require('./Validate/validateToken')
 const verifyAccessToken = require('./middleware/verifyAccessToken');
+
+
 // socket allowed only here
 app.use(
     "/api/user",
@@ -165,7 +168,12 @@ app.use(
     leaddetails,
 );
 
-
+app.use(
+    "/api/moduleright",
+    routeTrackerMiddleware("MODULE_RIGHT_DETAIL_ROUTER"),
+    socketMiddleware,
+    usermoduelright,
+);
 
 
 // health check

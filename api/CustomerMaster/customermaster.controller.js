@@ -712,7 +712,7 @@ module.exports = {
         if (err) {
           console.error("createVehicle db error:", err);
           if (err.code === "ER_DUP_ENTRY") {
-            return res.status(400).json({
+            return res.status(200).json({
               success: 0,
               message: "Vehicle Registration Number already exists."
             });

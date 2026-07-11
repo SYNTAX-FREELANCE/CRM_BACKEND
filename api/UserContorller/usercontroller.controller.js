@@ -113,6 +113,7 @@ module.exports = {
                 id: user.user_id,
                 username: user.name,
                 role: user.role_name,
+                role_id: user.role
               },
               attendance_id: attendanceId,
             });
