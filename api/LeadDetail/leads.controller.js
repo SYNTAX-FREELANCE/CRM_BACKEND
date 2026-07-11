@@ -108,6 +108,10 @@ module.exports = {
           if (Number(data.requires_followup) === 1) {
             leadservie.updateLeadFollowupDetail(data, (err) => {
               if (err) {
+                console.log({
+                  err
+                });
+                
                 return res.status(500).json({
                   success: 0,
                   message: "Failed to save follow-up",
@@ -337,6 +341,24 @@ module.exports = {
       });
     });
   },
+
+  getAssignEmployeeDtl: (req, res) => {
+    leadservie.getAssignEmployeeDtl((err, result) => {
+      if (result && result?.length === 0) {
+        return res.status(200).json({
+          success: 2,
+          message: "No Assign Detail Found",
+          data: [],
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        data: result,
+      });
+
+    });
+  },
+
   getActiveEmployees: (req, res) => {
     leadservie.getActiveEmployees((err, result) => {
       if (err) {
@@ -345,7 +367,6 @@ module.exports = {
           message: "Database Error",
         });
       }
-
       return res.status(200).json({
         success: 1,
         data: result,
@@ -354,7 +375,6 @@ module.exports = {
   },
   getEmployeeBatchDetail: (req, res) => {
     const empid = req.params.empid;
-
     leadservie.getEmployeeBatchDetail(empid, (err, result) => {
       if (err) {
         return res.status(500).json({
@@ -368,4 +388,59 @@ module.exports = {
       });
     });
   },
+  updateReallocation: (req, res) => {
+    const data = req.body;
+    leadservie.updateReallocation(data, (err, result) => {
+      if (err) {
+        console.log({
+          err
+        });
+
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        data: result,
+      });
+    });
+  },
+  releaseBatchLock: (req, res) => {
+
+    const { employee_id, batch_no, unlocked_by } = req.body;
+
+    if (!employee_id || !batch_no || !unlocked_by) {
+      return res.status(400).json({
+        success: 0,
+        message: "Required data is missing"
+      });
+    }
+
+    leadservie.releaseBatchLock(
+      {
+        employee_id,
+        batch_no,
+        unlocked_by
+      },
+      (err, result) => {
+
+        if (err) {
+          return res.status(500).json({
+            success: 0,
+            message: err.sqlMessage || err.message
+          });
+        }
+
+        return res.status(200).json({
+          success: 1,
+          message: "Batch unlocked successfully"
+        });
+
+      }
+    );
+  },
+
+
 };

@@ -113,6 +113,7 @@ module.exports = {
                 id: user.user_id,
                 username: user.name,
                 role: user.role_name,
+                role_id: user.role
               },
               attendance_id: attendanceId,
             });
@@ -176,6 +177,13 @@ module.exports = {
                 sameSite: "lax",
                 maxAge: 15 * 60 * 1000,
               });
+
+              // res.cookie("accessToken", newAccessToken, {
+              //   httpOnly: true,
+              //   secure: true,
+              //   sameSite: "none",
+              //   maxAge: 15 * 60 * 1000,
+              // });
 
               res.status(200).json({
                 success: 1,

@@ -898,6 +898,72 @@ LIMIT 10
       },
     );
   },
+
+  getAssignEmployeeDtl: (callback) => {
+    const sql = `
+            SELECT
+                l.lead_id,
+                l.work_status,
+                l.lead_priority,
+                l.assigned_date,
+                l.lead_source,
+                l.remarks,
+
+                -- Customer Details
+                c.customer_id,
+                c.customer_name,
+                c.mobile_number_1,
+                c.mobile_number_2,
+                c.email,
+                c.address,
+                c.city,
+                c.district,
+                c.state,
+                c.pincode,
+
+                -- Vehicle Details
+                v.vehicle_id,
+                v.registration_number,
+                v.make,
+                v.model,
+                v.manufacture_year,
+                v.vehicle_maker,
+                v.vehicle_class,
+                v.vehicle_category,
+                v.fuel_type,
+
+                -- Employee Details
+                um.user_id,
+                um.employee_id,
+                um.name AS employee_name,
+                um.mobile_number_1 AS employee_mobile
+            FROM leads l
+
+            INNER JOIN customers c
+                ON c.customer_id = l.customer_id
+
+            LEFT JOIN vehicles v
+                ON v.vehicle_id = l.vehicle_id
+
+            LEFT JOIN users_master um
+                ON um.user_id = l.assigned_to
+
+            WHERE
+                l.is_assigned = 1
+                AND l.assigned_to IS NOT NULL
+                AND l.work_status IN ('PENDING','IN_PROGRESS')
+
+            ORDER BY l.assigned_date DESC`;
+    pool.query(
+      sql,
+      [],
+      (err, result) => {
+        if (err) return callback(err);
+        callback(null, result);
+      }
+    );
+  },
+
   getActiveEmployees: (callback) => {
     pool.query(
       `
@@ -906,7 +972,6 @@ LIMIT 10
         u.employee_id,
         u.name,
         r.role_name,
-
         MAX(eab.batch_no) AS current_batch,
 
         COUNT(
@@ -926,7 +991,7 @@ LIMIT 10
     LEFT JOIN roles r
         ON r.role_id = u.role_id
 
-    WHERE eab.status='ACTIVE'
+    WHERE eab.status='ACTIVE' AND eab.is_active = 1
 
     GROUP BY
         u.user_id,
@@ -943,6 +1008,7 @@ LIMIT 10
       },
     );
   },
+
   getEmployeeBatchDetail: (empid, callback) => {
     pool.query(
       `
@@ -996,7 +1062,7 @@ ON v.vehicle_id=l.vehicle_id
 
 WHERE
 eab.empid=?
-AND eab.status='ACTIVE'
+AND eab.status='ACTIVE' AND eab.is_active = 1
 
 ORDER BY
 eab.batch_no,
@@ -1012,4 +1078,253 @@ l.lead_id
       },
     );
   },
+
+
+  updateReallocation: (data, callback) => {
+    pool.getConnection((err, connection) => {
+      if (err) return callback(err);
+      connection.beginTransaction(async (err) => {
+        if (err) {
+          connection.release();
+          return callback(err);
+        }
+
+        try {
+
+          const {
+            selectedEmployee,
+            remarks,
+            is_locked,
+            work_status,
+            leads,
+            assigned_by
+          } = data;
+
+          for (const lead of leads) {
+
+            // 1. Assignment History
+            await connection.promise().query(
+              `INSERT INTO lead_assignment_history
+                        (
+                            lead_id,
+                            old_user_id,
+                            new_user_id,
+                            assigned_by,
+                            remarks
+                        )
+                        VALUES (?,?,?,?,?)`,
+              [
+                lead.lead_id,
+                lead.user_id,
+                selectedEmployee,
+                assigned_by,
+                remarks
+              ]
+            );
+
+            // 2. Update Lead
+            await connection.promise().query(
+              `UPDATE leads
+                         SET
+                            assigned_to = ?,
+                            assigned_date = NOW(),
+                            edited_by = ?,
+                            is_assigned = 1,
+                            is_locked = ?,
+                            work_status = ?
+                         WHERE lead_id = ?`,
+              [
+                selectedEmployee,
+                assigned_by,
+                is_locked,
+                work_status,
+                lead.lead_id
+              ]
+            );
+
+            // 3. Deactivate old employee batch
+            await connection.promise().query(
+              `UPDATE employee_active_batches
+                         SET is_active = 0
+                         WHERE lead_id = ?
+                           AND empid = ?
+                           AND is_active = 1`,
+              [
+                lead.lead_id,
+                lead.user_id
+              ]
+            );
+
+            // 4. Allocate & Assign
+            if (work_status === "IN_PROGRESS") {
+
+              // Check existing active batch
+              const [batchRows] = await connection.promise().query(
+                `SELECT batch_no
+                             FROM employee_active_batches
+                             WHERE empid = ?
+                               AND is_active = 1
+                               AND status = 'ACTIVE'
+                             LIMIT 1`,
+                [selectedEmployee]
+              );
+
+              let batchNo;
+
+              if (batchRows.length > 0) {
+
+                batchNo = batchRows[0].batch_no;
+
+              } else {
+
+                const [nextBatch] = await connection.promise().query(
+                  `SELECT COALESCE(MAX(batch_no),0)+1 AS batchNo
+                                 FROM employee_active_batches
+                                 WHERE empid = ?`,
+                  [selectedEmployee]
+                );
+
+                batchNo = nextBatch[0].batchNo;
+              }
+
+              // Insert into new employee batch
+              await connection.promise().query(
+                `INSERT INTO employee_active_batches
+                            (
+                                empid,
+                                lead_id,
+                                batch_no,
+                                status,
+                                is_active
+                            )
+                            VALUES
+                            (
+                                ?, ?, ?, 'ACTIVE', 1
+                            )`,
+                [
+                  selectedEmployee,
+                  lead.lead_id,
+                  batchNo
+                ]
+              );
+
+            }
+
+          }
+
+          connection.commit((err) => {
+
+            if (err) {
+              return connection.rollback(() => {
+                connection.release();
+                callback(err);
+              });
+            }
+
+            connection.release();
+
+            return callback(null, {
+              success: 1,
+              message: "Lead(s) reallocated successfully."
+            });
+
+          });
+
+        } catch (error) {
+
+          connection.rollback(() => {
+            connection.release();
+            callback(error);
+          });
+
+        }
+
+      });
+
+    });
+
+  },
+  releaseBatchLock: (data, callback) => {
+    const {
+      employee_id,
+      batch_no,
+      unlocked_by
+    } = data;
+
+    pool.getConnection((err, connection) => {
+      if (err) return callback(err);
+      connection.beginTransaction((err) => {
+
+        if (err) {
+          connection.release();
+          return callback(err);
+        }
+        connection.query(
+          `
+                UPDATE system_controls
+                SET
+                    allow_next_batch = 1,
+                    force_unlock = 1
+                WHERE empid = ?
+                `,
+          [employee_id],
+          (err) => {
+
+            if (err) {
+              return connection.rollback(() => {
+                connection.release();
+                callback(err);
+              });
+            }
+
+            connection.query(
+              `
+                        INSERT INTO crm_batch_unlock_log
+                        (
+                            employee_id,
+                            batch_no,
+                            unlocked_by
+                        )
+                        VALUES (?,?,?)
+                        `,
+              [
+                employee_id,
+                batch_no,
+                unlocked_by
+              ],
+              (err, result) => {
+
+                if (err) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    callback(err);
+                  });
+                }
+
+                connection.commit((err) => {
+
+                  if (err) {
+                    return connection.rollback(() => {
+                      connection.release();
+                      callback(err);
+                    });
+                  }
+
+                  connection.release();
+                  callback(null, result);
+                });
+
+              }
+            );
+
+          }
+        );
+
+      });
+
+    });
+
+  },
 };
+
+
