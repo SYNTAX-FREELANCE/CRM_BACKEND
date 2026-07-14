@@ -67,14 +67,19 @@ router.get(
     leacontroller.getEmployeeRecentAcivity,
 );
 
-router.get("/active-batches", leacontroller.getActiveEmployees);
+router.get("/active-batches", verifyAccessToken, leacontroller.getActiveEmployees);
 
-router.get("/employee-batch/:empid", leacontroller.getEmployeeBatchDetail);
+router.get("/employee-batch/:empid", verifyAccessToken, leacontroller.getEmployeeBatchDetail);
 
 router.get('/employee/assigndtl', verifyAccessToken, leacontroller.getAssignEmployeeDtl)
 
 
 router.post('/update-reallocation', verifyAccessToken, leacontroller.updateReallocation);
-router.post('/release-block', leacontroller.releaseBatchLock);
+
+router.post('/release-block', verifyAccessToken, leacontroller.releaseBatchLock);
+
+
+router.get('/top-employee', verifyAccessToken, leacontroller.getTopEmployees);
+
 
 module.exports = router;
