@@ -594,8 +594,7 @@ module.exports = {
   createVehicle: (req, res) => {
     try {
       const data = req.body;
-      const editedBy = req.user ? req.user.id : null;
-
+    
       if (!data.customer_id) {
         return res.status(400).json({
           success: 0,
@@ -705,7 +704,7 @@ module.exports = {
         vehicle_category: data.vehicle_category ? data.vehicle_category.trim() : null,
         fuel_type: data.fuel_type ? data.fuel_type.trim() : null,
         seat_capacity: data.seat_capacity ? parseInt(data.seat_capacity, 10) : null,
-        edited_by: editedBy
+        created_by: data.created_by
       };
 
       customerService.createVehicle(mappedVehicle, (err, result) => {
