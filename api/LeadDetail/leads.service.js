@@ -594,6 +594,7 @@ ORDER BY
         v.model,
         v.fuel_type,
         v.vehicle_category,
+        lsm.status_id,
 
         lsm.status_name,
         lf.call_outcome,

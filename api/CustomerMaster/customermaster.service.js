@@ -396,10 +396,10 @@ WHERE
   createVehicle: (v, callback) => {
     const query = `
       INSERT INTO vehicles 
-      (customer_id, registration_number, rto, registration_date, model, vehicle_maker, engine_number, chassis_number, vehicle_class, vehicle_category, fuel_type, seat_capacity, edited_by)
+      (customer_id, registration_number, rto, registration_date, model, vehicle_maker, engine_number, chassis_number, vehicle_class, vehicle_category, fuel_type, seat_capacity, created_by)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    
+
     pool.query(
       query,
       [
@@ -415,7 +415,7 @@ WHERE
         v.vehicle_category || null,
         v.fuel_type || null,
         v.seat_capacity || null,
-        v.edited_by || null
+        v.created_by || null
       ],
       (err, result) => {
         if (err) {
