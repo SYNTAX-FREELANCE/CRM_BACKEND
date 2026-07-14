@@ -256,7 +256,7 @@ module.exports = {
         company_id: company_id || null,
         role_id: role_id || null,
         user_status: user_status,
-        is_active: is_active ,
+        is_active: is_active,
       };
 
       // Step 1: Update user in users_master
@@ -403,4 +403,220 @@ module.exports = {
       });
     }
   },
+
+  // ==================== UPLOAD DOCUMENTS ====================
+  uploadDocument: (req, res) => {
+    try {
+      const { user_id, file_type } = req.query;
+      const files = req.files; // Array of files
+
+      if (!user_id) {
+        return res.status(400).json({
+          success: 0,
+          message: "user_id is required"
+        });
+      }
+
+      if (!files || files.length === 0) {
+        return res.status(400).json({
+          success: 0,
+          message: "No files uploaded"
+        });
+      }
+
+      const insertPromises = files.map(file => {
+        const fileData = {
+          user_id: user_id,
+          file_type: file_type || "others",
+          file_name: file.originalname,
+          file_path: file.path,
+          file_size: file.size,
+          mime_type: file.mimetype
+        };
+
+        return new Promise((resolve, reject) => {
+          userCreationService.insertSingleFile(fileData, (err, result) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve({
+                file_id: result.insertId,
+                ...fileData
+              });
+            }
+          });
+        });
+      });
+
+      Promise.all(insertPromises)
+        .then(insertedFiles => {
+          return res.status(200).json({
+            success: 1,
+            message: "Documents uploaded successfully",
+            data: insertedFiles
+          });
+        })
+        .catch(err => {
+          console.error("Multiple file insert error:", err);
+          return res.status(500).json({
+            success: 0,
+            message: "Failed to save file details in database"
+          });
+        });
+    } catch (error) {
+      console.error("uploadDocument error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong"
+      });
+    }
+  },
+
+  // ==================== DELETE USER FILE ====================
+  deleteUserFile: (req, res) => {
+    try {
+      const { fileId } = req.params;
+
+      if (!fileId) {
+        return res.status(400).json({
+          success: 0,
+          message: "fileId parameter is required"
+        });
+      }
+
+      // 1. Get file path from DB
+      userCreationService.getFileById(fileId, (err, file) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            success: 0,
+            message: "Something went wrong"
+          });
+        }
+        if (!file) {
+          return res.status(404).json({
+            success: 0,
+            message: "File not found"
+          });
+        }
+
+        // 2. Mark file as inactive in DB (DO NOT delete file from disk)
+        userCreationService.deactivateFile(fileId, (err, result) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({
+              success: 0,
+              message: "Failed to update database record"
+            });
+          }
+          return res.status(200).json({
+            success: 1,
+            message: "File deleted successfully"
+          });
+        });
+      });
+    } catch (error) {
+      console.error("deleteUserFile error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong"
+      });
+    }
+  },
+
+  // ==================== VIEW USER FILE ====================
+  viewFile: (req, res) => {
+    try {
+      const { fileId } = req.params;
+
+      if (!fileId) {
+        return res.status(400).json({
+          success: 0,
+          message: "fileId parameter is required"
+        });
+      }
+
+      userCreationService.getFileById(fileId, (err, file) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            success: 0,
+            message: "Something went wrong"
+          });
+        }
+        if (!file) {
+          return res.status(404).json({
+            success: 0,
+            message: "File not found"
+          });
+        }
+
+        // Check if file exists on disk
+        const fs = require("fs");
+        if (!fs.existsSync(file.file_path)) {
+          return res.status(404).json({
+            success: 0,
+            message: "File does not exist on C drive disk"
+          });
+        }
+
+        // Send the file directly
+        return res.sendFile(file.file_path);
+      });
+    } catch (error) {
+      console.error("viewFile error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong"
+      });
+    }
+  },
+
+  // ==================== GET MEDICAL DOC FILE ====================
+  getMedicalDocFile: (req, res) => {
+    const id = req.query.id || req.params.id;
+    const filename = req.query.filename;
+    if (!id || !filename) {
+      return res.status(400).json({ success: 0, message: "id and filename are required" });
+    }
+
+    const path = require("path");
+    const fs = require("fs");
+
+    const folderPath = path.join('C:/CRM/EmployeeDetails', String(id));
+    
+    // Scan subfolders to find where filename exists on disk
+    const subfolders = ["bank", "resume", "aadhar", "others"];
+    let filePath = null;
+
+    for (const sub of subfolders) {
+      const testPath = path.join(folderPath, sub, filename);
+      if (fs.existsSync(testPath)) {
+        filePath = testPath;
+        break;
+      }
+    }
+
+    if (!filePath) {
+      filePath = path.join(folderPath, filename);
+    }
+
+    // Prevent directory traversal attacks by ensuring the resolved path starts with the intended folderPath
+    if (!filePath.startsWith(folderPath)) {
+      return res.status(403).json({ success: 0, message: "Invalid file path" });
+    }
+
+    fs.access(filePath, fs.constants.F_OK, (err) => {
+      if (err) {
+        return res.status(404).json({ success: 0, message: "File not found" });
+      }
+      res.download(filePath, filename, (downloadErr) => {
+        if (downloadErr) {
+          if (!res.headersSent) {
+            res.status(500).send("Error downloading file");
+          }
+        }
+      });
+    });
+  }
 };

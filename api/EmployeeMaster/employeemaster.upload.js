@@ -1,6 +1,7 @@
 // services/Upload.js
 const fs = require("fs");
 const path = require("path");
+const multer = require("multer");
 const createUpload = require("../../Middleware/multer");
 
 // C Drive Upload Paths
@@ -12,6 +13,43 @@ const BANK_UPLOAD_DIR = "C:/uploads/users/bank";
 const uploadAadhar = createUpload(AADHAR_UPLOAD_DIR, ["image/jpeg", "image/png", "application/pdf"], 5);
 const uploadBiodata = createUpload(BIODATA_UPLOAD_DIR, ["image/jpeg", "image/png", "application/pdf"], 5);
 const uploadBank = createUpload(BANK_UPLOAD_DIR, ["image/jpeg", "image/png", "application/pdf"], 5);
+
+// New Dynamic Storage for C:/CRM/EmployeeDetails/<user_id>/<file_type>/<filename>
+const dynamicStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const { user_id, file_type } = req.query;
+        let docFolder = file_type || "others";
+        if (docFolder === "bankDetails") docFolder = "bank";
+        if (docFolder === "otherUploads") docFolder = "others";
+
+        const dir = `C:/CRM/EmployeeDetails/${user_id || "unknown"}/${docFolder}`;
+
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, file.originalname);
+    }
+});
+
+// Dynamic upload middleware up to 25MB
+const uploadDocumentMiddleware = multer({
+    storage: dynamicStorage,
+    limits: {
+        fileSize: 25 * 1024 * 1024 // 25 MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error("Invalid file type. Only JPEG, PNG, and PDF files are allowed."), false);
+        }
+    }
+});
+
 
 /**
  * UPLOAD USER FILES TO C DRIVE
@@ -86,7 +124,7 @@ const uploadUserFiles = (req, res) => {
 
         return res.status(200).json({
             success: 1,
-            message: "Files uploaded to C drive successfully",
+            message: "Files uploaded successfully",
             count: uploadedFiles.length,
             data: uploadedFiles
         });
@@ -130,9 +168,9 @@ const getExistingFiles = (req, res) => {
             }
 
             const imageFiles = files
-                .filter((file) => file.toLowerCase().endsWith(".jpg") || 
-                               file.toLowerCase().endsWith(".png") || 
-                               file.toLowerCase().endsWith(".pdf"))
+                .filter((file) => file.toLowerCase().endsWith(".jpg") ||
+                    file.toLowerCase().endsWith(".png") ||
+                    file.toLowerCase().endsWith(".pdf"))
                 .map((file, index) => ({
                     id: index + 1,
                     name: file,
@@ -189,7 +227,7 @@ const deleteUploadFile = (req, res) => {
 
             res.status(200).json({
                 success: 1,
-                message: "File deleted successfully from C drive"
+                message: "File deleted successfully"
             });
         });
     } catch (error) {
@@ -252,5 +290,6 @@ module.exports = {
     deleteAllUserFiles,
     uploadAadhar,
     uploadBiodata,
-    uploadBank
+    uploadBank,
+    uploadDocumentMiddleware
 };

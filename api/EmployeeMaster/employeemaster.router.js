@@ -10,7 +10,8 @@ const {
     uploadUserFiles,
     getExistingFiles,
     deleteUploadFile,
-    deleteAllUserFiles
+    deleteAllUserFiles,
+    uploadDocumentMiddleware
 } = require("../EmployeeMaster/employeemaster.upload");
 
 // ==================== USER CREATION ROUTES ====================
@@ -45,6 +46,20 @@ router.patch(
 router.delete("/delete/:userId", verifyAccessToken, userCreationController.deleteUser);
 
 // ==================== FILE UPLOAD ROUTES ====================
+
+// Upload single or multiple documents (dynamic destination & size limits)
+router.post(
+    "/upload-document",
+    verifyAccessToken,
+    uploadDocumentMiddleware.array("files"),
+    userCreationController.uploadDocument
+);
+
+// Delete file by fileId (C drive + database soft-delete)
+router.delete("/delete-file/:fileId", verifyAccessToken, userCreationController.deleteUserFile);
+
+// View file securely by fileId (Sends file directly)
+router.get("/view-file/:fileId", verifyAccessToken, userCreationController.viewFile);
 
 // Upload files separately (user already exists)
 router.post(
