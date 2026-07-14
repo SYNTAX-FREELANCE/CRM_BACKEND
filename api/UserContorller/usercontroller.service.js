@@ -5,11 +5,26 @@ module.exports = {
     // Find user by username
     findUserByUsername: (username, callback) => {
         db.query(
-            `SELECT 
-                id, username, password, role, user_id, name, age, gender ,r.role_name FROM users u
-                left join users_master um on  u.username = um.employee_id
-                left join roles r on  r.role_id = u.role
-                WHERE username = ? and um.is_active = 1`,
+            `
+        SELECT 
+            id,
+            username,
+            password,
+            r.role_id as role,
+            user_id,
+            name,
+            age,
+            gender,
+            r.role_name
+        FROM
+            users u
+                LEFT JOIN
+            users_master um ON u.username = um.employee_id
+                LEFT JOIN
+            roles r ON r.role_id = um.role_id
+        WHERE
+            username = ? AND um.is_active = 1
+    `,
             [username],
             (err, result) => {
                 if (err) {

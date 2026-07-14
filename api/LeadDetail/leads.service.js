@@ -924,9 +924,7 @@ LIMIT 10
                 -- Vehicle Details
                 v.vehicle_id,
                 v.registration_number,
-                v.make,
                 v.model,
-                v.manufacture_year,
                 v.vehicle_maker,
                 v.vehicle_class,
                 v.vehicle_category,
@@ -1078,7 +1076,6 @@ l.lead_id
       },
     );
   },
-
 
   updateReallocation: (data, callback) => {
     pool.getConnection((err, connection) => {
@@ -1325,6 +1322,56 @@ l.lead_id
     });
 
   },
+  getTopEmployees: (callback) => {
+    pool.query(
+      `
+WITH lead_summary AS (
+    SELECT
+        assigned_to,
+        COUNT(*) AS total_calls,
+        SUM(status_id = 5) AS total_sold
+    FROM leads
+    GROUP BY assigned_to
+),
+ranked AS (
+    SELECT
+        u.user_id,
+        u.employee_id,
+        u.name,
+        COALESCE(ls.total_calls, 0) AS total_calls,
+        COALESCE(ls.total_sold, 0) AS total_sold,
+        DENSE_RANK() OVER (
+            ORDER BY
+                COALESCE(ls.total_sold, 0) DESC,
+                COALESCE(ls.total_calls, 0) DESC
+        ) AS rank_no
+    FROM users_master u
+    LEFT JOIN lead_summary ls
+        ON u.user_id = ls.assigned_to
+)
+SELECT
+    user_id,
+    employee_id,
+    name,
+    total_calls,
+    total_sold,
+    rank_no
+FROM ranked
+WHERE rank_no <= 3
+ORDER BY
+    rank_no,
+    total_sold DESC,
+    total_calls DESC
+`,
+      [],
+      (err, result) => {
+        if (err) return callback(err);
+
+        callback(null, result);
+      },
+    );
+  },
+  
 };
 
 
