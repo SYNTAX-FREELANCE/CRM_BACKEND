@@ -3,6 +3,8 @@ const express = require("express");
 const router = express.Router();
 const userCreationController = require("../EmployeeMaster/employeemaster.controller");
 const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const multer = require("multer");
+const uploadMemory = multer({ storage: multer.memoryStorage() });
 const {
     uploadAadhar,
     uploadBiodata,
@@ -42,11 +44,6 @@ router.patch(
     userCreationController.updateUser
 );
 
-// Delete user (soft delete)
-router.delete("/delete/:userId", verifyAccessToken, userCreationController.deleteUser);
-
-// ==================== FILE UPLOAD ROUTES ====================
-
 // Upload single or multiple documents (dynamic destination & size limits)
 router.post(
     "/upload-document",
@@ -82,5 +79,20 @@ router.delete("/delete-file", verifyAccessToken, deleteUploadFile);
 
 // Delete all user files (C drive + database)
 router.delete("/delete-all-files", verifyAccessToken, deleteAllUserFiles);
+
+// Upload profile photo
+router.post(
+    "/upload-profile-photo",
+    verifyAccessToken,
+    uploadMemory.single("photo"),
+    userCreationController.uploadProfilePhoto
+);
+
+// Get profile photo
+router.get(
+    "/profile-photo/:userId",
+    verifyAccessToken,
+    userCreationController.getProfilePhoto
+);
 
 module.exports = router;

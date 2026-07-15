@@ -50,6 +50,36 @@ module.exports = {
     });
   },
 
+  // Fetch call center performance metrics (leads, appointments, callbacks, sold) for employee
+  getCallCenterPerformance: (req, res) => {
+    const { employeeId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    if (!employeeId) {
+      return res.status(400).json({
+        success: 0,
+        message: "Employee ID is required"
+      });
+    }
+
+    const start = startDate || new Date().toISOString().split('T')[0];
+    const end = endDate || new Date().toISOString().split('T')[0];
+
+    userInfoService.getCallCenterPerformance(employeeId, start, end, (err, results) => {
+      if (err) {
+        console.error("getCallCenterPerformance error:", err);
+        return res.status(500).json({
+          success: 0,
+          message: "Failed to retrieve call center performance metrics"
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        data: results
+      });
+    });
+  },
+
   // Fetch check-in/out and productivity hours for employee
   getAttendanceByDate: (req, res) => {
     const { userId, date } = req.query;

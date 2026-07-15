@@ -97,7 +97,6 @@ ORDER BY
 
   // Fetch employee details from users_master with given employeeId (user_id)
   getEmployeePerformance: (employeeId, callback) => {
-
     const query = `
      SELECT user_id, employee_id, name, age, gender, qualification_id, date_of_join, experience, mobile_number_1, mobile_number_2,
      aadhar_number, um.company_id, um.role_id, um.user_status, um.is_active,role_name,company_name
@@ -108,6 +107,31 @@ ORDER BY
     `;
 
     pool.query(query, [employeeId], (err, results) => {
+      if (err) {
+        return callback(err, null);
+      }
+      callback(null, results);
+    });
+  },
+
+  // Fetch employee performance counts from leads table by user_id and date range
+  getCallCenterPerformance: (employeeId, startDate, endDate, callback) => {
+    const query = `
+      SELECT 
+          DATE(l.assigned_date) AS date,
+          COUNT(l.lead_id) AS leads,
+          COUNT(CASE WHEN UPPER(s.status_name) IN ('APPOINMENT', 'APPOINTMENT') THEN 1 END) AS appointments,
+          COUNT(CASE WHEN UPPER(s.status_name) = 'CALLBACK' THEN 1 END) AS callbacks,
+          COUNT(CASE WHEN UPPER(s.status_name) = 'SOLD' THEN 1 END) AS sold
+      FROM leads l
+      JOIN lead_status_master s ON l.status_id = s.status_id
+      WHERE l.assigned_to = ? 
+        AND DATE(l.assigned_date) BETWEEN ? AND ?
+      GROUP BY DATE(l.assigned_date)
+      ORDER BY DATE(l.assigned_date) ASC
+    `;
+
+    pool.query(query, [employeeId, startDate, endDate], (err, results) => {
       if (err) {
         return callback(err, null);
       }

@@ -44,6 +44,7 @@ module.exports = {
       const userData = {
         name: name,
         age: age ? parseInt(age) : null,
+        gender: gender || null,
         qualification_id: qualification_id,
         date_of_join: date_of_join || null,
         experience: experience || null,
@@ -247,6 +248,7 @@ module.exports = {
       const userData = {
         name: name,
         age: age ? parseInt(age) : null,
+        gender: gender || null,
         qualification_id: qualification_id || null,
         date_of_join: date_of_join || null,
         experience: experience || null,
@@ -341,33 +343,6 @@ module.exports = {
       });
     } catch (error) {
       console.error("updateUser error:", error);
-      return res.status(500).json({
-        success: 0,
-        message: "Something went wrong",
-      });
-    }
-  },
-
-  // ==================== DELETE USER (SOFT DELETE) ====================
-  deleteUser: (req, res) => {
-    try {
-      const { userId } = req.params;
-
-      // Step 1: Delete files from C drive
-      deleteAllUserFiles({ body: { user_id: userId } }, res);
-
-      // Step 2: Soft delete user from database
-      userCreationService.deleteUser(userId, (err, result) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).json({
-            success: 0,
-            message: "Something went wrong while deleting user",
-          });
-        }
-      });
-    } catch (error) {
-      console.error("deleteUser error:", error);
       return res.status(500).json({
         success: 0,
         message: "Something went wrong",
@@ -584,7 +559,7 @@ module.exports = {
     const fs = require("fs");
 
     const folderPath = path.join('C:/CRM/EmployeeDetails', String(id));
-    
+
     // Scan subfolders to find where filename exists on disk
     const subfolders = ["bank", "resume", "aadhar", "others"];
     let filePath = null;
@@ -618,5 +593,81 @@ module.exports = {
         }
       });
     });
+  },
+
+  uploadProfilePhoto: (req, res) => {
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const { userId } = req.body;
+      const file = req.file;
+
+      if (!userId) {
+        return res.status(400).json({ success: 0, message: "userId is required" });
+      }
+      if (!file) {
+        return res.status(400).json({ success: 0, message: "No file uploaded" });
+      }
+
+      // Enforce maximum size of 5 MB (5 * 1024 * 1024 bytes)
+      if (file.size > 5 * 1024 * 1024) {
+        return res.status(400).json({
+          success: 0,
+          message: "Profile photo exceeds the maximum size limit of 5 MB."
+        });
+      }
+
+      const dir = path.join("C:/CRM/ProfilePhoto", String(userId));
+      if (fs.existsSync(dir)) {
+        // Clear any old profile photos for this user
+        const existingFiles = fs.readdirSync(dir);
+        existingFiles.forEach((f) => {
+          try {
+            fs.unlinkSync(path.join(dir, f));
+          } catch (e) {
+            console.error("Unlink existing profile photo error:", e);
+          }
+        });
+      } else {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      const targetPath = path.join(dir, file.originalname);
+      fs.writeFileSync(targetPath, file.buffer);
+
+      return res.status(200).json({
+        success: 1,
+        message: "Profile photo uploaded successfully",
+        filePath: targetPath
+      });
+    } catch (error) {
+      console.error("uploadProfilePhoto error:", error);
+      return res.status(500).json({ success: 0, message: "Internal server error" });
+    }
+  },
+
+  getProfilePhoto: (req, res) => {
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const { userId } = req.params;
+      const dir = path.join("C:/CRM/ProfilePhoto", String(userId));
+
+      if (!fs.existsSync(dir)) {
+        return res.status(404).send("Not Found");
+      }
+
+      const files = fs.readdirSync(dir);
+      if (files.length === 0) {
+        return res.status(404).send("Not Found");
+      }
+
+      const filePath = path.join(dir, files[0]);
+      res.setHeader("Content-Type", "image/jpeg");
+      return res.sendFile(filePath);
+    } catch (error) {
+      console.error("getProfilePhoto error:", error);
+      return res.status(500).send("Internal Server Error");
+    }
   }
 };
