@@ -176,6 +176,12 @@ app.use(
 );
 
 
+const fileuploadRouter = express.Router();
+const employeemasterController = require("./api/EmployeeMaster/employeemaster.controller");
+fileuploadRouter.get("/getMedicalDocFile", verifyAccessToken, employeemasterController.getMedicalDocFile);
+app.use("/api/fileupload", fileuploadRouter);
+
+
 // health check
 app.get("/health", (_, res) => res.send("OK"));
 
