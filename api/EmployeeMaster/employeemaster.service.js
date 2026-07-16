@@ -23,8 +23,8 @@ module.exports = {
           `INSERT INTO users_master 
                     (employee_id, name, age, gender, qualification_id, date_of_join, 
                      experience, mobile_number_1, mobile_number_2, aadhar_number, 
-                     company_id, role_id, user_status, is_active)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                     company_id, role_id, user_status, is_active, dob, email, address)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             nextEmployeeId,
             userData.name,
@@ -40,6 +40,9 @@ module.exports = {
             userData.role_id,
             userData.user_status,
             userData.is_active,
+            userData.dob,
+            userData.email,
+            userData.address,
           ],
           (err, masterResult) => {
             if (err) {
@@ -163,6 +166,7 @@ module.exports = {
 
   // ==================== UPDATE USER ====================
   updateUser: (userId, userData, callback) => {
+    console.log("userData::", userData);
     pool.query(
       `UPDATE users_master 
          SET  
@@ -179,6 +183,9 @@ module.exports = {
              role_id = ?, 
              user_status = ?, 
              is_active = ?, 
+             dob = ?,
+             email = ?,
+             address = ?,
              updated_at = CURRENT_TIMESTAMP
          WHERE user_id = ?`,
       [
@@ -195,6 +202,9 @@ module.exports = {
         userData.role_id,
         userData.user_status,
         userData.is_active,
+        userData.dob,
+        userData.email,
+        userData.address,
         userId,
       ],
       (err, result) => {

@@ -5,7 +5,8 @@ module.exports = {
   // Fetch all employees with optional filters
   getAllEmployees: (filters, callback) => {
     let query = `
-     SELECT
+     
+SELECT
     um.user_id,
     um.employee_id,
     um.name,
@@ -13,6 +14,9 @@ module.exports = {
     um.mobile_number_1,
     um.date_of_join,
     um.experience,
+    um.dob,
+    um.email,
+    um.address,
 
     c.company_name,
     r.role_name,
