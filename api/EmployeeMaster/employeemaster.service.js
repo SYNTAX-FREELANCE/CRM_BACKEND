@@ -21,14 +21,15 @@ module.exports = {
         // Step 2: Insert into users_master
         pool.query(
           `INSERT INTO users_master 
-                    (employee_id, name, age, qualification_id, date_of_join, 
+                    (employee_id, name, age, gender, qualification_id, date_of_join, 
                      experience, mobile_number_1, mobile_number_2, aadhar_number, 
                      company_id, role_id, user_status, is_active)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             nextEmployeeId,
             userData.name,
             userData.age,
+            userData.gender,
             userData.qualification_id,
             userData.date_of_join,
             userData.experience,
@@ -78,7 +79,7 @@ module.exports = {
     const queries = fileDataArray.map((fileData) => {
       return new Promise((resolve, reject) => {
         pool.query(
-          `INSERT INTO user_files 
+          `INSERT INTO crm_new_project.user_files 
                     (user_id, file_type, file_name, file_path, file_size, mime_type)
                     VALUES (?, ?, ?, ?, ?, ?)`,
           [
@@ -167,6 +168,7 @@ module.exports = {
          SET  
              name = ?, 
              age = ?, 
+             gender = ?, 
              qualification_id = ?, 
              date_of_join = ?, 
              experience = ?, 
@@ -182,6 +184,7 @@ module.exports = {
       [
         userData.name,
         userData.age,
+        userData.gender,
         userData.qualification_id,
         userData.date_of_join,
         userData.experience,
@@ -203,12 +206,12 @@ module.exports = {
     );
   },
 
-  // ==================== DELETE USER (SOFT DELETE) ====================
-  deleteUser: (userId, callback) => {
+  // ==================== GET USER FILES ====================
+  getUserFiles: (userId, callback) => {
     pool.query(
-      `UPDATE users_master 
-            SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP 
-            WHERE user_id = ?`,
+      `SELECT * FROM crm_new_project.user_files 
+            WHERE user_id = ? AND is_active = TRUE
+            ORDER BY created_at DESC`,
       [userId],
       (err, result) => {
         if (err) {
@@ -219,19 +222,84 @@ module.exports = {
     );
   },
 
-  // ==================== GET USER FILES ====================
-  getUserFiles: (userId, callback) => {
+  // ==================== INSERT SINGLE USER FILE ====================
+  insertSingleFile: (fileData, callback) => {
     pool.query(
-      `SELECT * FROM user_files 
-            WHERE user_id = ? AND is_active = TRUE
-            ORDER BY created_at DESC`,
-      [userId],
+      `INSERT INTO crm_new_project.user_files 
+            (user_id, file_type, file_name, file_path, file_size, mime_type)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        fileData.user_id,
+        fileData.file_type,
+        fileData.file_name,
+        fileData.file_path,
+        fileData.file_size,
+        fileData.mime_type
+      ],
       (err, result) => {
         if (err) {
           return callback(err, null);
         }
         callback(null, result);
-      },
+      }
+    );
+  },
+
+  // ==================== GET FILE BY ID ====================
+  getFileById: (fileId, callback) => {
+
+    pool.query(
+      `SELECT * FROM user_files 
+            WHERE file_id = ? AND is_active = TRUE`,
+      [fileId],
+      (err, result) => {
+        if (err) {
+          return callback(err, null);
+        }
+        if (!result || result.length === 0) {
+          return callback(null, null);
+        }
+        callback(null, result[0]);
+      }
+    );
+  },
+
+  // ==================== DEACTIVATE FILE ====================
+  deactivateFile: (fileId, callback) => {
+    pool.query(
+      `UPDATE crm_new_project.user_files 
+            SET is_active = FALSE 
+            WHERE file_id = ?`,
+      [fileId],
+      (err, result) => {
+        if (err) {
+          return callback(err, null);
+        }
+        callback(null, result);
+      }
+    );
+  },
+
+  // ==================== DEACTIVATE FILES BY TYPE ====================
+  deactivateFilesByType: (userId, fileType, callback) => {
+    pool.query(
+      `SELECT * FROM crm_new_project.user_files 
+            WHERE user_id = ? AND file_type = ? AND is_active = TRUE`,
+      [userId, fileType],
+      (err, files) => {
+        if (err) return callback(err, null);
+
+        pool.query(
+          `UPDATE crm_new_project.user_files 
+                SET is_active = FALSE 
+                WHERE user_id = ? AND file_type = ?`,
+          [userId, fileType],
+          (err2, result) => {
+            if (err2) return callback(err2, null);
+            callback(null, files);
+          }
+        );
+      }
     );
   },
 };
