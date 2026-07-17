@@ -622,6 +622,16 @@ module.exports = {
         return res.status(400).json({ success: 0, message: "No file uploaded" });
       }
 
+      // Enforce file extension check (.jpg, .jpeg, .jpj)
+      const fileExt = path.extname(file.originalname).toLowerCase();
+      const allowedExtensions = [".jpg", ".jpeg", ".jpj"];
+      if (!allowedExtensions.includes(fileExt)) {
+        return res.status(400).json({
+          success: 0,
+          message: "Only JPG and JPEG images are allowed."
+        });
+      }
+
       // Enforce maximum size of 5 MB (5 * 1024 * 1024 bytes)
       if (file.size > 5 * 1024 * 1024) {
         return res.status(400).json({

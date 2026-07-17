@@ -17,7 +17,7 @@ SELECT
     um.dob,
     um.email,
     um.address,
-
+    um.is_admin,
     c.company_name,
     r.role_name,
 

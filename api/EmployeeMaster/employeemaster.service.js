@@ -82,7 +82,7 @@ module.exports = {
     const queries = fileDataArray.map((fileData) => {
       return new Promise((resolve, reject) => {
         pool.query(
-          `INSERT INTO crm_new_project.user_files 
+          `INSERT INTO user_files 
                     (user_id, file_type, file_name, file_path, file_size, mime_type)
                     VALUES (?, ?, ?, ?, ?, ?)`,
           [
@@ -219,7 +219,7 @@ module.exports = {
   // ==================== GET USER FILES ====================
   getUserFiles: (userId, callback) => {
     pool.query(
-      `SELECT * FROM crm_new_project.user_files 
+      `SELECT * FROM user_files 
             WHERE user_id = ? AND is_active = TRUE
             ORDER BY created_at DESC`,
       [userId],
@@ -235,7 +235,7 @@ module.exports = {
   // ==================== INSERT SINGLE USER FILE ====================
   insertSingleFile: (fileData, callback) => {
     pool.query(
-      `INSERT INTO crm_new_project.user_files 
+      `INSERT INTO user_files 
             (user_id, file_type, file_name, file_path, file_size, mime_type)
             VALUES (?, ?, ?, ?, ?, ?)`,
       [
@@ -277,7 +277,7 @@ module.exports = {
   // ==================== DEACTIVATE FILE ====================
   deactivateFile: (fileId, callback) => {
     pool.query(
-      `UPDATE crm_new_project.user_files 
+      `UPDATE user_files 
             SET is_active = FALSE 
             WHERE file_id = ?`,
       [fileId],
@@ -293,14 +293,14 @@ module.exports = {
   // ==================== DEACTIVATE FILES BY TYPE ====================
   deactivateFilesByType: (userId, fileType, callback) => {
     pool.query(
-      `SELECT * FROM crm_new_project.user_files 
+      `SELECT * FROM user_files 
             WHERE user_id = ? AND file_type = ? AND is_active = TRUE`,
       [userId, fileType],
       (err, files) => {
         if (err) return callback(err, null);
 
         pool.query(
-          `UPDATE crm_new_project.user_files 
+          `UPDATE user_files 
                 SET is_active = FALSE 
                 WHERE user_id = ? AND file_type = ?`,
           [userId, fileType],
