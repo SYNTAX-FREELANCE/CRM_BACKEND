@@ -2,6 +2,7 @@
 const jwt = require("jsonwebtoken");
 const authService = require("./usercontroller.service");
 const bcrypt = require("bcrypt");
+const nodemailer = require("nodemailer");
 const {
   // <<<<<<< HEAD
   generateTokens,
@@ -423,6 +424,180 @@ module.exports = {
       });
     } catch (error) {
       console.error("changePassword error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong",
+      });
+    }
+  },
+
+  forgotPassword: (req, res) => {
+    try {
+      const { employee_id, email } = req.body;
+
+      if (!employee_id || !email) {
+        return res.status(400).json({
+          success: 0,
+          message: "Employee ID and Email are required",
+        });
+      }
+
+      authService.verifyEmployeeAndEmail(employee_id, email, (err, user) => {
+        if (err) {
+          return res.status(500).json({
+            success: 0,
+            message: "Database error",
+          });
+        }
+
+        if (!user) {
+          return res.status(404).json({
+            success: 0,
+            message: "No user found with the provided Employee ID and Email",
+          });
+        }
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        authService.saveOtp(employee_id, otp, (saveErr) => {
+          if (saveErr) {
+            return res.status(500).json({
+              success: 0,
+              message: "Failed to generate OTP",
+            });
+          }
+
+          // Send Email
+          const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,
+            },
+          });
+
+          const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: "Password Reset OTP - Nexus CRM",
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Password Reset Request</h2>
+                <p>Hello ${user.name},</p>
+                <p>We received a request to reset your password. Here is your One-Time Password (OTP):</p>
+                <h1 style="background: #f3f4f6; padding: 10px; text-align: center; letter-spacing: 5px; color: #ea580c;">${otp}</h1>
+                <p>Please enter this code in the application to proceed with resetting your password.</p>
+                <p>If you did not request this, please ignore this email.</p>
+                <br />
+                <p>Regards,<br />Nexus CRM Team</p>
+              </div>
+            `,
+          };
+
+          transporter.sendMail(mailOptions, (mailErr, info) => {
+            if (mailErr) {
+              console.error("Error sending email:", mailErr);
+              return res.status(500).json({
+                success: 0,
+                message: "Failed to send OTP email",
+              });
+            }
+
+            return res.status(200).json({
+              success: 1,
+              message: "OTP sent successfully to your email",
+            });
+          });
+        });
+      });
+    } catch (error) {
+      console.error("forgotPassword error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong",
+      });
+    }
+  },
+
+  verifyOtp: (req, res) => {
+    try {
+      const { employee_id, otp } = req.body;
+
+      if (!employee_id || !otp) {
+        return res.status(400).json({
+          success: 0,
+          message: "Employee ID and OTP are required",
+        });
+      }
+
+      authService.verifyOtp(employee_id, otp, (err, user) => {
+        if (err) {
+          return res.status(500).json({
+            success: 0,
+            message: "Database error",
+          });
+        }
+
+        if (!user) {
+          return res.status(400).json({
+            success: 0,
+            message: "Invalid OTP",
+          });
+        }
+
+        return res.status(200).json({
+          success: 1,
+          message: "OTP verified successfully",
+        });
+      });
+    } catch (error) {
+      console.error("verifyOtp error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong",
+      });
+    }
+  },
+
+  resetPassword: (req, res) => {
+    try {
+      const { employee_id, newPassword, confirmPassword } = req.body;
+
+      if (!employee_id || !newPassword || !confirmPassword) {
+        return res.status(400).json({
+          success: 0,
+          message: "All fields are required",
+        });
+      }
+
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({
+          success: 0,
+          message: "Passwords do not match",
+        });
+      }
+
+      // Hash the password
+      const salt = bcrypt.genSaltSync(10);
+      const encryptedPassword = bcrypt.hashSync(newPassword, salt);
+
+      authService.resetPassword(employee_id, encryptedPassword, (err, result) => {
+        if (err) {
+          console.error("resetPassword error:", err);
+          return res.status(500).json({
+            success: 0,
+            message: "Database error",
+          });
+        }
+
+        return res.status(200).json({
+          success: 1,
+          message: "Password reset successfully",
+        });
+      });
+    } catch (error) {
+      console.error("resetPassword catch error:", error);
       return res.status(500).json({
         success: 0,
         message: "Something went wrong",
