@@ -456,6 +456,23 @@ module.exports = {
     });
   },
 
+getSingleEmployeeRecentActivity: (req, res) => {
+  const {empId} = req.params;
+    leadservie.getEmployeeActivity(empId,(err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        data: result,
+      });
+    });
+  },
+
+  
 
 
 

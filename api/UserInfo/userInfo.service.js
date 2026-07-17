@@ -10,9 +10,12 @@ module.exports = {
     um.employee_id,
     um.name,
     um.gender,
+    um.age,
     um.mobile_number_1,
     um.date_of_join,
     um.experience,
+    um.email,
+    um.address,
 
     c.company_name,
     r.role_name,
@@ -62,9 +65,12 @@ GROUP BY
     um.employee_id,
     um.name,
     um.gender,
+    um.age,
     um.mobile_number_1,
     um.date_of_join,
     um.experience,
+       um.email,
+    um.address,
     c.company_name,
     r.role_name
 

@@ -82,4 +82,11 @@ router.post('/release-block', verifyAccessToken, leacontroller.releaseBatchLock)
 router.get('/top-employee', verifyAccessToken, leacontroller.getTopEmployees);
 
 
+
+router.get(
+    "/employee-recent-activity/:empId",
+    verifyAccessToken,
+    leacontroller.getSingleEmployeeRecentActivity,
+);
+
 module.exports = router;
