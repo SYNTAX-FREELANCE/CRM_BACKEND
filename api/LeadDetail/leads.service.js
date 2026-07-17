@@ -1372,7 +1372,74 @@ ORDER BY
       },
     );
   },
-  
+
+
+  getEmployeeActivity: (empId, callback) => {
+    const sql = `
+SELECT
+    lsh.history_id,
+    lsh.lead_id,
+    lsm.status_name,
+    lsh.remarks,
+    lsh.status_change_reason,
+    um.name,
+    lsh.changed_at
+FROM lead_status_history lsh
+
+INNER JOIN lead_status_master lsm
+    ON lsh.new_status_id = lsm.status_id
+
+LEFT JOIN users_master um
+    ON lsh.changed_by = um.user_id
+
+INNER JOIN leads l
+    ON lsh.lead_id = l.lead_id
+WHERE lsh.changed_by = ?
+ORDER BY lsh.changed_at DESC
+LIMIT 10;
+`;
+
+    pool.query(
+      sql,
+      [empId],
+
+      (err, result) => {
+        if (err) return callback(err);
+        callback(null, result);
+      },
+    );
+  },
+
+  getEmployeeWeeklyActivity: (empId, callback) => {
+    const sql = `
+SELECT
+    WEEKDAY(l.created_at) AS day,
+    lsm.status_name,
+    COUNT(*) AS total
+FROM leads l
+JOIN lead_status_master lsm
+    ON l.status_id = lsm.status_id
+WHERE l.assigned_to = 2
+  AND YEARWEEK(l.created_at, 1) = YEARWEEK(CURDATE(), 1)
+GROUP BY
+    WEEKDAY(l.created_at),
+    lsm.status_name
+ORDER BY
+    day,
+    lsm.display_order
+`;
+
+    pool.query(
+      sql,
+      [empId],
+
+      (err, result) => {
+        if (err) return callback(err);
+        callback(null, result);
+      },
+    );
+  },
+
 };
 
 
