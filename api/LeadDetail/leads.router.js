@@ -16,6 +16,13 @@ router.get(
     verifyAccessToken,
     leacontroller.getActiveBatch,
 );
+
+router.get(
+    "/get-active-batch/:empid",
+    verifyAccessToken,
+    leacontroller.getEmployeeActiveBatch,
+);
+
 router.post(
     "/update-status",
     verifyAccessToken,

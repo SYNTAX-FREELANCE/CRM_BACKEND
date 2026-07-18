@@ -160,6 +160,34 @@ module.exports = {
       });
     }
   },
+
+    getEmployeeActiveBatch: (req, res) => {
+    try {
+      const { empid, statusId } = req.params;
+
+      leadservie.getEmployeeActiveBatchService(empid, statusId, (err, results) => {
+        if (err) {
+          return res.status(500).json({
+            success: 0,
+            message: "Database Error",
+          });
+        }
+
+        return res.status(200).json({
+          success: 1,
+          message: "Active Batch",
+          data: results,
+        });
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong",
+      });
+    }
+  },
+
+
   getLeadHistory: (req, res) => {
     try {
       const { leadid } = req.params;

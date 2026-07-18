@@ -326,6 +326,7 @@ module.exports = {
       },
     );
   },
+
   getActiveBatch: (empid, statusId, callback) => {
     const workStatus = Number(statusId) === 1 ? "IN_PROGRESS" : "COMPLETED";
 
@@ -398,6 +399,83 @@ module.exports = {
       },
     );
   },
+
+
+
+  getEmployeeActiveBatchService: (empid, statusId, callback) => {
+    const workStatus = Number(statusId) === 1 ? "IN_PROGRESS" : "COMPLETED";
+
+    pool.query(
+      `
+    SELECT
+        l.lead_id,
+        l.status_id,
+        ls.status_name,
+        ls.requires_followup,
+        ls.is_call_required,
+        ls.is_policy_required,
+        l.lead_priority,
+        l.lead_source,
+        l.work_status,
+
+        c.customer_id,
+        c.customer_name,
+        c.mobile_number_1,
+        c.mobile_number_2,
+        c.email,
+        c.address,
+        c.city,
+        c.district,
+        c.state,
+
+        v.vehicle_id,
+        v.registration_number,
+        v.model,
+        v.vehicle_maker,
+        v.engine_number,
+        v.chassis_number,
+
+        p.policy_id,
+        p.policy_number,
+        p.policy_type,
+        p.start_date,
+        p.expiry_date,
+        p.premium_amount
+
+    FROM leads l
+
+    INNER JOIN customers c
+        ON c.customer_id = l.customer_id
+
+    INNER JOIN vehicles v
+        ON v.vehicle_id = l.vehicle_id
+
+    LEFT JOIN policies p
+        ON p.policy_id = l.policy_id
+
+    INNER JOIN lead_status_master ls
+        ON ls.status_id = l.status_id
+
+    WHERE
+        l.assigned_to = ?
+        AND l.status_id = ?
+        AND l.work_status = ?
+        AND (
+              l.is_locked = 1
+              OR ? <> 1
+            )
+
+    ORDER BY l.assigned_date DESC, l.created_at DESC
+    `,
+      [empid, statusId, workStatus, Number(statusId)],
+      (err, results) => {
+        if (err) return callback(err);
+        callback(null, results);
+      },
+    );
+  },
+  
+
 
   updateEmployeeBatchStatus: (data, callback) => {
     pool.query(

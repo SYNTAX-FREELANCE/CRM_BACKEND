@@ -1,4 +1,6 @@
 // controllers/userCreation.controller.js
+const fs = require("fs");
+const path = require("path");
 const userCreationService = require("../EmployeeMaster/employeemaster.service");
 const {
   uploadUserFiles,
@@ -663,11 +665,16 @@ module.exports = {
       }
 
       const filePath = path.join(dir, files[0]);
+      console.log({
+        filePath
+      });
+
       res.setHeader("Content-Type", "image/jpeg");
       return res.sendFile(filePath);
     } catch (error) {
       console.error("getProfilePhoto error:", error);
       return res.status(500).send("Internal Server Error");
     }
-  }
+  },
+ 
 };
