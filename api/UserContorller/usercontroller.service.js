@@ -198,4 +198,77 @@ module.exports = {
             }
         );
     },
+
+    // Verify employee ID and email
+    verifyEmployeeAndEmail: (employee_id, email, callback) => {
+        db.query(
+            "SELECT * FROM users_master WHERE employee_id = ? AND email = ? AND is_active = 1",
+            [employee_id, email],
+            (err, result) => {
+                if (err) {
+                    return callback(err, null);
+                }
+                if (!result || result.length === 0) {
+                    return callback(null, null);
+                }
+                callback(null, result[0]);
+            }
+        );
+    },
+
+    // Save OTP
+    saveOtp: (employee_id, otp, callback) => {
+        db.query(
+            "UPDATE users_master SET otp = ? WHERE employee_id = ?",
+            [otp, employee_id],
+            (err, result) => {
+                if (err) {
+                    return callback(err, null);
+                }
+                callback(null, result);
+            }
+        );
+    },
+
+    // Verify OTP
+    verifyOtp: (employee_id, otp, callback) => {
+        db.query(
+            "SELECT * FROM users_master WHERE employee_id = ? AND otp = ? AND is_active = 1",
+            [employee_id, otp],
+            (err, result) => {
+                if (err) {
+                    return callback(err, null);
+                }
+                if (!result || result.length === 0) {
+                    return callback(null, null);
+                }
+                callback(null, result[0]);
+            }
+        );
+    },
+
+    // Reset password and clear OTP
+    resetPassword: (employee_id, hashedPassword, callback) => {
+        db.query(
+            "UPDATE users SET password = ? WHERE username = ?",
+            [hashedPassword, employee_id],
+            (err, result) => {
+                if (err) {
+                    return callback(err, null);
+                }
+                
+                // Clear OTP after successful password reset
+                db.query(
+                    "UPDATE users_master SET otp = NULL WHERE employee_id = ?",
+                    [employee_id],
+                    (err2, result2) => {
+                        if (err2) {
+                            return callback(err2, null);
+                        }
+                        callback(null, result);
+                    }
+                );
+            }
+        );
+    },
 };
