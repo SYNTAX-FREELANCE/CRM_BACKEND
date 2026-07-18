@@ -656,12 +656,12 @@ module.exports = {
       const dir = path.join("C:/CRM/ProfilePhoto", String(userId));
 
       if (!fs.existsSync(dir)) {
-        return res.status(404).send("Not Found");
+        return res.status(200).send("Not Found");
       }
 
       const files = fs.readdirSync(dir);
       if (files.length === 0) {
-        return res.status(404).send("Not Found");
+        return res.status(200).send("Not Found");
       }
 
       const filePath = path.join(dir, files[0]);

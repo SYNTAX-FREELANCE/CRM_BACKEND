@@ -161,11 +161,11 @@ module.exports = {
     }
   },
 
-    getEmployeeActiveBatch: (req, res) => {
+  getEmployeeActiveBatch: (req, res) => {
     try {
-      const { empid, statusId } = req.params;
+      const { empid } = req.params;
 
-      leadservie.getEmployeeActiveBatchService(empid, statusId, (err, results) => {
+      leadservie.getEmployeeActiveBatchService(empid, (err, results) => {
         if (err) {
           return res.status(500).json({
             success: 0,
@@ -483,10 +483,59 @@ module.exports = {
       });
     });
   },
+  updateExpiryDetails: (req, res) => {
+    const { vehicle_id, edited_by, known_policy_expiry_date } = req.body;
 
-getSingleEmployeeRecentActivity: (req, res) => {
-  const {empId} = req.params;
-    leadservie.getEmployeeActivity(empId,(err, result) => {
+    if (!vehicle_id || !edited_by) {
+      return res.status(200).json({
+        success: 0,
+        message: "Required Id's are Missing!",
+      });
+    }
+
+    leadservie.updateExpiryDetailsService(vehicle_id, edited_by, known_policy_expiry_date, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        message: "Update SuccessFully",
+      });
+    });
+  },
+
+  UpdateFetchStatus: (req, res) => {
+    const { lead_id, edited_by } = req.body;
+
+    if (!lead_id || !edited_by) {
+      return res.status(200).json({
+        success: 0,
+        message: "Required Id's are Missing!",
+      });
+    }
+
+    leadservie.UpdateFetchStatusService(lead_id, edited_by, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        message: "Update SuccessFully",
+      });
+    });
+  },
+
+
+
+  getSingleEmployeeRecentActivity: (req, res) => {
+    const { empId } = req.params;
+    leadservie.getEmployeeActivity(empId, (err, result) => {
       if (err) {
         return res.status(500).json({
           success: 0,
@@ -500,7 +549,7 @@ getSingleEmployeeRecentActivity: (req, res) => {
     });
   },
 
-  
+
 
 
 

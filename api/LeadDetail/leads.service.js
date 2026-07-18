@@ -94,8 +94,6 @@ module.exports = {
         l.lead_id,
         l.status_id,
         ls.status_name,
-        l.lead_priority,
-        l.lead_source,
         l.work_status,
 
         c.customer_id,
@@ -273,6 +271,38 @@ module.exports = {
     );
   },
 
+  updateExpiryDetailsService: (vehicle_id, edited_by, known_policy_expiry_date, callback) => {
+    pool.query(
+      `UPDATE vehicles
+     SET
+        known_policy_expiry_date = ?,
+        edited_by = ?
+     WHERE vehicle_id = ?`,
+      [known_policy_expiry_date, edited_by, vehicle_id],
+      (err, result) => {
+        if (err) return callback(err, null);
+        callback(null, result);
+      },
+    );
+  },
+  UpdateFetchStatusService: (lead_id, edited_by, callback) => {
+    pool.query(
+      `UPDATE leads
+     SET
+        work_status = 'NOT_STARTED' ,
+        edited_by = ?
+     WHERE lead_id = ?`,
+      [edited_by, lead_id],
+      (err, result) => {
+        if (err) return callback(err, null);
+        callback(null, result);
+      },
+    );
+  },
+
+
+
+
   updateLeadFollowupDetail: (data, callback) => {
     pool.query(
       `INSERT INTO lead_followups
@@ -339,8 +369,7 @@ module.exports = {
         ls.requires_followup,
         ls.is_call_required,
         ls.is_policy_required,
-        l.lead_priority,
-        l.lead_source,
+        ls.is_followup_date_required,
         l.work_status,
 
         c.customer_id,
@@ -352,6 +381,7 @@ module.exports = {
         c.city,
         c.district,
         c.state,
+        c.is_previous_customer,
 
         v.vehicle_id,
         v.registration_number,
@@ -359,6 +389,7 @@ module.exports = {
         v.vehicle_maker,
         v.engine_number,
         v.chassis_number,
+        v.known_policy_expiry_date,
 
         p.policy_id,
         p.policy_number,
@@ -401,80 +432,86 @@ module.exports = {
   },
 
 
-
-  getEmployeeActiveBatchService: (empid, statusId, callback) => {
-    const workStatus = Number(statusId) === 1 ? "IN_PROGRESS" : "COMPLETED";
-
+  getEmployeeActiveBatchService: (empid, callback) => {
     pool.query(
       `
     SELECT
-        l.lead_id,
-        l.status_id,
-        ls.status_name,
-        ls.requires_followup,
-        ls.is_call_required,
-        ls.is_policy_required,
-        l.lead_priority,
-        l.lead_source,
-        l.work_status,
+    l.lead_id,
+    l.status_id,
+    ls.status_name,
+    ls.requires_followup,
+    ls.is_call_required,
+    ls.is_policy_required,
+    ls.is_followup_date_required,
+    l.work_status,
 
-        c.customer_id,
-        c.customer_name,
-        c.mobile_number_1,
-        c.mobile_number_2,
-        c.email,
-        c.address,
-        c.city,
-        c.district,
-        c.state,
+    c.customer_id,
+    c.customer_name,
+    c.mobile_number_1,
+    c.mobile_number_2,
+    c.email,
+    c.address,
+    c.city,
+    c.district,
+    c.state,
+    c.is_previous_customer,
 
-        v.vehicle_id,
-        v.registration_number,
-        v.model,
-        v.vehicle_maker,
-        v.engine_number,
-        v.chassis_number,
+    v.vehicle_id,
+    v.registration_number,
+    v.model,
+    v.vehicle_maker,
+    v.engine_number,
+    v.chassis_number,
+    v.known_policy_expiry_date,
 
-        p.policy_id,
-        p.policy_number,
-        p.policy_type,
-        p.start_date,
-        p.expiry_date,
-        p.premium_amount
 
-    FROM leads l
+    lf.followup_id,
+    lf.call_outcome,
+    lf.remarks AS followup_remarks,
+    lf.next_followup_date,
+    lf.created_at AS followup_created_at
 
-    INNER JOIN customers c
-        ON c.customer_id = l.customer_id
+FROM leads l
 
-    INNER JOIN vehicles v
-        ON v.vehicle_id = l.vehicle_id
+INNER JOIN customers c
+    ON c.customer_id = l.customer_id
 
-    LEFT JOIN policies p
-        ON p.policy_id = l.policy_id
+INNER JOIN vehicles v
+    ON v.vehicle_id = l.vehicle_id
 
-    INNER JOIN lead_status_master ls
-        ON ls.status_id = l.status_id
+INNER JOIN lead_status_master ls
+    ON ls.status_id = l.status_id
 
-    WHERE
-        l.assigned_to = ?
-        AND l.status_id = ?
-        AND l.work_status = ?
-        AND (
-              l.is_locked = 1
-              OR ? <> 1
-            )
+LEFT JOIN (
+    SELECT lf1.*
+    FROM lead_followups lf1
+    INNER JOIN (
+        SELECT
+            lead_id,
+            MAX(followup_id) AS latest_followup_id
+        FROM lead_followups
+        GROUP BY lead_id
+    ) latest
+        ON latest.latest_followup_id = lf1.followup_id
+) lf
+    ON lf.lead_id = l.lead_id
 
-    ORDER BY l.assigned_date DESC, l.created_at DESC
+WHERE
+    l.assigned_to = ?
+    AND l.is_locked = 1
+
+ORDER BY
+    l.assigned_date DESC,
+    l.created_at DESC
     `,
-      [empid, statusId, workStatus, Number(statusId)],
+      [empid],
       (err, results) => {
         if (err) return callback(err);
         callback(null, results);
       },
     );
   },
-  
+
 
 
   updateEmployeeBatchStatus: (data, callback) => {
@@ -761,7 +798,7 @@ SELECT DISTINCT
 
     l.lead_id,
     l.work_status,
-    l.lead_priority,
+
 
     ls.status_name
 
@@ -983,9 +1020,7 @@ LIMIT 10
             SELECT
                 l.lead_id,
                 l.work_status,
-                l.lead_priority,
                 l.assigned_date,
-                l.lead_source,
                 l.remarks,
 
                 -- Customer Details
@@ -1101,8 +1136,6 @@ eab.assigned_at,
 
 l.lead_id,
 l.work_status,
-l.lead_priority,
-l.lead_source,
 l.remarks,
 
 c.customer_id,
