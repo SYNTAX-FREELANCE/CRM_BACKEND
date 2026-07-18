@@ -315,7 +315,7 @@ module.exports = {
     console.log(month);
 
     const query = `
-      SELECT
+    SELECT
     c.customer_id,
     c.customer_name,
     c.mobile_number_1,
@@ -323,16 +323,15 @@ module.exports = {
     v.registration_number,
     v.registration_date,
     v.vehicle_category,
-    DATE_ADD(v.registration_date, INTERVAL 1 YEAR) AS expiry_date
+    v.known_policy_expiry_date AS expiry_date
 FROM customers c
-INNER JOIN vehicles v
+JOIN vehicles v
     ON c.customer_id = v.customer_id
 LEFT JOIN leads l
     ON l.customer_id = c.customer_id
-    AND l.vehicle_id = v.vehicle_id
-WHERE
-    MONTH(DATE_ADD(v.registration_date, INTERVAL 1 YEAR)) = ?
-    AND l.lead_id IS NULL;
+   AND l.vehicle_id = v.vehicle_id
+WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
+  AND l.lead_id IS NULL
     `;
     pool.query(query, [month], (err, results) => {
       if (err) {
@@ -468,11 +467,10 @@ WHERE
                 vehicle_id,
                 policy_id,
                 status_id,
-                lead_priority,
                 assigned_to,
                 assigned_date,
                 is_assigned,
-                lead_source,
+                work_status,
                 remarks,
                 created_by
             )
