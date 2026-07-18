@@ -16,6 +16,13 @@ router.get(
     verifyAccessToken,
     leacontroller.getActiveBatch,
 );
+
+router.get(
+    "/get-active-batch/:empid",
+    verifyAccessToken,
+    leacontroller.getEmployeeActiveBatch,
+);
+
 router.post(
     "/update-status",
     verifyAccessToken,
@@ -82,6 +89,10 @@ router.post('/release-block', verifyAccessToken, leacontroller.releaseBatchLock)
 router.get('/top-employee', verifyAccessToken, leacontroller.getTopEmployees);
 
 
+router.post('/update-expiry', verifyAccessToken, leacontroller.updateExpiryDetails);
+
+
+router.post('/update-fetchStatus', verifyAccessToken, leacontroller.UpdateFetchStatus);
 
 router.get(
     "/employee-recent-activity/:empId",

@@ -95,4 +95,5 @@ router.get(
     userCreationController.getProfilePhoto
 );
 
+
 module.exports = router;

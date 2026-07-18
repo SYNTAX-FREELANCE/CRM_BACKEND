@@ -1,4 +1,6 @@
 // controllers/userCreation.controller.js
+const fs = require("fs");
+const path = require("path");
 const userCreationService = require("../EmployeeMaster/employeemaster.service");
 const {
   uploadUserFiles,
@@ -654,20 +656,25 @@ module.exports = {
       const dir = path.join("C:/CRM/ProfilePhoto", String(userId));
 
       if (!fs.existsSync(dir)) {
-        return res.status(404).send("Not Found");
+        return res.status(200).send("Not Found");
       }
 
       const files = fs.readdirSync(dir);
       if (files.length === 0) {
-        return res.status(404).send("Not Found");
+        return res.status(200).send("Not Found");
       }
 
       const filePath = path.join(dir, files[0]);
+      console.log({
+        filePath
+      });
+
       res.setHeader("Content-Type", "image/jpeg");
       return res.sendFile(filePath);
     } catch (error) {
       console.error("getProfilePhoto error:", error);
       return res.status(500).send("Internal Server Error");
     }
-  }
+  },
+ 
 };

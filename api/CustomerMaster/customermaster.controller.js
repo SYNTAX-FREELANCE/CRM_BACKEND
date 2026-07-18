@@ -594,7 +594,7 @@ module.exports = {
   createVehicle: (req, res) => {
     try {
       const data = req.body;
-    
+
       if (!data.customer_id) {
         return res.status(400).json({
           success: 0,
@@ -1229,19 +1229,17 @@ module.exports = {
         });
       }
 
-      console.log(allocations);
-      
+
 
       const values = allocations.map((item) => [
         item.customer_id,
         item.vehicle_id,
         item.policy_id,
         item.status_id,
-        item.lead_priority,
         item.assigned_to,
         item.assigned_date,
         item.is_assigned,
-        item.lead_source,
+        item.work_status,
         item.remarks,
         item.created_by,
       ]);
