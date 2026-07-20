@@ -5,26 +5,47 @@ const bcrypt = require("bcrypt");
 module.exports = {
   // ==================== CREATE USER WITH AUTH ====================
   createUserWithAuth: (userData, callback) => {
-    // Step 1: Get next employee_id (auto-increment from 1000)
+    // Step 1: Get company prefix & sequence
     pool.query(
-      "SELECT MAX(employee_id) as max_emp FROM users_master",
-      [],
+      `SELECT employee_prefix, employee_sequence
+     FROM companies
+     WHERE company_id = ?`,
+      [userData.company_id],
       (err, result) => {
         if (err) {
           return callback(err, null);
         }
 
-        const nextEmployeeId = result[0].max_emp
-          ? (parseInt(result[0].max_emp) + 1).toString()
-          : "1000";
+        if (result.length === 0) {
+          return callback(new Error("Company not found"), null);
+        }
+
+        const prefix = result[0].employee_prefix;
+        const sequence = result[0].employee_sequence;
+
+        // Generate Employee ID
+        const nextEmployeeId = prefix + String(sequence).padStart(4, "0");
 
         // Step 2: Insert into users_master
         pool.query(
-          `INSERT INTO users_master 
-                    (employee_id, name, age, gender, qualification_id, date_of_join, 
-                     experience, mobile_number_1, mobile_number_2, aadhar_number, 
-                     company_id, role_id, user_status, is_active)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO users_master
+        (
+            employee_id,
+            name,
+            age,
+            gender,
+            qualification_id,
+            date_of_join,
+            experience,
+            mobile_number_1,
+            mobile_number_2,
+            aadhar_number,
+            company_id,
+            role_id,
+            user_status,
+            is_active
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             nextEmployeeId,
             userData.name,
@@ -46,26 +67,45 @@ module.exports = {
               return callback(err, null);
             }
 
-            const userId = masterResult.insertId;
-            // Step 3: Create username and encrypt password
-            const username = nextEmployeeId;
-
-            //  FIXED: Generate salt first
-            const salt = bcrypt.genSaltSync(10);
-            const encryptedPassword = bcrypt.hashSync(username, salt);
-
-            // Step 4: Insert into users table for authentication
+            // Step 3: Update Company Sequence
             pool.query(
-              `INSERT INTO users (username, password, role) 
-                            VALUES (?, ?, ?)`,
-              [username, encryptedPassword, userData.role_id],
-              (err, authResult) => {
+              `UPDATE companies
+             SET employee_sequence = employee_sequence + 1
+             WHERE company_id = ?`,
+              [userData.company_id],
+              (err) => {
                 if (err) {
-                  // Rollback users_master if auth fails
                   return callback(err, null);
                 }
 
-                callback(null, masterResult);
+                // Step 4: Username & Password
+                const username = nextEmployeeId;
+
+                const salt = bcrypt.genSaltSync(10);
+                const encryptedPassword = bcrypt.hashSync(username, salt);
+
+                // Step 5: Insert into users table
+                pool.query(
+                  `INSERT INTO users
+                (
+                    username,
+                    password,
+                    role
+                )
+                VALUES (?, ?, ?)`,
+                  [username, encryptedPassword, userData.role_id],
+                  (err, authResult) => {
+                    if (err) {
+                      return callback(err, null);
+                    }
+
+                    callback(null, {
+                      insertId: masterResult.insertId,
+                      employee_id: nextEmployeeId,
+                      username: username,
+                    });
+                  },
+                );
               },
             );
           },
@@ -234,20 +274,19 @@ module.exports = {
         fileData.file_name,
         fileData.file_path,
         fileData.file_size,
-        fileData.mime_type
+        fileData.mime_type,
       ],
       (err, result) => {
         if (err) {
           return callback(err, null);
         }
         callback(null, result);
-      }
+      },
     );
   },
 
   // ==================== GET FILE BY ID ====================
   getFileById: (fileId, callback) => {
-
     pool.query(
       `SELECT * FROM user_files 
             WHERE file_id = ? AND is_active = TRUE`,
@@ -260,7 +299,7 @@ module.exports = {
           return callback(null, null);
         }
         callback(null, result[0]);
-      }
+      },
     );
   },
 
@@ -276,7 +315,7 @@ module.exports = {
           return callback(err, null);
         }
         callback(null, result);
-      }
+      },
     );
   },
 
@@ -297,9 +336,9 @@ module.exports = {
           (err2, result) => {
             if (err2) return callback(err2, null);
             callback(null, files);
-          }
+          },
         );
-      }
+      },
     );
   },
 };
