@@ -6,14 +6,15 @@ module.exports = {
   createCompany: (companyData, callback) => {
     pool.query(
       `INSERT INTO companies 
-            (company_name, location, email, address, is_active, created_at)
-            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+            (company_name, location, email, address, is_active,employee_prefix, created_at)
+            VALUES (?, ?, ?, ?, ?,?, CURRENT_TIMESTAMP)`,
       [
         companyData.company_name,
         companyData.company_location,
         companyData.company_email,
         companyData.company_address,
         companyData.is_active,
+        companyData.employee_prefix
       ],
       (err, result) => {
         if (err) {
@@ -64,7 +65,7 @@ module.exports = {
     pool.query(
       `UPDATE companies 
             SET company_name = ?, location = ?, email = ?, 
-                address = ?, is_active = ?, 
+                address = ?, is_active = ?, employee_prefix = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE company_id = ?`,
       [
@@ -73,6 +74,7 @@ module.exports = {
         companyData.company_email,
         companyData.company_address,
         companyData.is_active,
+        companyData.employee_prefix,
         companyId,
       ],
       (err, result) => {
