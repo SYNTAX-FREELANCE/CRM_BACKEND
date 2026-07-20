@@ -195,7 +195,6 @@ module.exports = {
 
   // ==================== UPDATE USER ====================
   updateUser: (userId, userData, callback) => {
-    console.log("userData::", userData);
     pool.query(
       `UPDATE users_master 
          SET  

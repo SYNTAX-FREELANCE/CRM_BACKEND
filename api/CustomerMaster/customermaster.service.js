@@ -312,8 +312,6 @@ module.exports = {
     });
   },
   getNewCustomers: (month, callback) => {
-    console.log(month);
-
     const query = `
     SELECT
     c.customer_id,

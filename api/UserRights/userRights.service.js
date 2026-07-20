@@ -59,8 +59,6 @@ module.exports = {
           parseInt(userId),
           new Date(), // create_date
         ]);
-        console.log(values);
-
         pool.query(
           `INSERT INTO user_rights 
            (role_slno, module_slno, menu_slno, Active_status, create_user, create_date) 
@@ -80,23 +78,6 @@ module.exports = {
   // 4. Fetch allowed menus for a role (where Active_status = 1)
   getAllowedMenusForRole: (roleId, callback) => {
     pool.query(
-      // `SELECT 
-      //   ur.user_rights_slno,
-      //   ur.role_slno,
-      //   ur.module_slno,
-      //   m.module_name,
-      //   ur.menu_slno,
-      //   mn.menu_name,
-      //   mn.is_active AS menu_is_active,
-      //   m.is_active AS module_is_active
-      //  FROM user_rights ur
-      //  INNER JOIN modules m ON ur.module_slno = m.module_id
-      //  INNER JOIN menus mn ON ur.menu_slno = mn.menu_id
-      //  WHERE ur.role_slno = ? 
-      //    AND ur.Active_status = 1 
-      //    AND m.is_active = 1 
-      //    AND mn.is_active = 1
-      //  ORDER BY m.module_name ASC, mn.menu_name ASC`,
       `  SELECT
                 m.module_name,
                 mn.menu_name,

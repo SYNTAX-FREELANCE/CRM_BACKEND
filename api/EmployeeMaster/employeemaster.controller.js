@@ -254,8 +254,6 @@ module.exports = {
           message: "Name and Mobile Number are required",
         });
       }
-      console.log("gender::", gender);
-
       // Prepare user data
       const userData = {
         name: name,
@@ -688,9 +686,6 @@ module.exports = {
       }
 
       const filePath = path.join(dir, files[0]);
-      console.log({
-        filePath
-      });
 
       res.setHeader("Content-Type", "image/jpeg");
       return res.sendFile(filePath);
@@ -699,5 +694,5 @@ module.exports = {
       return res.status(500).send("Internal Server Error");
     }
   },
- 
+
 };
