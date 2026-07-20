@@ -25,6 +25,23 @@ module.exports = {
     });
   },
 
+  getEmployeesDetailsById: (req, res) => {
+    const { empid } = req.params;
+    userInfoService.getSingleEmployeeDetails(empid, (err, results) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Failed to retrieve Employee Details"
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        data: results
+      });
+    });
+  },
+
+
   // Fetch performance metrics for employee
   getEmployeePerformance: (req, res) => {
     const { employeeId } = req.params;

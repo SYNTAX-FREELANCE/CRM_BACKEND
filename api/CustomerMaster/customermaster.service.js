@@ -395,8 +395,8 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
   createVehicle: (v, callback) => {
     const query = `
       INSERT INTO vehicles 
-      (customer_id, registration_number, rto, registration_date, model, vehicle_maker, engine_number, chassis_number, vehicle_class, vehicle_category, fuel_type, seat_capacity, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (customer_id, registration_number, rto, registration_date, model, vehicle_maker, engine_number, chassis_number, vehicle_class, vehicle_category, fuel_type, seat_capacity, known_policy_expiry_date,created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?)
     `;
 
     pool.query(
@@ -414,6 +414,7 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
         v.vehicle_category || null,
         v.fuel_type || null,
         v.seat_capacity || null,
+        v.expiry_date || null,
         v.created_by || null
       ],
       (err, result) => {
