@@ -141,16 +141,16 @@ module.exports = {
           success: 1,
           message:
             "User created successfully. Employee can login with username as password.",
-          user: {
-            id: userId,
-            employee_id: userData.employee_id,
-            name: userData.name,
-            mobile: userData.mobile_number_1,
-            username: name.toLowerCase().replace(/\s+/g, "_"),
-            // IMPORTANT: Tell admin the password is the username
-            password_note:
-              "Password is auto-generated as username (lowercase name)",
-          },
+          // user: {
+          //   id: userId,
+          //   employee_id: userData.employee_id,
+          //   name: userData.name,
+          //   mobile: userData.mobile_number_1,
+          //   username: name.toLowerCase().replace(/\s+/g, "_"),
+          //   // IMPORTANT: Tell admin the password is the username
+          //   password_note:
+          //     "Password is auto-generated as username (lowercase name)",
+          // },
         });
       });
     } catch (error) {
