@@ -19,6 +19,29 @@ const getMappingValue = (row, keySynonyms) => {
   return "";
 };
 
+// Helper function to safely parse Excel serial dates or return standard strings
+const parseDate = (val) => {
+  if (!val) return null;
+  val = String(val).trim();
+  // If it's a 5 digit number string (Excel serial date)
+  if (/^\d{5}$/.test(val)) {
+    const serial = parseInt(val, 10);
+    // Excel epoch starts at Jan 1 1900. 25569 is the difference in days between 1900 and 1970 UNIX epoch.
+    // (Note: This assumes dates are after March 1, 1900, which is universally true for vehicle reg/expiry dates)
+    const excelEpochDiff = 25569;
+    const date = new Date(Math.round((serial - excelEpochDiff) * 86400 * 1000));
+    return date.toISOString().split('T')[0];
+  }
+  return val;
+};
+
+// Helper function to safely parse integer or return null
+const parseIntOrNull = (val) => {
+  if (!val) return null;
+  const parsed = parseInt(val, 10);
+  return isNaN(parsed) ? null : parsed;
+};
+
 module.exports = {
   // ==================== UPLOAD & PROCESS FILE (EXCEL / PDF) ====================
   uploadCustomerFile: async (req, res) => {
@@ -90,6 +113,7 @@ module.exports = {
         district: ["district", "region"],
         state: ["state", "province"],
         pincode: ["pincode", "zip", "zipcode", "zip_code", "pin_code"],
+        is_previous_customer: ["is_previous_customer", "previous_customer", "is previous customer", "previous customer"],
 
         // Vehicle mappings
         registration_number: ["registration_number", "registration number", "reg_no", "reg no", "registration_no", "registrationno"],
@@ -102,7 +126,8 @@ module.exports = {
         vehicle_class: ["vehicle_class", "vehicle class", "vechile_class", "vechile class", "class"],
         vehicle_category: ["vehicle_category", "vehicle category", "category", "vechile_category", "vechile category"],
         fuel_type: ["fuel_type", "fuel type", "fuel"],
-        seat_capacity: ["seat_capacity", "seat capacity", "seats", "seating", "seating_capacity"]
+        seat_capacity: ["seat_capacity", "seat capacity", "seats", "seating", "seating_capacity"],
+        known_policy_expiry_date: ["known_policy_expiry_date", "policy_expiry_date", "policy expiry date", "expiry date", "expiry_date", "known policy expiry date"]
       };
 
       // Map and validate rows
@@ -117,6 +142,7 @@ module.exports = {
           district: getMappingValue(row, mappings.district),
           state: getMappingValue(row, mappings.state),
           pincode: getMappingValue(row, mappings.pincode),
+          is_previous_customer: getMappingValue(row, mappings.is_previous_customer).toLowerCase() === 'yes' ? 1 : 0,
           is_active: 1,
           created_by: createdBy
         };
@@ -124,7 +150,7 @@ module.exports = {
         const mappedVehicle = {
           registration_number: getMappingValue(row, mappings.registration_number),
           rto: getMappingValue(row, mappings.rto),
-          registration_date: getMappingValue(row, mappings.registration_data),
+          registration_date: parseDate(getMappingValue(row, mappings.registration_data)),
           model: getMappingValue(row, mappings.model),
           vehicle_maker: getMappingValue(row, mappings.vehicle_maker),
           engine_number: getMappingValue(row, mappings.engine_number),
@@ -132,7 +158,8 @@ module.exports = {
           vehicle_class: getMappingValue(row, mappings.vehicle_class),
           vehicle_category: getMappingValue(row, mappings.vehicle_category),
           fuel_type: getMappingValue(row, mappings.fuel_type),
-          seat_capacity: getMappingValue(row, mappings.seat_capacity)
+          seat_capacity: parseIntOrNull(getMappingValue(row, mappings.seat_capacity)),
+          known_policy_expiry_date: parseDate(getMappingValue(row, mappings.known_policy_expiry_date))
         };
 
         // Validation
@@ -334,6 +361,7 @@ module.exports = {
         state: data.state ? data.state.trim() : null,
         pincode: data.pincode ? data.pincode.trim() : null,
         is_active: data.is_active !== undefined ? (data.is_active ? 1 : 0) : 1,
+        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer ? 1 : 0) : 0,
         created_by: createdBy
       };
 
@@ -496,7 +524,8 @@ module.exports = {
         vechile_class: ["vechile_class", "vechile class", "vehicle_class", "vehicle class", "class"],
         vehicle_category: ["vehicle_category", "vehicle category", "category", "vechile_category", "vechile category"],
         fuel_type: ["fuel_type", "fuel type", "fuel"],
-        seat_capacity: ["seat_capacity", "seat capacity", "seats", "seating", "seating_capacity"]
+        seat_capacity: ["seat_capacity", "seat capacity", "seats", "seating", "seating_capacity"],
+        known_policy_expiry_date: ["known_policy_expiry_date", "policy_expiry_date", "policy expiry date", "expiry date", "expiry_date", "known policy expiry date"]
       };
 
       rawRows.forEach((row, index) => {
@@ -504,15 +533,17 @@ module.exports = {
           customer_id: getMappingValue(row, mappings.customer_id),
           registration_number: getMappingValue(row, mappings.registration_number),
           rto: getMappingValue(row, mappings.rto),
-          registration_date: getMappingValue(row, mappings.registration_data),
+          registration_date: parseDate(getMappingValue(row, mappings.registration_data)),
           model: getMappingValue(row, mappings.model),
-          vehicle_maker: getMappingValue(row, mappings.vehicle_maker),
+          vehicle_maker: getMappingValue(row, mappings.vechile_maker),
           engine_number: getMappingValue(row, mappings.engine_number),
           chassis_number: getMappingValue(row, mappings.chassis_number),
-          vehicle_class: getMappingValue(row, mappings.vehicle_class),
+          vehicle_class: getMappingValue(row, mappings.vechile_class),
           vehicle_category: getMappingValue(row, mappings.vehicle_category),
           fuel_type: getMappingValue(row, mappings.fuel_type),
-          seat_capacity: getMappingValue(row, mappings.seat_capacity)
+          seat_capacity: parseIntOrNull(getMappingValue(row, mappings.seat_capacity)),
+          known_policy_expiry_date: parseDate(getMappingValue(row, mappings.known_policy_expiry_date)),
+          created_by: createdBy
         };
 
         const rowNumber = index + 2; // Row 1 is header
@@ -704,6 +735,7 @@ module.exports = {
         vehicle_category: data.vehicle_category ? data.vehicle_category.trim() : null,
         fuel_type: data.fuel_type ? data.fuel_type.trim() : null,
         seat_capacity: data.seat_capacity ? parseInt(data.seat_capacity, 10) : null,
+        known_policy_expiry_date: data.known_policy_expiry_date ? data.known_policy_expiry_date : null,
         created_by: data.created_by
       };
 
@@ -1035,7 +1067,8 @@ module.exports = {
         district: data.district ? data.district.trim() : null,
         state: data.state ? data.state.trim() : null,
         pincode: data.pincode ? data.pincode.trim() : null,
-        is_active: data.is_active !== undefined ? (data.is_active ? 1 : 0) : 1
+        is_active: data.is_active !== undefined ? (data.is_active ? 1 : 0) : 1,
+        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer === "yes" || data.is_previous_customer === 1 ? 1 : 0) : 0
       };
 
       customerService.updateCustomer(customerId, mappedCustomer, (err, result) => {
@@ -1187,7 +1220,8 @@ module.exports = {
         vehicle_class: data.vehicle_class ? data.vehicle_class.trim() : null,
         vehicle_category: data.vehicle_category ? data.vehicle_category.trim() : null,
         fuel_type: data.fuel_type ? data.fuel_type.trim() : null,
-        seat_capacity: data.seat_capacity ? parseInt(data.seat_capacity, 10) : null
+        seat_capacity: data.seat_capacity ? parseInt(data.seat_capacity, 10) : null,
+        known_policy_expiry_date: data.known_policy_expiry_date ? data.known_policy_expiry_date : null
       };
 
       customerService.updateVehicle(vehicleId, mappedVehicle, (err, result) => {

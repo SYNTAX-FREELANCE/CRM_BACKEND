@@ -6,7 +6,7 @@ module.exports = {
   insertBulkCustomers: (customersArray, callback) => {
     const query = `
       INSERT INTO customers 
-      (customer_name, mobile_number_1, mobile_number_2, email, address, city, district, state, pincode, is_active, created_by)
+      (customer_name, mobile_number_1, mobile_number_2, email, address, city, district, state, pincode, is_active, is_previous_customer, created_by)
       VALUES ?
     `;
 
@@ -22,10 +22,13 @@ module.exports = {
       cust.state || null,
       cust.pincode || null,
       cust.is_active !== undefined ? cust.is_active : 1,
+      cust.is_previous_customer !== undefined ? cust.is_previous_customer : 0,
       cust.created_by || null,
     ]);
 
     pool.query(query, [values], (err, result) => {
+      console.log('error', err);
+
       if (err) {
         return callback(err, null);
       }
@@ -37,8 +40,8 @@ module.exports = {
   createCustomer: (cust, callback) => {
     const query = `
       INSERT INTO customers 
-      (customer_name, mobile_number_1, mobile_number_2, email, address, city, district, state, pincode, is_active, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (customer_name, mobile_number_1, mobile_number_2, email, address, city, district, state, pincode, is_active, is_previous_customer, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     pool.query(
@@ -54,6 +57,7 @@ module.exports = {
         cust.state || null,
         cust.pincode || null,
         cust.is_active !== undefined ? cust.is_active : 1,
+        cust.is_previous_customer !== undefined ? cust.is_previous_customer : 0,
         cust.created_by || null,
       ],
       (err, result) => {
@@ -99,7 +103,7 @@ module.exports = {
   insertBulkVehicles: (vehiclesArray, callback) => {
     const query = `
       INSERT INTO vehicles 
-      (customer_id, registration_number, rto, registration_date, model, vehicle_maker, engine_number, chassis_number, vehicle_class, vehicle_category, fuel_type, seat_capacity)
+      (customer_id, registration_number, rto, registration_date, model, vehicle_maker, engine_number, chassis_number, vehicle_class, vehicle_category, fuel_type, seat_capacity, known_policy_expiry_date)
       VALUES ?
     `;
 
@@ -116,6 +120,7 @@ module.exports = {
       v.vehicle_category || null,
       v.fuel_type || null,
       v.seat_capacity || null,
+      v.known_policy_expiry_date || null,
     ]);
 
     pool.query(query, [values], (err, result) => {
@@ -199,8 +204,8 @@ module.exports = {
       for (const cust of newCustomersToInsert) {
         const [result] = await connection.query(
           `INSERT INTO customers 
-           (customer_name, mobile_number_1, mobile_number_2, email, address, city, district, state, pincode, is_active, created_by)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (customer_name, mobile_number_1, mobile_number_2, email, address, city, district, state, pincode, is_active, is_previous_customer, created_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             cust.customer_name,
             cust.mobile_number_1,
@@ -212,6 +217,7 @@ module.exports = {
             cust.state || null,
             cust.pincode || null,
             cust.is_active !== undefined ? cust.is_active : 1,
+            cust.is_previous_customer !== undefined ? cust.is_previous_customer : 0,
             cust.created_by || null,
           ],
         );
@@ -248,6 +254,7 @@ module.exports = {
           row.vehicle.vehicle_category || null,
           row.vehicle.fuel_type || null,
           row.vehicle.seat_capacity || null,
+          row.vehicle.known_policy_expiry_date || null,
         ];
       });
 
@@ -275,7 +282,8 @@ module.exports = {
      vehicle_class,
      vehicle_category,
      fuel_type,
-     seat_capacity
+     seat_capacity,
+     known_policy_expiry_date
    )
    VALUES ?`,
           [vehiclesToInsert],
@@ -364,7 +372,7 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
     const query = `
       UPDATE customers 
       SET customer_name = ?, mobile_number_1 = ?, mobile_number_2 = ?, email = ?, 
-          address = ?, city = ?, district = ?, state = ?, pincode = ?, is_active = ?
+          address = ?, city = ?, district = ?, state = ?, pincode = ?, is_active = ?, is_previous_customer = ?
       WHERE customer_id = ?
     `;
     pool.query(
@@ -380,6 +388,7 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
         cust.state || null,
         cust.pincode || null,
         cust.is_active !== undefined ? cust.is_active : 1,
+        cust.is_previous_customer !== undefined ? cust.is_previous_customer : 0,
         customerId,
       ],
       (err, result) => {
@@ -395,8 +404,8 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
   createVehicle: (v, callback) => {
     const query = `
       INSERT INTO vehicles 
-      (customer_id, registration_number, rto, registration_date, model, vehicle_maker, engine_number, chassis_number, vehicle_class, vehicle_category, fuel_type, seat_capacity, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (customer_id, registration_number, rto, registration_date, model, vehicle_maker, engine_number, chassis_number, vehicle_class, vehicle_category, fuel_type, seat_capacity, known_policy_expiry_date, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     pool.query(
@@ -414,6 +423,7 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
         v.vehicle_category || null,
         v.fuel_type || null,
         v.seat_capacity || null,
+        v.known_policy_expiry_date || null,
         v.created_by || null
       ],
       (err, result) => {
@@ -431,7 +441,7 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
       UPDATE vehicles 
       SET customer_id = ?, registration_number = ?, rto = ?, registration_date = ?, 
           model = ?, vehicle_maker = ?, engine_number = ?, chassis_number = ?, 
-          vehicle_class = ?, vehicle_category = ?, fuel_type = ?, seat_capacity = ?
+          vehicle_class = ?, vehicle_category = ?, fuel_type = ?, seat_capacity = ?, known_policy_expiry_date = ?
       WHERE vehicle_id = ?
     `;
     pool.query(
@@ -449,6 +459,7 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
         v.vehicle_category || null,
         v.fuel_type || null,
         v.seat_capacity || null,
+        v.known_policy_expiry_date || null,
         vehicleId,
       ],
       (err, result) => {
