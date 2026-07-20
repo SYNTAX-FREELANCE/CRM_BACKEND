@@ -19,6 +19,7 @@ SELECT
     um.email,
     um.address,
     um.is_admin,
+    s.status_name,
     c.company_name,
     r.role_name,
     COUNT(l.lead_id) AS total_assigned,
@@ -57,9 +58,12 @@ LEFT JOIN roles r
 
 LEFT JOIN leads l
     ON l.assigned_to = um.user_id
+  
+LEFT JOIN statuses s
+    ON s.status_id = um.user_status
 
 WHERE
-    um.is_active = 1
+   um.is_active = 1 AND um.is_admin = 0
 
 GROUP BY
     um.user_id,
@@ -101,6 +105,92 @@ ORDER BY
       callback(null, results);
     });
   },
+
+  getSingleEmployeeDetails: (empid, callback) => {
+    let query = `
+     SELECT
+    um.user_id,
+    um.employee_id,
+    um.name,
+    um.gender,
+    um.age,
+    um.mobile_number_1,
+    um.date_of_join,
+    um.experience,
+    um.email,
+    um.address,
+   s.status_name,
+    c.company_name,
+    r.role_name,
+
+    COUNT(l.lead_id) AS total_assigned,
+
+    SUM(
+        CASE
+            WHEN l.work_status <> 'PENDING'
+            THEN 1
+            ELSE 0
+        END
+    ) AS total_fetched,
+
+    SUM(
+        CASE
+            WHEN l.status_id = 5
+            THEN 1
+            ELSE 0
+        END
+    ) AS total_sold,
+
+    SUM(
+        CASE
+            WHEN l.status_id = 6
+            THEN 1
+            ELSE 0
+        END
+    ) AS total_lost
+
+FROM users_master um
+
+LEFT JOIN companies c
+    ON c.company_id = um.company_id
+
+LEFT JOIN roles r
+    ON r.role_id = um.role_id
+
+LEFT JOIN leads l
+    ON l.assigned_to = um.user_id
+
+LEFT JOIN statuses s
+    ON s.status_id = um.user_status
+    
+WHERE
+   um.is_active = 1 and user_id = ?
+GROUP BY
+    um.user_id,
+    um.employee_id,
+    um.name,
+    um.gender,
+    um.age,
+    um.mobile_number_1,
+    um.date_of_join,
+    um.experience,
+       um.email,
+    um.address,
+    c.company_name,
+    r.role_name
+
+ORDER BY
+    um.name`;
+
+    pool.query(query, [empid], (err, results) => {
+      if (err) {
+        return callback(err, null);
+      }
+      callback(null, results);
+    });
+  },
+
+
 
   // Fetch employee details from users_master with given employeeId (user_id)
   getEmployeePerformance: (employeeId, callback) => {

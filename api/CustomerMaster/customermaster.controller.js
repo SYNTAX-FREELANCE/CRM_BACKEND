@@ -595,101 +595,6 @@ module.exports = {
     try {
       const data = req.body;
 
-      if (!data.customer_id) {
-        return res.status(400).json({
-          success: 0,
-          message: "Customer ID is required."
-        });
-      } else if (!/^\d+$/.test(data.customer_id)) {
-        return res.status(400).json({
-          success: 0,
-          message: "Customer ID must be numeric."
-        });
-      }
-
-      if (!data.registration_number || !data.registration_number.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Registration Number is required."
-        });
-      }
-
-      if (!data.rto || !data.rto.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "RTO Details is required."
-        });
-      }
-
-      if (!data.registration_date) {
-        return res.status(400).json({
-          success: 0,
-          message: "Registration Date is required."
-        });
-      }
-
-      if (!data.vehicle_maker || !data.vehicle_maker.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Vehicle Maker is required."
-        });
-      }
-
-      if (!data.model || !data.model.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Vehicle Model is required."
-        });
-      }
-
-      if (!data.engine_number || !data.engine_number.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Engine Number is required."
-        });
-      }
-
-      if (!data.chassis_number || !data.chassis_number.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Chassis Number is required."
-        });
-      }
-
-      if (!data.vehicle_class || !data.vehicle_class.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Vehicle Class is required."
-        });
-      }
-
-      if (!data.vehicle_category || !data.vehicle_category.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Vehicle Category is required."
-        });
-      }
-
-      if (!data.fuel_type || !data.fuel_type.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Fuel Type is required."
-        });
-      }
-
-      if (!data.seat_capacity || !data.seat_capacity.toString().trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Seat capacity is required."
-        });
-      }
-
-      if (!/^\d+$/.test(data.seat_capacity.toString().trim())) {
-        return res.status(400).json({
-          success: 0,
-          message: "Seat capacity must be numeric."
-        });
-      }
 
       const mappedVehicle = {
         customer_id: parseInt(data.customer_id, 10),
@@ -704,6 +609,7 @@ module.exports = {
         vehicle_category: data.vehicle_category ? data.vehicle_category.trim() : null,
         fuel_type: data.fuel_type ? data.fuel_type.trim() : null,
         seat_capacity: data.seat_capacity ? parseInt(data.seat_capacity, 10) : null,
+        expiry_date: data.expiry_date ? data.expiry_date : null,
         created_by: data.created_by
       };
 
