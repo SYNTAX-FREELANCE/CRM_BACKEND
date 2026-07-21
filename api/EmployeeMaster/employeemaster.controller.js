@@ -32,6 +32,9 @@ module.exports = {
         role_id,
         user_status,
         is_active,
+        dob,
+        email,
+        address,
       } = req.body;
 
       // Validation
@@ -57,6 +60,9 @@ module.exports = {
         role_id: role_id,
         user_status: user_status,
         is_active: is_active,
+        dob: dob || null,
+        email: email ? email.trim() : null,
+        address: address ? address.trim() : null,
       };
 
       // Step 1: Create user in users_master + users table (creates auth account)
@@ -236,6 +242,9 @@ module.exports = {
         role_id,
         user_status,
         is_active,
+        dob,
+        email,
+        address,
       } = req.body;
 
       // Validation
@@ -245,7 +254,6 @@ module.exports = {
           message: "Name and Mobile Number are required",
         });
       }
-
       // Prepare user data
       const userData = {
         name: name,
@@ -261,6 +269,9 @@ module.exports = {
         role_id: role_id || null,
         user_status: user_status,
         is_active: is_active,
+        dob: dob || null,
+        email: email ? email.trim() : null,
+        address: address ? address.trim() : null,
       };
 
       // Step 1: Update user in users_master
@@ -611,6 +622,16 @@ module.exports = {
         return res.status(400).json({ success: 0, message: "No file uploaded" });
       }
 
+      // Enforce file extension check (.jpg, .jpeg, .jpj)
+      const fileExt = path.extname(file.originalname).toLowerCase();
+      const allowedExtensions = [".jpg", ".jpeg", ".jpj"];
+      if (!allowedExtensions.includes(fileExt)) {
+        return res.status(400).json({
+          success: 0,
+          message: "Only JPG and JPEG images are allowed."
+        });
+      }
+
       // Enforce maximum size of 5 MB (5 * 1024 * 1024 bytes)
       if (file.size > 5 * 1024 * 1024) {
         return res.status(400).json({
@@ -665,9 +686,6 @@ module.exports = {
       }
 
       const filePath = path.join(dir, files[0]);
-      console.log({
-        filePath
-      });
 
       res.setHeader("Content-Type", "image/jpeg");
       return res.sendFile(filePath);
@@ -676,5 +694,5 @@ module.exports = {
       return res.status(500).send("Internal Server Error");
     }
   },
- 
+
 };
