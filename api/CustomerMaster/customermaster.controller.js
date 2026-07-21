@@ -640,7 +640,7 @@ module.exports = {
         vehicle_category: data.vehicle_category ? data.vehicle_category.trim() : null,
         fuel_type: data.fuel_type ? data.fuel_type.trim() : null,
         seat_capacity: data.seat_capacity ? parseInt(data.seat_capacity, 10) : null,
-        known_policy_expiry_date: data.known_policy_expiry_date ? data.known_policy_expiry_date : null,
+        // known_policy_expiry_date: data.known_policy_expiry_date ? data.known_policy_expiry_date : null,
         expiry_date: data.expiry_date ? data.expiry_date : null,
         created_by: data.created_by
       };

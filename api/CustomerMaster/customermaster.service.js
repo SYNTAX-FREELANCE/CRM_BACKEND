@@ -421,7 +421,7 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
         v.vehicle_category || null,
         v.fuel_type || null,
         v.seat_capacity || null,
-        v.known_policy_expiry_date || null,
+        // v.known_policy_expiry_date || null,
         v.expiry_date || null,
         v.created_by || null
       ],
