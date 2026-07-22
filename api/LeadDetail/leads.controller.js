@@ -21,11 +21,6 @@ module.exports = {
             message: "Database error during logout",
           });
         }
-
-        console.log({
-          results,
-        });
-
         return res.status(200).json({
           success: results.success,
           message: results.message,
@@ -42,6 +37,7 @@ module.exports = {
   updateLeadStatus: (req, res) => {
     try {
       const data = req.body;
+
       if (!data.lead_id) {
         return res.status(200).json({
           success: 0,

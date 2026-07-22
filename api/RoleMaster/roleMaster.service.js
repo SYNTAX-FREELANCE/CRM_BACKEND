@@ -4,7 +4,7 @@ const pool = require("../../dbconfig/dbconfig");
 module.exports = {
     // ==================== CREATE ROLE ====================
     createRole: (roleData, callback) => {
-       
+
         pool.query(
             `INSERT INTO roles 
             (role_name, alias, description, is_active, created_at)
@@ -61,8 +61,7 @@ module.exports = {
 
     // ==================== UPDATE ROLE ====================
     updateRole: (roleId, roleData, callback) => {
-         
-        
+
         pool.query(
             `UPDATE roles 
             SET role_name = ?, description = ?, alias = ?, 

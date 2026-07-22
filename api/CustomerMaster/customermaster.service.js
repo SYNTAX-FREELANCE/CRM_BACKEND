@@ -306,6 +306,203 @@ module.exports = {
     }
   },
 
+  // ==================== PROCESS RENEWAL UPLOADS ====================
+  processRenewalUploads: async (combinedRows) => {
+    const promisePool = pool.promise();
+    const connection = await promisePool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      let insertedCustomersCount = 0;
+      let insertedVehiclesCount = 0;
+      let updatedVehiclesCount = 0;
+      const skippedRows = [];
+      const processedData = [];
+
+      // 1. Separate into insert list and update list
+      const insertList = [];
+      const updateList = [];
+
+      combinedRows.forEach(row => {
+        if (row.customer.is_previous_customer === 1) {
+          updateList.push(row);
+        } else {
+          insertList.push(row);
+        }
+      });
+
+      // 2. Handle Update List
+      for (const row of updateList) {
+        const regNo = row.vehicle.registration_number;
+        const expiryDate = row.vehicle.known_policy_expiry_date;
+        
+        // Find existing vehicle
+        const [vehResult] = await connection.query(
+          "SELECT vehicle_id, customer_id FROM vehicles WHERE registration_number = ?",
+          [regNo]
+        );
+        
+        if (vehResult.length > 0) {
+          const vehicleId = vehResult[0].vehicle_id;
+          const customerId = vehResult[0].customer_id;
+          
+          // Update vehicle known_policy_expiry_date
+          await connection.query(
+            "UPDATE vehicles SET known_policy_expiry_date = ? WHERE vehicle_id = ?",
+            [expiryDate, vehicleId]
+          );
+          updatedVehiclesCount++;
+          
+          // Update customer is_previous_customer = 1
+          await connection.query(
+            "UPDATE customers SET is_previous_customer = 1 WHERE customer_id = ?",
+            [customerId]
+          );
+
+          processedData.push({
+            customer_name: row.customer.customer_name,
+            mobile_number_1: row.customer.mobile_number_1,
+            registration_number: row.vehicle.registration_number,
+            model: row.vehicle.model,
+            vehicle_maker: row.vehicle.vehicle_maker,
+            fuel_type: row.vehicle.fuel_type,
+            status: "Updated"
+          });
+        } else {
+          skippedRows.push({
+            row: row.originalRow,
+            data: row.originalData || {},
+            errors: ["Previous customer vehicle not found in database. Registration Number: " + regNo]
+          });
+        }
+      }
+
+      // 3. Handle Insert List using similar logic to insertBulkCombined
+      if (insertList.length > 0) {
+        const mobileNumbers = [
+          ...new Set(insertList.map((row) => row.customer.mobile_number_1)),
+        ];
+
+        const customerMap = new Map();
+
+        if (mobileNumbers.length > 0) {
+          const [existing] = await connection.query(
+            "SELECT customer_id, mobile_number_1 FROM customers WHERE mobile_number_1 IN (?)",
+            [mobileNumbers],
+          );
+          existing.forEach((row) => {
+            customerMap.set(row.mobile_number_1, row.customer_id);
+          });
+        }
+
+        const newCustomersToInsert = [];
+        const insertedMobileSet = new Set();
+
+        insertList.forEach((row) => {
+          const mob = row.customer.mobile_number_1;
+          if (!customerMap.has(mob) && !insertedMobileSet.has(mob)) {
+            newCustomersToInsert.push(row.customer);
+            insertedMobileSet.add(mob);
+          }
+        });
+
+        for (const cust of newCustomersToInsert) {
+          const [result] = await connection.query(
+            `INSERT INTO customers 
+             (customer_name, mobile_number_1, mobile_number_2, email, address, city, district, state, pincode, is_active, is_previous_customer, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              cust.customer_name,
+              cust.mobile_number_1,
+              cust.mobile_number_2 || null,
+              cust.email || null,
+              cust.address || null,
+              cust.city || null,
+              cust.district || null,
+              cust.state || null,
+              cust.pincode || null,
+              cust.is_active !== undefined ? cust.is_active : 1,
+              cust.is_previous_customer !== undefined ? cust.is_previous_customer : 0,
+              cust.created_by || null,
+            ],
+          );
+          customerMap.set(cust.mobile_number_1, result.insertId);
+        }
+        
+        insertedCustomersCount = newCustomersToInsert.length;
+
+        const vehiclesToInsert = insertList.map((row) => {
+          const custId = customerMap.get(row.customer.mobile_number_1);
+          
+          processedData.push({
+            customer_name: row.customer.customer_name,
+            mobile_number_1: row.customer.mobile_number_1,
+            registration_number: row.vehicle.registration_number,
+            model: row.vehicle.model,
+            vehicle_maker: row.vehicle.vehicle_maker,
+            fuel_type: row.vehicle.fuel_type,
+            status: "Inserted"
+          });
+
+          return [
+            custId,
+            row.vehicle.registration_number,
+            row.vehicle.rto || null,
+            row.vehicle.registration_date || null,
+            row.vehicle.model || null,
+            row.vehicle.vehicle_maker || null,
+            row.vehicle.engine_number || null,
+            row.vehicle.chassis_number || null,
+            row.vehicle.vehicle_class || null,
+            row.vehicle.vehicle_category || null,
+            row.vehicle.fuel_type || null,
+            row.vehicle.seat_capacity || null,
+            row.vehicle.known_policy_expiry_date || null,
+          ];
+        });
+
+        if (vehiclesToInsert.length > 0) {
+          const [vehResult] = await connection.query(
+            `INSERT INTO vehicles
+             (
+               customer_id,
+               registration_number,
+               rto,
+               registration_date,
+               model,
+               vehicle_maker,
+               engine_number,
+               chassis_number,
+               vehicle_class,
+               vehicle_category,
+               fuel_type,
+               seat_capacity,
+               known_policy_expiry_date
+             )
+             VALUES ?`,
+            [vehiclesToInsert],
+          );
+          insertedVehiclesCount = vehResult.affectedRows;
+        }
+      }
+
+      await connection.commit();
+
+      return {
+        insertedCustomers: insertedCustomersCount,
+        insertedVehicles: insertedVehiclesCount,
+        updatedVehicles: updatedVehiclesCount,
+        skippedRows: skippedRows,
+        processedData: processedData
+      };
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  },
+
   // ==================== GET CUSTOMER BY ID ====================
   getCustomerById: (customerId, callback) => {
     const query = `
@@ -421,7 +618,7 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
         v.vehicle_category || null,
         v.fuel_type || null,
         v.seat_capacity || null,
-        v.known_policy_expiry_date || null,
+        // v.known_policy_expiry_date || null,
         v.expiry_date || null,
         v.created_by || null
       ],

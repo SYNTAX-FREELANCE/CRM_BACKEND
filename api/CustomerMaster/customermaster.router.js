@@ -15,6 +15,14 @@ router.post(
   customerController.uploadCustomerFile
 );
 
+// Renewal Upload Excel file
+router.post(
+  "/renewal-upload",
+  verifyAccessToken,
+  uploadCustomer.single("file"),
+  customerController.renewalUploadFile
+);
+
 // Upload Excel vehicle file
 router.post(
   "/upload-vehicles",
