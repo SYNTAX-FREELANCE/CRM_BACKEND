@@ -257,6 +257,232 @@ module.exports = {
     }
   },
 
+  // ==================== RENEWAL UPLOAD ====================
+  renewalUploadFile: async (req, res) => {
+    try {
+      const file = req.file;
+      const createdBy = req.user ? req.user.id : null;
+
+      if (!file) {
+        return res.status(400).json({
+          success: 0,
+          message: "No file uploaded or invalid file type. Please upload Excel (.xlsx, .xls) files."
+        });
+      }
+
+      const fileExt = path.extname(file.originalname).toLowerCase();
+
+      // We only accept Excel files now
+      if (fileExt !== ".xlsx" && fileExt !== ".xls") {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        return res.status(400).json({
+          success: 0,
+          message: "Invalid file type. Please upload an Excel file (.xlsx or .xls)."
+        });
+      }
+
+      const filePath = file.path;
+
+      // Read the workbook
+      let workbook;
+      try {
+        workbook = xlsx.readFile(filePath);
+      } catch (readErr) {
+        console.error("Error reading excel file:", readErr);
+        // Delete file from disk
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+        return res.status(400).json({
+          success: 0,
+          message: "Failed to read Excel file. The file may be corrupt."
+        });
+      }
+
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+
+      // Parse rows into JSON objects
+      const rawRows = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
+
+      if (rawRows.length === 0) {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        return res.status(400).json({
+          success: 0,
+          message: "Excel sheet is empty. Please add customer and vehicle details."
+        });
+      }
+
+      const validCombinedRows = [];
+      const failedRows = [];
+
+      // Unified column mappings with synonyms for both Customer and Vehicle
+      const mappings = {
+        // Customer mappings
+        customer_name: ["customer_name", "customer name", "name", "customer"],
+        mobile_number_1: ["mobile_number_1", "mobile number 1", "mobile", "mobile1", "mobile_1", "phone", "phone_number", "contact"],
+        mobile_number_2: ["mobile_number_2", "mobile number 2", "mobile2", "mobile_2", "phone2", "alternate_mobile", "alternate phone"],
+        email: ["email", "email_address", "email address", "mail"],
+        address: ["address", "street", "location"],
+        city: ["city", "town"],
+        district: ["district", "region"],
+        state: ["state", "province"],
+        pincode: ["pincode", "zip", "zipcode", "zip_code", "pin_code"],
+        is_previous_customer: ["is_previous_customer", "previous_customer", "is previous customer", "previous customer"],
+
+        // Vehicle mappings
+        registration_number: ["registration_number", "registration number", "reg_no", "reg no", "registration_no", "registrationno"],
+        rto: ["rto"],
+        registration_data: ["registration_data", "registration data", "registration_date", "registration date", "registrationdata", "registrationdate"],
+        model: ["model"],
+        vehicle_maker: ["vehicle_maker", "vehicle maker", "vechile_maker", "vechile maker", "maker"],
+        engine_number: ["engine_number", "engine number", "engine_no", "engine no"],
+        chassis_number: ["chassis_number", "chassis number", "chassis_no", "chassis no"],
+        vehicle_class: ["vehicle_class", "vehicle class", "vechile_class", "vechile class", "class"],
+        vehicle_category: ["vehicle_category", "vehicle category", "category", "vechile_category", "vechile category"],
+        fuel_type: ["fuel_type", "fuel type", "fuel"],
+        seat_capacity: ["seat_capacity", "seat capacity", "seats", "seating", "seating_capacity"],
+        known_policy_expiry_date: ["known_policy_expiry_date", "policy_expiry_date", "policy expiry date", "expiry date", "expiry_date", "known policy expiry date"]
+      };
+
+      // Map and validate rows
+      rawRows.forEach((row, index) => {
+        const isPrev = getMappingValue(row, mappings.is_previous_customer).toLowerCase() === 'yes' ? 1 : 0;
+        const mappedCustomer = {
+          customer_name: getMappingValue(row, mappings.customer_name),
+          mobile_number_1: getMappingValue(row, mappings.mobile_number_1),
+          mobile_number_2: getMappingValue(row, mappings.mobile_number_2),
+          email: getMappingValue(row, mappings.email),
+          address: getMappingValue(row, mappings.address),
+          city: getMappingValue(row, mappings.city),
+          district: getMappingValue(row, mappings.district),
+          state: getMappingValue(row, mappings.state),
+          pincode: getMappingValue(row, mappings.pincode),
+          is_previous_customer: isPrev,
+          is_active: 1,
+          created_by: createdBy
+        };
+
+        const mappedVehicle = {
+          registration_number: getMappingValue(row, mappings.registration_number),
+          rto: getMappingValue(row, mappings.rto),
+          registration_date: parseDate(getMappingValue(row, mappings.registration_data)),
+          model: getMappingValue(row, mappings.model),
+          vehicle_maker: getMappingValue(row, mappings.vehicle_maker),
+          engine_number: getMappingValue(row, mappings.engine_number),
+          chassis_number: getMappingValue(row, mappings.chassis_number),
+          vehicle_class: getMappingValue(row, mappings.vehicle_class),
+          vehicle_category: getMappingValue(row, mappings.vehicle_category),
+          fuel_type: getMappingValue(row, mappings.fuel_type),
+          seat_capacity: parseIntOrNull(getMappingValue(row, mappings.seat_capacity)),
+          known_policy_expiry_date: parseDate(getMappingValue(row, mappings.known_policy_expiry_date))
+        };
+
+        // Validation
+        const rowNumber = index + 2; // Row 1 is headers
+        const errors = [];
+
+        // Customer validations
+        if (!mappedCustomer.customer_name) {
+          errors.push("Customer Name is missing.");
+        }
+        if (!mappedCustomer.mobile_number_1) {
+          errors.push("Mobile Number 1 is missing.");
+        } else if (!/^\d+$/.test(mappedCustomer.mobile_number_1)) {
+          errors.push("Mobile Number 1 must be numeric.");
+        }
+        if (mappedCustomer.mobile_number_2 && !/^\d+$/.test(mappedCustomer.mobile_number_2)) {
+          errors.push("Mobile Number 2 must be numeric.");
+        }
+
+        // Vehicle validations
+        if (!mappedVehicle.registration_number) {
+          errors.push("Vehicle Registration Number is missing.");
+        }
+        
+        if (isPrev && !mappedVehicle.known_policy_expiry_date) {
+            errors.push("Policy Expiry Date is missing for previous customer.");
+        }
+
+        if (errors.length > 0) {
+          failedRows.push({
+            row: rowNumber,
+            data: row,
+            errors: errors
+          });
+        } else {
+          validCombinedRows.push({
+            customer: mappedCustomer,
+            vehicle: mappedVehicle,
+            originalRow: rowNumber,
+            originalData: row
+          });
+        }
+      });
+
+      // Delete uploaded file from temp location
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+
+      // Insert valid rows in transactional method
+      if (validCombinedRows.length > 0) {
+        try {
+          const result = await customerService.processRenewalUploads(validCombinedRows);
+          
+          // Combine failed rows from service layer with validation errors
+          if (result.skippedRows && result.skippedRows.length > 0) {
+              failedRows.push(...result.skippedRows);
+          }
+
+          return res.status(200).json({
+            success: 1,
+            message: `Successfully processed file. Inserted ${result.insertedCustomers} customer(s), updated ${result.updatedVehicles} existing vehicle(s).`,
+            fileType: "excel",
+            stats: {
+              totalRows: rawRows.length,
+              insertedCount: result.insertedCustomers + result.updatedVehicles,
+              failedCount: failedRows.length
+            },
+            failedRows: failedRows,
+            insertedData: result.processedData || validCombinedRows.map(row => ({
+              customer_name: row.customer.customer_name,
+              mobile_number_1: row.customer.mobile_number_1,
+              registration_number: row.vehicle.registration_number,
+              model: row.vehicle.model,
+              vehicle_maker: row.vehicle.vehicle_maker,
+              fuel_type: row.vehicle.fuel_type
+            }))
+          });
+        } catch (dbErr) {
+          console.error("Renewal bulk process database error:", dbErr);
+          return res.status(500).json({
+            success: 0,
+            message: "Failed to process customer and vehicle data into database.",
+            error: dbErr.message
+          });
+        }
+      } else {
+        return res.status(400).json({
+          success: 0,
+          message: "No valid rows found in Excel sheet. Check validation errors.",
+          stats: {
+            totalRows: rawRows.length,
+            insertedCount: 0,
+            failedCount: failedRows.length
+          },
+          failedRows: failedRows
+        });
+      }
+    } catch (error) {
+      console.error("renewalUploadFile error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "An error occurred while processing the file.",
+        error: error.message
+      });
+    }
+  },
+
   // ==================== CREATE SINGLE CUSTOMER ====================
   createCustomer: (req, res) => {
     try {
