@@ -61,9 +61,7 @@ module.exports = {
 
     // ==================== UPDATE ROLE ====================
     updateRole: (roleId, roleData, callback) => {
-         console.log({
-            roleData
-        });
+         
         
         pool.query(
             `UPDATE roles 

@@ -59,7 +59,7 @@ module.exports = {
           parseInt(userId),
           new Date(), // create_date
         ]);
-        console.log(values);
+        
 
         pool.query(
           `INSERT INTO user_rights 
