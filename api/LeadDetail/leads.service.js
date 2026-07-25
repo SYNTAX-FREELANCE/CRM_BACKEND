@@ -1642,8 +1642,6 @@ ORDER BY
     );
   },
 
-
-
   updateReallocation: (data, callback) => {
     pool.getConnection((err, connection) => {
       if (err) return callback(err);
@@ -1798,6 +1796,91 @@ ORDER BY
       });
     });
   },
+
+
+  getCustomerPolicyDetail: (customerid, callback) => {
+    const sql = `
+        SELECT
+            -- Customer
+            c.customer_id,
+            c.customer_name,
+            c.mobile_number_1,
+            c.mobile_number_2,
+            c.email as customeremail,
+            c.address,
+            c.city,
+            c.district,
+            c.state,
+            c.pincode,
+            c.is_previous_customer,
+
+            -- Vehicle
+            v.vehicle_id,
+            v.registration_number,
+            v.model,
+            v.vehicle_maker,
+            v.vehicle_class,
+            v.vehicle_category,
+            v.fuel_type,
+            v.engine_number,
+            v.chassis_number,
+            v.registration_date,
+
+            -- Policy
+            p.policy_id,
+            p.policy_number,
+            p.policy_type,
+            p.renewal_year,
+            p.renewal_cycle,
+            p.start_date,
+            p.expiry_date,
+            p.premium_amount,
+            p.insured_declared_value,
+            p.policy_status,
+            p.remarks,
+
+            -- Insurance Company
+            ic.insurance_company_id,
+            ic.company_name,
+            ic.contact_number,
+            ic.email,
+
+            -- Employee
+            u.user_id AS employee_id,
+            u.name AS sold_by
+
+        FROM customers c
+
+        INNER JOIN policies p
+            ON p.customer_id = c.customer_id
+
+        INNER JOIN vehicles v
+            ON v.vehicle_id = p.vehicle_id
+
+        INNER JOIN insurance_companies ic
+            ON ic.insurance_company_id = p.insurance_company_id
+
+        LEFT JOIN leads l
+            ON l.lead_id = p.lead_id
+
+        LEFT JOIN users_master u
+            ON u.user_id = l.assigned_to
+
+        WHERE c.customer_id = ?
+
+        ORDER BY p.expiry_date DESC
+`;
+    pool.query(
+      sql,
+      [customerid],
+      (err, result) => {
+        if (err) return callback(err);
+        callback(null, result);
+      },
+    );
+  },
+
+
 
 };
 

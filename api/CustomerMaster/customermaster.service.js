@@ -335,24 +335,24 @@ module.exports = {
       for (const row of updateList) {
         const regNo = row.vehicle.registration_number;
         const expiryDate = row.vehicle.known_policy_expiry_date;
-        
+
         // Find existing vehicle
         const [vehResult] = await connection.query(
           "SELECT vehicle_id, customer_id FROM vehicles WHERE registration_number = ?",
           [regNo]
         );
-        
+
         if (vehResult.length > 0) {
           const vehicleId = vehResult[0].vehicle_id;
           const customerId = vehResult[0].customer_id;
-          
+
           // Update vehicle known_policy_expiry_date
           await connection.query(
             "UPDATE vehicles SET known_policy_expiry_date = ? WHERE vehicle_id = ?",
             [expiryDate, vehicleId]
           );
           updatedVehiclesCount++;
-          
+
           // Update customer is_previous_customer = 1
           await connection.query(
             "UPDATE customers SET is_previous_customer = 1 WHERE customer_id = ?",
@@ -428,12 +428,12 @@ module.exports = {
           );
           customerMap.set(cust.mobile_number_1, result.insertId);
         }
-        
+
         insertedCustomersCount = newCustomersToInsert.length;
 
         const vehiclesToInsert = insertList.map((row) => {
           const custId = customerMap.get(row.customer.mobile_number_1);
-          
+
           processedData.push({
             customer_name: row.customer.customer_name,
             mobile_number_1: row.customer.mobile_number_1,
@@ -516,6 +516,7 @@ module.exports = {
       callback(null, results[0] || null);
     });
   },
+
   getNewCustomers: (month, callback) => {
     const query = `
     SELECT
@@ -543,8 +544,6 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
       callback(null, results || null);
     });
   },
-
-
 
   // ==================== GET VEHICLE BY ID ====================
   getVehicleById: (vehicleId, callback) => {
@@ -666,6 +665,7 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
       },
     );
   },
+
   CreateNewLead: (values, callback) => {
 
     pool.query(
@@ -693,4 +693,54 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
       }
     );
   },
+
+  getEmployeePolicyTaken: (empid, callback) => {
+    const query = `
+      SELECT
+          COUNT(DISTINCT p.policy_id) AS total_sold,
+
+          SUM(
+              CASE
+                  WHEN YEAR(p.start_date) = YEAR(CURDATE())
+                  AND MONTH(p.start_date) = MONTH(CURDATE())
+                  THEN 1
+                  ELSE 0
+              END
+          ) AS this_month,
+
+          COALESCE(SUM(p.premium_amount), 0) AS total_premium,
+
+          SUM(
+              CASE
+                  WHEN p.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                      AND p.policy_status = 'ACTIVE'
+                  THEN 1
+                  ELSE 0
+              END
+          ) AS renewal_due,
+
+          SUM(
+              CASE
+                  WHEN p.expiry_date < CURDATE()
+                  THEN 1
+                  ELSE 0
+              END
+          ) AS expired
+
+      FROM policies p
+      INNER JOIN leads l
+          ON l.lead_id = p.lead_id
+      INNER JOIN lead_status_master sm
+          ON sm.status_id = l.status_id
+      WHERE sm.status_id = 5
+        AND l.assigned_to = ?	;
+    `;
+    pool.query(query, [empid], (err, results) => {
+      if (err) {
+        return callback(err, null);
+      }
+      callback(null, results[0] || null);
+    });
+  },
+
 };

@@ -50,7 +50,6 @@ const uploadDocumentMiddleware = multer({
     }
 });
 
-
 /**
  * UPLOAD USER FILES TO C DRIVE
  * Returns file paths - NO DATABASE QUERY HERE
@@ -62,14 +61,14 @@ const uploadUserFiles = (req, res) => {
 
         // Validation
         if (!user_id) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: 0,
                 message: "user_id is required"
             });
         }
 
         if (!files || (!files.aadhar_files && !files.biodata_files && !files.bank_files)) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: 0,
                 message: "No files uploaded"
             });
