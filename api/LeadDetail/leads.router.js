@@ -100,4 +100,11 @@ router.get(
     leacontroller.getSingleEmployeeRecentActivity,
 );
 
+
+router.get(
+    "/employee-policy-detail/:customerid",
+    verifyAccessToken,
+    leacontroller.getCustomerPolicyDetails,
+);
+
 module.exports = router;

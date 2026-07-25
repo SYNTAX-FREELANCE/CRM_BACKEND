@@ -695,4 +695,72 @@ module.exports = {
     }
   },
 
+  uploadPolicyDocument: (req, res) => {
+    try {
+     
+      const { policy_id, customer_id, file_type, uploaded_by } = req.body;
+
+      const files = req.files;
+      if (!policy_id) {
+        return res.status(200).json({
+          success: 0,
+          message: "policy_id is required"
+        });
+      }
+
+      if (!files || files.length === 0) {
+        return res.status(200).json({
+          success: 0,
+          message: "No files uploaded"
+        });
+      }
+
+      const insertPromises = files.map(file => {
+        const data = {
+          policy_id,
+          file_type,
+          file_name: file.originalname,
+          file_path: file.path,
+          file_size: file.size,
+          mime_type: file.mimetype,
+          uploaded_by
+        };
+
+        return new Promise((resolve, reject) => {
+          userCreationService.insertPolicyFile(data, (err, result) => {
+            if (err) reject(err);
+            else
+              resolve({
+                file_id: result.insertId,
+                ...data
+              });
+          });
+        });
+      });
+
+      Promise.all(insertPromises)
+        .then(result => {
+          return res.status(200).json({
+            success: 1,
+            message: `${file_type} uploaded Successfully`,
+            data: result
+          });
+        })
+        .catch(err => {
+          console.log(err);
+          return res.status(500).json({
+            success: 0,
+            message: "Database Error"
+          });
+        });
+    } catch (e) {
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong"
+      });
+
+    }
+
+  }
+
 };

@@ -544,6 +544,31 @@ module.exports = {
   },
 
 
+  getCustomerPolicyDetails: (req, res) => {
+    const { customerid } = req.params;
+    leadservie.getCustomerPolicyDetail(customerid, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+
+      if (!result && result.length === 0) {
+        return res.status(200).json({
+          success: 1,
+          data: [],
+          message: 'No Policy Found Under This.'
+        })
+      }
+
+      return res.status(200).json({
+        success: 1,
+        data: result,
+      });
+
+    });
+  },
 
 
 

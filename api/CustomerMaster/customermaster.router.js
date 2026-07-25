@@ -67,4 +67,7 @@ router.patch("/update-vehicle/:vehicleId", verifyAccessToken, customerController
 router.post("/allocate-customer", verifyAccessToken, customerController.CreateNewLead);
 
 
+//employee policy detail 
+router.get("/employee-policy-taken/:empid", verifyAccessToken, customerController.getEmployeePolicyTaken);
+
 module.exports = router;

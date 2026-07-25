@@ -398,9 +398,9 @@ module.exports = {
         if (!mappedVehicle.registration_number) {
           errors.push("Vehicle Registration Number is missing.");
         }
-        
+
         if (isPrev && !mappedVehicle.known_policy_expiry_date) {
-            errors.push("Policy Expiry Date is missing for previous customer.");
+          errors.push("Policy Expiry Date is missing for previous customer.");
         }
 
         if (errors.length > 0) {
@@ -428,10 +428,10 @@ module.exports = {
       if (validCombinedRows.length > 0) {
         try {
           const result = await customerService.processRenewalUploads(validCombinedRows);
-          
+
           // Combine failed rows from service layer with validation errors
           if (result.skippedRows && result.skippedRows.length > 0) {
-              failedRows.push(...result.skippedRows);
+            failedRows.push(...result.skippedRows);
           }
 
           return res.status(200).json({
@@ -1395,8 +1395,6 @@ module.exports = {
         });
       }
 
-
-
       const values = allocations.map((item) => [
         item.customer_id,
         item.vehicle_id,
@@ -1434,5 +1432,44 @@ module.exports = {
       });
     }
   },
+
+  getEmployeePolicyTaken: (req, res) => {
+    try {
+      const { empid } = req.params;
+
+      if (!empid) {
+        return res.status(400).json({
+          success: 0,
+          message: "Employee ID is required."
+        });
+      }
+
+      customerService.getEmployeePolicyTaken(empid, (err, result) => {
+        if (err) {
+          return res.status(500).json({
+            success: 0,
+            message: "Database error occurred."
+          });
+        }
+        if (!result) {
+          return res.status(200).json({
+            success: 2,
+            message: "No Policy Data Found.",
+            data: []
+          });
+        }
+        return res.status(200).json({
+          success: 1,
+          data: result
+        });
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong."
+      });
+    }
+  },
+
 
 };

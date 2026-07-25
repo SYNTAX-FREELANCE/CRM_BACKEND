@@ -15,6 +15,7 @@ const {
     deleteAllUserFiles,
     uploadDocumentMiddleware
 } = require("../EmployeeMaster/employeemaster.upload");
+const { uploadPolicyDocumentMiddleware } = require("./employeepolicy.upload");
 
 // ==================== USER CREATION ROUTES ====================
 
@@ -93,6 +94,14 @@ router.get(
     "/profile-photo/:userId",
     verifyAccessToken,
     userCreationController.getProfilePhoto
+);
+
+
+router.post(
+    "/upload-policy-document",
+    verifyAccessToken,
+    uploadPolicyDocumentMiddleware.array("files"),
+    userCreationController.uploadPolicyDocument
 );
 
 
