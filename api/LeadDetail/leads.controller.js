@@ -362,10 +362,17 @@ module.exports = {
   },
 
   getAssignEmployeeDtl: (req, res) => {
-    leadservie.getAssignEmployeeDtl((err, result) => {
+    const { empid } = req.params;
+    leadservie.getAssignEmployeeDtl(empid, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
       if (result && result?.length === 0) {
         return res.status(200).json({
-          success: 2,
+          success: 1,
           message: "No Assign Detail Found",
           data: [],
         });
@@ -411,10 +418,6 @@ module.exports = {
     const data = req.body;
     leadservie.updateReallocation(data, (err, result) => {
       if (err) {
-        console.log({
-          err
-        });
-
         return res.status(500).json({
           success: 0,
           message: "Database Error",
@@ -541,6 +544,31 @@ module.exports = {
   },
 
 
+  getCustomerPolicyDetails: (req, res) => {
+    const { customerid } = req.params;
+    leadservie.getCustomerPolicyDetail(customerid, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+
+      if (!result && result.length === 0) {
+        return res.status(200).json({
+          success: 1,
+          data: [],
+          message: 'No Policy Found Under This.'
+        })
+      }
+
+      return res.status(200).json({
+        success: 1,
+        data: result,
+      });
+
+    });
+  },
 
 
 
