@@ -90,6 +90,34 @@ module.exports = {
   getEmployeeAttendanceData: (employeeId, fromDate, toDate, callback) => {
     const query = `
       SELECT 
+        DATE(ua.login_time) AS attendance_date,
+        MIN(ua.id) AS id, 
+        ua.user_id, 
+        ua.username, 
+        um.name AS employee_name,
+        MIN(ua.login_time) AS login_time, 
+        MAX(ua.logout_time) AS logout_time, 
+        MAX(ua.shift_status) AS shift_status, 
+        ROUND(SUM(ua.productivity_hours), 2) AS productivity_hours, 
+        MAX(ua.system_ip) AS system_ip
+      FROM user_attendance ua
+      LEFT JOIN users_master um ON ua.username = um.employee_id
+      WHERE ua.username = ? AND DATE(ua.login_time) BETWEEN ? AND ?
+      GROUP BY DATE(ua.login_time), ua.user_id, ua.username, um.name
+      ORDER BY attendance_date DESC
+    `;
+    
+    pool.query(query, [employeeId, fromDate, toDate], (err, results) => {
+      if (err) {
+        return callback(err, null);
+      }
+      return callback(null, results);
+    });
+  },
+
+  getDetailedEmployeeAttendanceData: (employeeId, fromDate, toDate, callback) => {
+    const query = `
+      SELECT 
         ua.id, 
         ua.user_id, 
         ua.username, 
