@@ -742,7 +742,8 @@ module.exports = {
         .then(result => {
           return res.status(200).json({
             success: 1,
-            message: `${file_type} uploaded Successfully`,
+            message: `${file_type} uploaded Successfullynpm start
+            `,
             data: result
           });
         })
