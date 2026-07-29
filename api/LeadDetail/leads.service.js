@@ -535,6 +535,7 @@ module.exports = {
         v.engine_number,
         v.chassis_number,
         v.known_policy_expiry_date,
+        v.registration_date,
       
         
       p.policy_id,
