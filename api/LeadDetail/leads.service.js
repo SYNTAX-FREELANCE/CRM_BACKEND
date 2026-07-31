@@ -766,74 +766,146 @@ ORDER BY
     try {
       const summaryQuery = `
       SELECT
-        SUM(CASE WHEN DATE(lf.next_followup_date) < CURDATE() THEN 1 ELSE 0 END) AS overdue,
-
-        SUM(CASE WHEN DATE(lf.next_followup_date) = CURDATE() THEN 1 ELSE 0 END) AS today,
-
-        SUM(CASE WHEN DATE(lf.next_followup_date) = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS tomorrow,
-
-        SUM(CASE 
-          WHEN DATE(lf.next_followup_date) BETWEEN 
-               DATE_ADD(CURDATE(), INTERVAL 2 DAY)
-               AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
-          THEN 1 ELSE 0 
-        END) AS next7days
-
+          SUM(CASE WHEN DATE(lf.next_followup_date) < CURDATE() THEN 1 ELSE 0 END) AS overdue,
+          SUM(CASE WHEN DATE(lf.next_followup_date) = CURDATE() THEN 1 ELSE 0 END) AS today,
+          SUM(CASE WHEN DATE(lf.next_followup_date) = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS tomorrow,
+          SUM(CASE
+                  WHEN DATE(lf.next_followup_date)
+                      BETWEEN DATE_ADD(CURDATE(), INTERVAL 2 DAY)
+                          AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+                  THEN 1 ELSE 0
+              END) AS next7days
       FROM lead_followups lf
-      INNER JOIN leads l ON l.lead_id = lf.lead_id
-      WHERE l.assigned_to = ?;
-    `;
-
-      const followupQuery = `
-      SELECT
-        lf.followup_id,
-        lf.lead_id,
-
-        c.customer_name,
-        c.mobile_number_1,
-        c.mobile_number_2,
-        c.address,
-        c.city,
-
-        v.registration_number,
-        v.model,
-        v.fuel_type,
-        v.vehicle_category,
-        lsm.status_id,
-
-        lsm.status_name,
-        lf.call_outcome,
-        lf.remarks,
-        lf.next_followup_date,
-
-        TIME_FORMAT(lf.next_followup_date, '%h:%i %p') AS followup_time,
-
-        CASE
-          WHEN lsm.status_name='CALLBACK' THEN 'Callback'
-          WHEN lsm.status_name='APPOINMENT' THEN 'Appointment'
-          WHEN lsm.status_name='QUOTE' THEN 'Quote'
-          WHEN lsm.status_name='SOLD' THEN 'Policy Sold'
-          WHEN lsm.status_name='LOST' THEN 'Lost Lead'
-          ELSE lsm.status_name
-        END AS action,
-
-        CASE
-          WHEN DATE(lf.next_followup_date) < CURDATE() THEN 'overdue'
-          WHEN DATE(lf.next_followup_date) = CURDATE() THEN 'today'
-          WHEN DATE(lf.next_followup_date) = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 'tomorrow'
-          ELSE 'upcoming'
-        END AS bucket
-
-      FROM lead_followups lf
-      INNER JOIN leads l ON l.lead_id = lf.lead_id
-      INNER JOIN customers c ON c.customer_id = l.customer_id
-      INNER JOIN vehicles v ON v.vehicle_id = l.vehicle_id
-      INNER JOIN lead_status_master lsm ON lsm.status_id = lf.status_id
-
+      INNER JOIN (
+          SELECT lead_id, MAX(followup_id) AS latest_followup
+          FROM lead_followups
+          GROUP BY lead_id
+      ) latest
+          ON latest.latest_followup = lf.followup_id
+      INNER JOIN leads l
+          ON l.lead_id = lf.lead_id
+      INNER JOIN lead_status_master lsm
+          ON lsm.status_id = l.status_id
       WHERE l.assigned_to = ?
-      ORDER BY lf.next_followup_date ASC;
+        AND lsm.requires_followup = 1
     `;
 
+      //   const followupQuery = `
+      //   SELECT
+      //     lf.followup_id,
+      //     lf.lead_id,
+
+      //     c.customer_name,
+      //     c.mobile_number_1,
+      //     c.mobile_number_2,
+      //     c.address,
+      //     c.city,
+
+      //     v.registration_number,
+      //     v.model,
+      //     v.fuel_type,
+      //     v.vehicle_category,
+      //     lsm.status_id,
+
+      //     lsm.status_name,
+      //     lf.call_outcome,
+      //     lf.remarks,
+      //     lf.next_followup_date,
+
+      //     TIME_FORMAT(lf.next_followup_date, '%h:%i %p') AS followup_time,
+
+      //     CASE
+      //       WHEN lsm.status_name='CALLBACK' THEN 'Callback'
+      //       WHEN lsm.status_name='APPOINMENT' THEN 'Appointment'
+      //       WHEN lsm.status_name='QUOTE' THEN 'Quote'
+      //       WHEN lsm.status_name='SOLD' THEN 'Policy Sold'
+      //       WHEN lsm.status_name='LOST' THEN 'Lost Lead'
+      //       ELSE lsm.status_name
+      //     END AS action,
+
+      //     CASE
+      //       WHEN DATE(lf.next_followup_date) < CURDATE() THEN 'overdue'
+      //       WHEN DATE(lf.next_followup_date) = CURDATE() THEN 'today'
+      //       WHEN DATE(lf.next_followup_date) = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 'tomorrow'
+      //       ELSE 'upcoming'
+      //     END AS bucket
+
+      //   FROM lead_followups lf
+      //   INNER JOIN leads l ON l.lead_id = lf.lead_id
+      //   INNER JOIN customers c ON c.customer_id = l.customer_id
+      //   INNER JOIN vehicles v ON v.vehicle_id = l.vehicle_id
+      //   INNER JOIN lead_status_master lsm ON lsm.status_id = lf.status_id
+
+      //   WHERE l.assigned_to = ?
+      //   ORDER BY lf.next_followup_date ASC;
+      // `;
+      const followupQuery = `
+SELECT
+    lf.followup_id,
+    lf.lead_id,
+
+    c.customer_name,
+    c.mobile_number_1,
+    c.mobile_number_2,
+    c.address,
+    c.city,
+
+    v.registration_number,
+    v.model,
+    v.fuel_type,
+    v.vehicle_category,
+
+    lsm.status_id,
+    lsm.status_name,
+
+    lf.call_outcome,
+    lf.remarks,
+    lf.next_followup_date,
+
+    TIME_FORMAT(lf.next_followup_date, '%h:%i %p') AS followup_time,
+
+    CASE
+        WHEN lsm.status_name = 'CALLBACK' THEN 'Callback'
+        WHEN lsm.status_name = 'APPOINTMENT' THEN 'Appointment'
+        WHEN lsm.status_name = 'QUOTE' THEN 'Quote'
+        WHEN lsm.status_name = 'SOLD' THEN 'Policy Sold'
+        WHEN lsm.status_name = 'LOST' THEN 'Lost Lead'
+        ELSE lsm.status_name
+    END AS action,
+
+    CASE
+        WHEN DATE(lf.next_followup_date) < CURDATE() THEN 'overdue'
+        WHEN DATE(lf.next_followup_date) = CURDATE() THEN 'today'
+        WHEN DATE(lf.next_followup_date) = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 'tomorrow'
+        ELSE 'upcoming'
+    END AS bucket
+
+FROM lead_followups lf
+
+INNER JOIN (
+    SELECT lead_id, MAX(followup_id) AS latest_followup_id
+    FROM lead_followups
+    GROUP BY lead_id
+) latest
+    ON latest.latest_followup_id = lf.followup_id
+
+INNER JOIN leads l
+    ON l.lead_id = lf.lead_id
+
+INNER JOIN customers c
+    ON c.customer_id = l.customer_id
+
+INNER JOIN vehicles v
+    ON v.vehicle_id = l.vehicle_id
+
+INNER JOIN lead_status_master lsm
+    ON lsm.status_id = l.status_id
+
+WHERE l.assigned_to = ?
+  AND lsm.requires_followup = 1
+
+ORDER BY lf.next_followup_date ASC;
+`;
       const [summary, rows] = await Promise.all([
         query(summaryQuery, [empid]),
         query(followupQuery, [empid]),
