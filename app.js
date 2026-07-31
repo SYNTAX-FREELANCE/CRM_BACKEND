@@ -15,11 +15,8 @@ const server = http.createServer(app);
 
 // Serve the C:\uploads folder at /uploads URL
 app.use("/uploads", express.static("C:/uploads"));
-
-app.use(
-    "/policy-documents",
-    express.static("C:/CRM/PolicyDocuments")
-);
+app.use("/policy-documents", express.static("C:/CRM/PolicyDocuments"));
+app.use("/lead-documents", express.static("C:/CRM/LeadDocuments"));
 
 // middlewares
 app.use(cors(corsConfig));

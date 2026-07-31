@@ -16,6 +16,7 @@ const {
   uploadDocumentMiddleware,
 } = require("../EmployeeMaster/employeemaster.upload");
 const { uploadPolicyDocumentMiddleware } = require("./employeepolicy.upload");
+const { uploadLeadDocumentMiddleware } = require("./employeelead.upload");
 
 // ==================== USER CREATION ROUTES ====================
 
@@ -126,18 +127,39 @@ router.get(
 );
 
 router.delete(
-    "/policy-document/:file_id",
-    verifyAccessToken,
-    userCreationController.deletePolicyDocument
+  "/policy-document/:file_id",
+  verifyAccessToken,
+  userCreationController.deletePolicyDocument
 );
 
 
 // employee.router.js
 
 router.get(
-    "/attendance/:user_id",
-    verifyAccessToken,
-    userCreationController.getUserAttendance
+  "/attendance/:user_id",
+  verifyAccessToken,
+  userCreationController.getUserAttendance
+);
+
+
+
+router.post(
+  "/upload-lead-document",
+  verifyAccessToken,
+  uploadLeadDocumentMiddleware.array("files"),
+  userCreationController.uploadLeadDocument,
+);
+
+router.get(
+  "/lead-documents/:lead_id",
+  verifyAccessToken,
+  userCreationController.getLeadDocuments,
+);
+
+router.delete(
+  "/lead-document/:file_id",
+  verifyAccessToken,
+  userCreationController.deleteLeadDocument,
 );
 
 module.exports = router;

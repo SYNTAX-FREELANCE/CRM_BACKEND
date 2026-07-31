@@ -401,4 +401,35 @@ module.exports = {
       },
     );
   },
+  insertLeadFile: (data, callback) => {
+    pool.query(
+      `INSERT INTO lead_files
+    (
+      lead_id,
+      file_type,
+      file_name,
+      file_path,
+      file_size,
+      mime_type,
+      uploaded_by
+    )
+    VALUES (?,?,?,?,?,?,?)`,
+      [
+        data.lead_id,
+        data.file_type,
+        data.file_name,
+        data.file_path,
+        data.file_size,
+        data.mime_type,
+        data.uploaded_by,
+      ],
+      (err, result) => {
+        if (err) {
+          return callback(err, null);
+        }
+
+        return callback(null, result);
+      }
+    );
+  },
 };

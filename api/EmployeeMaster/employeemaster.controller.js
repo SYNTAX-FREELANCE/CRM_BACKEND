@@ -17,6 +17,7 @@ const {
   getPolicyDocumentsService,
   deletePolicyDocumentService,
 } = require("./employeepolicy.upload");
+const { deleteLeadDocumentService, getLeadDocumentsService } = require("./employeelead.upload");
 
 module.exports = {
   // ==================== CREATE USER WITH FILES ====================
@@ -839,6 +840,120 @@ module.exports = {
         success: 1,
         message: "Attendance fetched successfully",
         data: result,
+      });
+    });
+  },
+  uploadLeadDocument: (req, res) => {
+    try {
+      const { lead_id, file_type, uploaded_by } = req.body;
+
+      const files = req.files;
+
+      if (!lead_id) {
+        return res.status(200).json({
+          success: 0,
+          message: "lead_id is required",
+        });
+      }
+
+      if (!files || files.length === 0) {
+        return res.status(200).json({
+          success: 0,
+          message: "No files uploaded",
+        });
+      }
+
+      const insertPromises = files.map((file) => {
+        const data = {
+          lead_id,
+          file_type,
+          file_name: file.originalname,
+          file_path: file.path,
+          file_size: file.size,
+          mime_type: file.mimetype,
+          uploaded_by,
+        };
+
+        return new Promise((resolve, reject) => {
+          userCreationService.insertLeadFile(data, (err, result) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve({
+                file_id: result.insertId,
+                ...data,
+              });
+            }
+          });
+        });
+      });
+
+      Promise.all(insertPromises)
+        .then((result) => {
+          return res.status(200).json({
+            success: 1,
+            message: `${file_type} uploaded successfully`,
+            data: result,
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+
+          return res.status(500).json({
+            success: 0,
+            message: "Database Error",
+          });
+        });
+
+    } catch (err) {
+      console.log(err);
+
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong",
+      });
+    }
+  },
+  getLeadDocuments: (req, res) => {
+    const { lead_id } = req.params;
+
+    getLeadDocumentsService(lead_id, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: err.message,
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Lead documents fetched successfully",
+        data: result,
+      });
+    });
+  },
+
+  deleteLeadDocument: (req, res) => {
+    const { file_id } = req.params;
+
+    deleteLeadDocumentService(file_id, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: err.sqlMessage || err.message,
+        });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(200).json({
+          success: 0,
+          message: "Document not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Document deleted successfully",
       });
     });
   },
