@@ -5,7 +5,7 @@ module.exports = {
     // ==================== CREATE COMPANY ====================
     createCompany: (req, res) => {
         try {
-            const { company_name, company_address, company_location, company_email, isActive } = req.body;
+            const { company_name, company_address, company_location, company_email, isActive, employee_prefix } = req.body;
 
             // Validation
             if (!company_name || company_name.trim() === "") {
@@ -21,6 +21,7 @@ module.exports = {
                 company_address: company_address || null,
                 company_location: company_location || null,
                 company_email: company_email || null,
+                employee_prefix: employee_prefix || null,
                 is_active: isActive
             };
 
@@ -116,7 +117,7 @@ module.exports = {
         try {
             const { companyId } = req.params;
 
-            const { company_name, company_address, company_email, company_location, isActive } = req.body;
+            const { company_name, company_address, company_email, company_location, employee_prefix, isActive } = req.body;
 
             // Validation
             if (!company_name || company_name.trim() === "") {
@@ -131,6 +132,7 @@ module.exports = {
                 company_address: company_address || null,
                 company_location: company_location || null,
                 company_email: company_email || null,
+                employee_prefix: employee_prefix || null,
                 is_active: isActive
             };
 

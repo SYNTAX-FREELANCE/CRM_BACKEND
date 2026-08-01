@@ -13,6 +13,11 @@ const {
   generateTokens,
   generateAccessToken,
 } = require("../../Middleware/generateTokens");
+const {
+  getPolicyDocumentsService,
+  deletePolicyDocumentService,
+} = require("./employeepolicy.upload");
+const { deleteLeadDocumentService, getLeadDocumentsService } = require("./employeelead.upload");
 
 module.exports = {
   // ==================== CREATE USER WITH FILES ====================
@@ -32,6 +37,9 @@ module.exports = {
         role_id,
         user_status,
         is_active,
+        dob,
+        email,
+        address,
       } = req.body;
 
       // Validation
@@ -57,6 +65,9 @@ module.exports = {
         role_id: role_id,
         user_status: user_status,
         is_active: is_active,
+        dob: dob || null,
+        email: email ? email.trim() : null,
+        address: address ? address.trim() : null,
       };
 
       // Step 1: Create user in users_master + users table (creates auth account)
@@ -236,6 +247,9 @@ module.exports = {
         role_id,
         user_status,
         is_active,
+        dob,
+        email,
+        address,
       } = req.body;
 
       // Validation
@@ -245,7 +259,6 @@ module.exports = {
           message: "Name and Mobile Number are required",
         });
       }
-
       // Prepare user data
       const userData = {
         name: name,
@@ -261,6 +274,9 @@ module.exports = {
         role_id: role_id || null,
         user_status: user_status,
         is_active: is_active,
+        dob: dob || null,
+        email: email ? email.trim() : null,
+        address: address ? address.trim() : null,
       };
 
       // Step 1: Update user in users_master
@@ -390,25 +406,25 @@ module.exports = {
       if (!user_id) {
         return res.status(400).json({
           success: 0,
-          message: "user_id is required"
+          message: "user_id is required",
         });
       }
 
       if (!files || files.length === 0) {
         return res.status(400).json({
           success: 0,
-          message: "No files uploaded"
+          message: "No files uploaded",
         });
       }
 
-      const insertPromises = files.map(file => {
+      const insertPromises = files.map((file) => {
         const fileData = {
           user_id: user_id,
           file_type: file_type || "others",
           file_name: file.originalname,
           file_path: file.path,
           file_size: file.size,
-          mime_type: file.mimetype
+          mime_type: file.mimetype,
         };
 
         return new Promise((resolve, reject) => {
@@ -418,7 +434,7 @@ module.exports = {
             } else {
               resolve({
                 file_id: result.insertId,
-                ...fileData
+                ...fileData,
               });
             }
           });
@@ -426,25 +442,25 @@ module.exports = {
       });
 
       Promise.all(insertPromises)
-        .then(insertedFiles => {
+        .then((insertedFiles) => {
           return res.status(200).json({
             success: 1,
             message: "Documents uploaded successfully",
-            data: insertedFiles
+            data: insertedFiles,
           });
         })
-        .catch(err => {
+        .catch((err) => {
           console.error("Multiple file insert error:", err);
           return res.status(500).json({
             success: 0,
-            message: "Failed to save file details in database"
+            message: "Failed to save file details in database",
           });
         });
     } catch (error) {
       console.error("uploadDocument error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong"
+        message: "Something went wrong",
       });
     }
   },
@@ -457,7 +473,7 @@ module.exports = {
       if (!fileId) {
         return res.status(400).json({
           success: 0,
-          message: "fileId parameter is required"
+          message: "fileId parameter is required",
         });
       }
 
@@ -467,13 +483,13 @@ module.exports = {
           console.error(err);
           return res.status(500).json({
             success: 0,
-            message: "Something went wrong"
+            message: "Something went wrong",
           });
         }
         if (!file) {
           return res.status(404).json({
             success: 0,
-            message: "File not found"
+            message: "File not found",
           });
         }
 
@@ -483,12 +499,12 @@ module.exports = {
             console.error(err);
             return res.status(500).json({
               success: 0,
-              message: "Failed to update database record"
+              message: "Failed to update database record",
             });
           }
           return res.status(200).json({
             success: 1,
-            message: "File deleted successfully"
+            message: "File deleted successfully",
           });
         });
       });
@@ -496,7 +512,7 @@ module.exports = {
       console.error("deleteUserFile error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong"
+        message: "Something went wrong",
       });
     }
   },
@@ -509,7 +525,7 @@ module.exports = {
       if (!fileId) {
         return res.status(400).json({
           success: 0,
-          message: "fileId parameter is required"
+          message: "fileId parameter is required",
         });
       }
 
@@ -518,13 +534,13 @@ module.exports = {
           console.error(err);
           return res.status(500).json({
             success: 0,
-            message: "Something went wrong"
+            message: "Something went wrong",
           });
         }
         if (!file) {
           return res.status(404).json({
             success: 0,
-            message: "File not found"
+            message: "File not found",
           });
         }
 
@@ -533,7 +549,7 @@ module.exports = {
         if (!fs.existsSync(file.file_path)) {
           return res.status(404).json({
             success: 0,
-            message: "File does not exist on C drive disk"
+            message: "File does not exist on C drive disk",
           });
         }
 
@@ -544,7 +560,7 @@ module.exports = {
       console.error("viewFile error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong"
+        message: "Something went wrong",
       });
     }
   },
@@ -554,13 +570,15 @@ module.exports = {
     const id = req.query.id || req.params.id;
     const filename = req.query.filename;
     if (!id || !filename) {
-      return res.status(400).json({ success: 0, message: "id and filename are required" });
+      return res
+        .status(400)
+        .json({ success: 0, message: "id and filename are required" });
     }
 
     const path = require("path");
     const fs = require("fs");
 
-    const folderPath = path.join('C:/CRM/EmployeeDetails', String(id));
+    const folderPath = path.join("C:/CRM/EmployeeDetails", String(id));
 
     // Scan subfolders to find where filename exists on disk
     const subfolders = ["bank", "resume", "aadhar", "others"];
@@ -605,17 +623,31 @@ module.exports = {
       const file = req.file;
 
       if (!userId) {
-        return res.status(400).json({ success: 0, message: "userId is required" });
+        return res
+          .status(400)
+          .json({ success: 0, message: "userId is required" });
       }
       if (!file) {
-        return res.status(400).json({ success: 0, message: "No file uploaded" });
+        return res
+          .status(400)
+          .json({ success: 0, message: "No file uploaded" });
+      }
+
+      // Enforce file extension check (.jpg, .jpeg, .jpj)
+      const fileExt = path.extname(file.originalname).toLowerCase();
+      const allowedExtensions = [".jpg", ".jpeg", ".jpj"];
+      if (!allowedExtensions.includes(fileExt)) {
+        return res.status(400).json({
+          success: 0,
+          message: "Only JPG and JPEG images are allowed.",
+        });
       }
 
       // Enforce maximum size of 5 MB (5 * 1024 * 1024 bytes)
       if (file.size > 5 * 1024 * 1024) {
         return res.status(400).json({
           success: 0,
-          message: "Profile photo exceeds the maximum size limit of 5 MB."
+          message: "Profile photo exceeds the maximum size limit of 5 MB.",
         });
       }
 
@@ -640,11 +672,13 @@ module.exports = {
       return res.status(200).json({
         success: 1,
         message: "Profile photo uploaded successfully",
-        filePath: targetPath
+        filePath: targetPath,
       });
     } catch (error) {
       console.error("uploadProfilePhoto error:", error);
-      return res.status(500).json({ success: 0, message: "Internal server error" });
+      return res
+        .status(500)
+        .json({ success: 0, message: "Internal server error" });
     }
   },
 
@@ -665,9 +699,6 @@ module.exports = {
       }
 
       const filePath = path.join(dir, files[0]);
-      console.log({
-        filePath
-      });
 
       res.setHeader("Content-Type", "image/jpeg");
       return res.sendFile(filePath);
@@ -676,5 +707,254 @@ module.exports = {
       return res.status(500).send("Internal Server Error");
     }
   },
- 
+
+  uploadPolicyDocument: (req, res) => {
+    try {
+      const { policy_id, customer_id, file_type, uploaded_by } = req.body;
+
+      const files = req.files;
+      if (!policy_id) {
+        return res.status(200).json({
+          success: 0,
+          message: "policy_id is required",
+        });
+      }
+
+      if (!files || files.length === 0) {
+        return res.status(200).json({
+          success: 0,
+          message: "No files uploaded",
+        });
+      }
+
+      const insertPromises = files.map((file) => {
+        const data = {
+          policy_id,
+          file_type,
+          file_name: file.originalname,
+          file_path: file.path,
+          file_size: file.size,
+          mime_type: file.mimetype,
+          uploaded_by,
+        };
+
+        return new Promise((resolve, reject) => {
+          userCreationService.insertPolicyFile(data, (err, result) => {
+            if (err) reject(err);
+            else
+              resolve({
+                file_id: result.insertId,
+                ...data,
+              });
+          });
+        });
+      });
+
+      Promise.all(insertPromises)
+        .then((result) => {
+          return res.status(200).json({
+            success: 1,
+            message: `${file_type} uploaded Successfully`,
+            data: result,
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+          return res.status(500).json({
+            success: 0,
+            message: "Database Error",
+          });
+        });
+    } catch (e) {
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong",
+      });
+    }
+  },
+
+  getPolicyDocuments: (req, res) => {
+    const { policy_id } = req.params;
+
+    getPolicyDocumentsService(policy_id, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: err.message,
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Policy documents fetched successfully",
+        data: result,
+      });
+    });
+  },
+  deletePolicyDocument: (req, res) => {
+    const { file_id } = req.params;
+    deletePolicyDocumentService(file_id, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: err.sqlMessage || err.message,
+        });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(200).json({
+          success: 0,
+          message: "Document not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Document deleted successfully",
+      });
+    });
+  },
+  // employee.controller.js
+
+  getUserAttendance: (req, res) => {
+    const { user_id } = req.params;
+
+    if (!user_id) {
+      return res.status(200).json({
+        success: 0,
+        message: "User ID is required",
+      });
+    }
+
+    userCreationService.getTodayAttendanceService(user_id, (err, result) => {
+      if (err) {
+        console.log(err);
+
+        return res.status(500).json({
+          success: 0,
+          message: err.sqlMessage || err.message,
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Attendance fetched successfully",
+        data: result,
+      });
+    });
+  },
+  uploadLeadDocument: (req, res) => {
+    try {
+      const { lead_id, file_type, uploaded_by } = req.body;
+
+      const files = req.files;
+
+      if (!lead_id) {
+        return res.status(200).json({
+          success: 0,
+          message: "lead_id is required",
+        });
+      }
+
+      if (!files || files.length === 0) {
+        return res.status(200).json({
+          success: 0,
+          message: "No files uploaded",
+        });
+      }
+
+      const insertPromises = files.map((file) => {
+        const data = {
+          lead_id,
+          file_type,
+          file_name: file.originalname,
+          file_path: file.path,
+          file_size: file.size,
+          mime_type: file.mimetype,
+          uploaded_by,
+        };
+
+        return new Promise((resolve, reject) => {
+          userCreationService.insertLeadFile(data, (err, result) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve({
+                file_id: result.insertId,
+                ...data,
+              });
+            }
+          });
+        });
+      });
+
+      Promise.all(insertPromises)
+        .then((result) => {
+          return res.status(200).json({
+            success: 1,
+            message: `${file_type} uploaded successfully`,
+            data: result,
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+
+          return res.status(500).json({
+            success: 0,
+            message: "Database Error",
+          });
+        });
+
+    } catch (err) {
+      console.log(err);
+
+      return res.status(500).json({
+        success: 0,
+        message: "Something went wrong",
+      });
+    }
+  },
+  getLeadDocuments: (req, res) => {
+    const { lead_id } = req.params;
+
+    getLeadDocumentsService(lead_id, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: err.message,
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Lead documents fetched successfully",
+        data: result,
+      });
+    });
+  },
+
+  deleteLeadDocument: (req, res) => {
+    const { file_id } = req.params;
+
+    deleteLeadDocumentService(file_id, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: err.sqlMessage || err.message,
+        });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(200).json({
+          success: 0,
+          message: "Document not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Document deleted successfully",
+      });
+    });
+  },
 };

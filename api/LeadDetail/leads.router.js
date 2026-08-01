@@ -78,7 +78,7 @@ router.get("/active-batches", verifyAccessToken, leacontroller.getActiveEmployee
 
 router.get("/employee-batch/:empid", verifyAccessToken, leacontroller.getEmployeeBatchDetail);
 
-router.get('/employee/assigndtl', verifyAccessToken, leacontroller.getAssignEmployeeDtl)
+router.get('/employee/assigndtl/:empid', verifyAccessToken, leacontroller.getAssignEmployeeDtl)
 
 
 router.post('/update-reallocation', verifyAccessToken, leacontroller.updateReallocation);
@@ -98,6 +98,13 @@ router.get(
     "/employee-recent-activity/:empId",
     verifyAccessToken,
     leacontroller.getSingleEmployeeRecentActivity,
+);
+
+
+router.get(
+    "/employee-policy-detail/:customerid",
+    verifyAccessToken,
+    leacontroller.getCustomerPolicyDetails,
 );
 
 module.exports = router;

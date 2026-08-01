@@ -7,6 +7,8 @@ const verifyAccessToken = require("../../Middleware/verifyAccessToken");
 // 1. Fetch employee list (Admin and Team Lead use cases)
 router.get("/employees", verifyAccessToken, userInfoController.getEmployees);
 
+router.get("/employees/:empid", verifyAccessToken, userInfoController.getEmployeesDetailsById);
+
 // 2. Fetch selected employee's performance (calls, appointments, callbacks)
 router.get("/performance/:employeeId", verifyAccessToken, userInfoController.getEmployeePerformance);
 

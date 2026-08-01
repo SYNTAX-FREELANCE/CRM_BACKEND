@@ -27,4 +27,12 @@ router.get("/employee-attendance", verifyAccessToken, reportsController.getEmplo
 // Export Employee Attendance Report to Excel
 router.get("/employee-attendance/export", verifyAccessToken, reportsController.exportEmployeeAttendanceExcel);
 
+// ==================== DETAILED EMPLOYEE ATTENDANCE ROUTES ====================
+
+// Get Detailed Employee Attendance Report JSON data
+router.get("/employee-attendance-detailed", verifyAccessToken, reportsController.getDetailedEmployeeAttendance);
+
+// Export Detailed Employee Attendance Report to Excel
+router.get("/employee-attendance-detailed/export", verifyAccessToken, reportsController.exportDetailedEmployeeAttendanceExcel);
+
 module.exports = router;

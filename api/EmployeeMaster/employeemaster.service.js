@@ -28,24 +28,12 @@ module.exports = {
 
         // Step 2: Insert into users_master
         pool.query(
-          `INSERT INTO users_master
-        (
-            employee_id,
-            name,
-            age,
-            gender,
-            qualification_id,
-            date_of_join,
-            experience,
-            mobile_number_1,
-            mobile_number_2,
-            aadhar_number,
-            company_id,
-            role_id,
-            user_status,
-            is_active
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO users_master 
+                    (employee_id, name, age, gender, qualification_id, date_of_join, 
+                     experience, mobile_number_1, mobile_number_2, aadhar_number, 
+                     company_id, role_id, user_status, is_active, dob, email, address)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+
           [
             nextEmployeeId,
             userData.name,
@@ -61,6 +49,9 @@ module.exports = {
             userData.role_id,
             userData.user_status,
             userData.is_active,
+            userData.dob,
+            userData.email,
+            userData.address,
           ],
           (err, masterResult) => {
             if (err) {
@@ -119,7 +110,7 @@ module.exports = {
     const queries = fileDataArray.map((fileData) => {
       return new Promise((resolve, reject) => {
         pool.query(
-          `INSERT INTO crm_new_project.user_files 
+          `INSERT INTO user_files 
                     (user_id, file_type, file_name, file_path, file_size, mime_type)
                     VALUES (?, ?, ?, ?, ?, ?)`,
           [
@@ -219,6 +210,9 @@ module.exports = {
              role_id = ?, 
              user_status = ?, 
              is_active = ?, 
+             dob = ?,
+             email = ?,
+             address = ?,
              updated_at = CURRENT_TIMESTAMP
          WHERE user_id = ?`,
       [
@@ -235,6 +229,9 @@ module.exports = {
         userData.role_id,
         userData.user_status,
         userData.is_active,
+        userData.dob,
+        userData.email,
+        userData.address,
         userId,
       ],
       (err, result) => {
@@ -249,7 +246,7 @@ module.exports = {
   // ==================== GET USER FILES ====================
   getUserFiles: (userId, callback) => {
     pool.query(
-      `SELECT * FROM crm_new_project.user_files 
+      `SELECT * FROM user_files 
             WHERE user_id = ? AND is_active = TRUE
             ORDER BY created_at DESC`,
       [userId],
@@ -265,7 +262,7 @@ module.exports = {
   // ==================== INSERT SINGLE USER FILE ====================
   insertSingleFile: (fileData, callback) => {
     pool.query(
-      `INSERT INTO crm_new_project.user_files 
+      `INSERT INTO user_files 
             (user_id, file_type, file_name, file_path, file_size, mime_type)
             VALUES (?, ?, ?, ?, ?, ?)`,
       [
@@ -306,7 +303,7 @@ module.exports = {
   // ==================== DEACTIVATE FILE ====================
   deactivateFile: (fileId, callback) => {
     pool.query(
-      `UPDATE crm_new_project.user_files 
+      `UPDATE user_files 
             SET is_active = FALSE 
             WHERE file_id = ?`,
       [fileId],
@@ -322,14 +319,14 @@ module.exports = {
   // ==================== DEACTIVATE FILES BY TYPE ====================
   deactivateFilesByType: (userId, fileType, callback) => {
     pool.query(
-      `SELECT * FROM crm_new_project.user_files 
+      `SELECT * FROM user_files 
             WHERE user_id = ? AND file_type = ? AND is_active = TRUE`,
       [userId, fileType],
       (err, files) => {
         if (err) return callback(err, null);
 
         pool.query(
-          `UPDATE crm_new_project.user_files 
+          `UPDATE user_files 
                 SET is_active = FALSE 
                 WHERE user_id = ? AND file_type = ?`,
           [userId, fileType],
@@ -339,6 +336,100 @@ module.exports = {
           },
         );
       },
+    );
+  },
+
+  insertPolicyFile: (data, callback) => {
+    pool.query(
+      `INSERT INTO policy_files
+        (
+            policy_id,
+            file_type,
+            file_name,
+            file_path,
+            file_size,
+            mime_type,
+            uploaded_by
+        )
+        VALUES (?,?,?,?,?,?,?)`,
+      [
+        data.policy_id,
+        data.file_type,
+        data.file_name,
+        data.file_path,
+        data.file_size,
+        data.mime_type,
+        data.uploaded_by,
+      ],
+      (err, result) => {
+        if (err) {
+          return callback(err, null);
+        }
+        callback(null, result);
+      },
+    );
+  },
+
+  // employee.service.js
+
+  getTodayAttendanceService: (user_id, callback) => {
+    pool.query(
+      `
+        SELECT
+            id,
+            user_id,
+            username,
+            login_time,
+            logout_time,
+            shift_status,
+            productivity_hours,
+            system_ip
+        FROM user_attendance
+        WHERE
+            user_id = ?
+            AND DATE(login_time) = CURDATE()
+        ORDER BY login_time DESC
+        `,
+      [user_id],
+      (err, results) => {
+        if (err) {
+          console.log(err);
+          return callback(err, null);
+        }
+
+        return callback(null, results);
+      },
+    );
+  },
+  insertLeadFile: (data, callback) => {
+    pool.query(
+      `INSERT INTO lead_files
+    (
+      lead_id,
+      file_type,
+      file_name,
+      file_path,
+      file_size,
+      mime_type,
+      uploaded_by
+    )
+    VALUES (?,?,?,?,?,?,?)`,
+      [
+        data.lead_id,
+        data.file_type,
+        data.file_name,
+        data.file_path,
+        data.file_size,
+        data.mime_type,
+        data.uploaded_by,
+      ],
+      (err, result) => {
+        if (err) {
+          return callback(err, null);
+        }
+
+        return callback(null, result);
+      }
     );
   },
 };

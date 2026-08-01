@@ -51,29 +51,14 @@ module.exports = {
           return res.status(500).send("Something went wrong while generating the report");
         }
 
-        // Map data to clean user-friendly Excel column headers
+        // Map data to match the UI table columns
         const mappedData = results.map(row => ({
-          "Lead ID": row.lead_id,
-          "Customer ID": row.customer_id,
-          "Vehicle ID": row.vehicle_id,
-          "Policy ID": row.policy_id,
-          "Status ID": row.status_id,
+          "Customer Name": row.customer_name || "N/A",
+          "Vehicle ID": row.vehicle_id || "N/A",
           "Status Name": row.status_name || "N/A",
           "Assigned To": row.assigned_to || "Unassigned",
           "Assigned Date": row.assigned_date ? new Date(row.assigned_date).toLocaleDateString() : "N/A",
-          "Is Assigned": row.is_assigned === 1 ? "Yes" : "No",
-          "Remarks": row.remarks || "",
-          "Created At": row.created_at ? new Date(row.created_at).toLocaleString() : "N/A",
-          "Is Locked": row.is_locked === 1 ? "Yes" : "No",
-          "Work Status": row.work_status || "",
-          "Created By": row.created_by || "",
-          "Edited By": row.edited_by || "",
-          "Status Display Order": row.display_order || "",
-          "Status Active": row.status_is_active === 1 ? "Active" : "Inactive",
-          "Requires Follow-up": row.requires_followup === 1 ? "Yes" : "No",
-          "Is Call Required": row.is_call_required === 1 ? "Yes" : "No",
-          "Is Policy Required": row.is_policy_required === 1 ? "Yes" : "No",
-          "Is Follow-up Date Required": row.is_followup_date_required === 1 ? "Yes" : "No"
+          "Remarks": row.remarks || ""
         }));
 
         const workbook = xlsx.utils.book_new();
@@ -141,29 +126,14 @@ module.exports = {
           return res.status(500).send("Something went wrong while generating the report");
         }
 
-        // Map data to clean user-friendly Excel column headers
+        // Map data to match the UI table columns
         const mappedData = results.map(row => ({
-          "Lead ID": row.lead_id,
-          "Customer ID": row.customer_id,
-          "Vehicle ID": row.vehicle_id,
-          "Policy ID": row.policy_id,
-          "Status ID": row.status_id,
+          "Customer Name": row.customer_name || "N/A",
           "Status Name": row.status_name || "N/A",
           "Assigned To": row.employee_name ? `${row.employee_name} (${row.employee_id})` : (row.assigned_to || "Unassigned"),
           "Assigned Date": row.assigned_date ? new Date(row.assigned_date).toLocaleDateString() : "N/A",
-          "Is Assigned": row.is_assigned === 1 ? "Yes" : "No",
-          "Remarks": row.remarks || "",
-          "Created At": row.created_at ? new Date(row.created_at).toLocaleString() : "N/A",
-          "Is Locked": row.is_locked === 1 ? "Yes" : "No",
-          "Work Status": row.work_status || "",
-          "Created By": row.created_by || "",
-          "Edited By": row.edited_by || "",
-          "Status Display Order": row.display_order || "",
-          "Status Active": row.status_is_active === 1 ? "Active" : "Inactive",
-          "Requires Follow-up": row.requires_followup === 1 ? "Yes" : "No",
-          "Is Call Required": row.is_call_required === 1 ? "Yes" : "No",
-          "Is Policy Required": row.is_policy_required === 1 ? "Yes" : "No",
-          "Is Follow-up Date Required": row.is_followup_date_required === 1 ? "Yes" : "No"
+          "Work Status": row.work_status || "N/A",
+          "Remarks": row.remarks || ""
         }));
 
         const workbook = xlsx.utils.book_new();
@@ -231,15 +201,35 @@ module.exports = {
           return res.status(500).send("Something went wrong while generating the report");
         }
 
+        const formatDateTime = (dateStr) => {
+          if (!dateStr) return "N/A";
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) return "N/A";
+          return date.toLocaleString("en-US", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+          });
+        };
+
+        const formatProductivityHours = (val) => {
+          if (!val || isNaN(val)) return "0 hrs 0 mins";
+          const totalMinutes = Math.round(parseFloat(val) * 60);
+          const hrs = Math.floor(totalMinutes / 60);
+          const mins = totalMinutes % 60;
+          return `${hrs} hrs ${mins} mins`;
+        };
+
         const mappedData = results.map(row => ({
-          "Log ID": row.id,
-          "User ID": row.user_id,
-          "Employee ID (Username)": row.username,
+          "Employee ID": row.username,
           "Employee Name": row.employee_name || "N/A",
-          "Login Time": row.login_time ? new Date(row.login_time).toLocaleString() : "N/A",
-          "Logout Time": row.logout_time ? new Date(row.logout_time).toLocaleString() : "N/A",
-          "Shift Status": row.shift_status || "",
-          "Productivity Hours": row.productivity_hours || "0",
+          "Login Time": formatDateTime(row.login_time),
+          "Logout Time": formatDateTime(row.logout_time),
+          "Productivity Hours": formatProductivityHours(row.productivity_hours),
           "System IP": row.system_ip || ""
         }));
 
@@ -255,6 +245,103 @@ module.exports = {
       });
     } catch (error) {
       console.error("exportEmployeeAttendanceExcel controller error:", error);
+      return res.status(500).send("Internal server error");
+    }
+  },
+
+  getDetailedEmployeeAttendance: (req, res) => {
+    try {
+      const { employeeId, fromDate, toDate } = req.query;
+      
+      if (!employeeId || !fromDate || !toDate) {
+        return res.status(200).json({
+          success: 0,
+          message: "employeeId, fromDate and toDate parameters are required"
+        });
+      }
+
+      reportsService.getDetailedEmployeeAttendanceData(employeeId, fromDate, toDate, (err, results) => {
+        if (err) {
+          console.error("getDetailedEmployeeAttendance error:", err);
+          return res.status(500).json({
+            success: 0,
+            message: "Something went wrong while retrieving detailed attendance report data"
+          });
+        }
+        
+        return res.status(200).json({
+          success: 1,
+          message: "Detailed employee attendance report retrieved successfully",
+          data: results
+        });
+      });
+    } catch (error) {
+      console.error("getDetailedEmployeeAttendance controller error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Internal server error"
+      });
+    }
+  },
+
+  exportDetailedEmployeeAttendanceExcel: (req, res) => {
+    try {
+      const { employeeId, fromDate, toDate } = req.query;
+      
+      if (!employeeId || !fromDate || !toDate) {
+        return res.status(400).send("employeeId, fromDate and toDate parameters are required");
+      }
+
+      reportsService.getDetailedEmployeeAttendanceData(employeeId, fromDate, toDate, (err, results) => {
+        if (err) {
+          console.error("exportDetailedEmployeeAttendanceExcel error:", err);
+          return res.status(500).send("Something went wrong while generating the report");
+        }
+
+        const formatDateTime = (dateStr) => {
+          if (!dateStr) return "N/A";
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) return "N/A";
+          return date.toLocaleString("en-US", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+          });
+        };
+
+        const formatProductivityHours = (val) => {
+          if (!val || isNaN(val)) return "0 hrs 0 mins";
+          const totalMinutes = Math.round(parseFloat(val) * 60);
+          const hrs = Math.floor(totalMinutes / 60);
+          const mins = totalMinutes % 60;
+          return `${hrs} hrs ${mins} mins`;
+        };
+
+        const mappedData = results.map(row => ({
+          "Employee ID": row.username,
+          "Employee Name": row.employee_name || "N/A",
+          "Login Time": formatDateTime(row.login_time),
+          "Logout Time": formatDateTime(row.logout_time),
+          "Productivity Hours": formatProductivityHours(row.productivity_hours),
+          "System IP": row.system_ip || ""
+        }));
+
+        const workbook = xlsx.utils.book_new();
+        const worksheet = xlsx.utils.json_to_sheet(mappedData);
+        xlsx.utils.book_append_sheet(workbook, worksheet, "Detailed Attendance Report");
+        
+        const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+        res.setHeader("Content-Disposition", `attachment; filename="detailed_attendance_report_${employeeId}_${fromDate}_to_${toDate}.xlsx"`);
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        return res.send(buffer);
+      });
+    } catch (error) {
+      console.error("exportDetailedEmployeeAttendanceExcel controller error:", error);
       return res.status(500).send("Internal server error");
     }
   }

@@ -15,6 +15,14 @@ router.post(
   customerController.uploadCustomerFile
 );
 
+// Renewal Upload Excel file
+router.post(
+  "/renewal-upload",
+  verifyAccessToken,
+  uploadCustomer.single("file"),
+  customerController.renewalUploadFile
+);
+
 // Upload Excel vehicle file
 router.post(
   "/upload-vehicles",
@@ -58,5 +66,8 @@ router.patch("/update-vehicle/:vehicleId", verifyAccessToken, customerController
 //new lead insert 
 router.post("/allocate-customer", verifyAccessToken, customerController.CreateNewLead);
 
+
+//employee policy detail 
+router.get("/employee-policy-taken/:empid", verifyAccessToken, customerController.getEmployeePolicyTaken);
 
 module.exports = router;
