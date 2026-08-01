@@ -1616,45 +1616,112 @@ l.lead_id
 
   },
   getTopEmployees: (callback) => {
+
     pool.query(
       `
-WITH lead_summary AS (
+SELECT
+    ROW_NUMBER() OVER (
+        ORDER BY achievement_percentage DESC
+    ) AS rank_no,
+
+    employee_id,
+    employee_code,
+    name,
+
+    normal_target,
+    renewal_target,
+    total_calls,
+
+    normal_sold,
+    renewal_sold,
+    total_sold,
+
+    achievement_percentage
+
+FROM (
+
     SELECT
-        assigned_to,
-        COUNT(*) AS total_calls,
-        SUM(status_id = 5) AS total_sold
-    FROM leads
-    GROUP BY assigned_to
-),
-ranked AS (
-    SELECT
-        u.user_id,
+        etm.employee_id,
+        u.employee_id AS employee_code,
+        u.name AS name,
+
+        etm.normal_target,
+        etm.renewal_target,
+
+        (etm.normal_target + etm.renewal_target) AS total_calls,
+
+        COUNT(
+            CASE
+                WHEN l.status_id = 5
+                AND c.is_previous_customer = 0
+                THEN 1
+            END
+        ) AS normal_sold,
+
+        COUNT(
+            CASE
+                WHEN l.status_id = 5
+                AND c.is_previous_customer = 1
+                THEN 1
+            END
+        ) AS renewal_sold,
+
+        COUNT(
+            CASE
+                WHEN l.status_id = 5
+                THEN 1
+            END
+        ) AS total_sold,
+
+        ROUND(
+            (
+                COUNT(
+                    CASE
+                        WHEN l.status_id = 5 THEN 1
+                    END
+                )
+                /
+                NULLIF(
+                    (etm.normal_target + etm.renewal_target),
+                    0
+                )
+            ) * 100,
+            2
+        ) AS achievement_percentage
+
+    FROM employee_target_master etm
+
+JOIN users_master u
+    ON u.user_id = etm.employee_id
+    AND u.is_active = 1
+    AND u.is_admin = 0
+
+    LEFT JOIN leads l
+        ON l.assigned_to = etm.employee_id
+        AND YEAR(l.assigned_date) = YEAR(CURDATE())
+        AND MONTH(l.assigned_date) = MONTH(CURDATE())
+
+    LEFT JOIN customers c
+        ON c.customer_id = l.customer_id
+
+    WHERE
+        etm.is_active = 1
+        AND YEAR(etm.target_date) = YEAR(CURDATE())
+        AND MONTH(etm.target_date) = MONTH(CURDATE())
+
+    GROUP BY
+        etm.employee_id,
         u.employee_id,
         u.name,
-        COALESCE(ls.total_calls, 0) AS total_calls,
-        COALESCE(ls.total_sold, 0) AS total_sold,
-        DENSE_RANK() OVER (
-            ORDER BY
-                COALESCE(ls.total_sold, 0) DESC,
-                COALESCE(ls.total_calls, 0) DESC
-        ) AS rank_no
-    FROM users_master u
-    LEFT JOIN lead_summary ls
-        ON u.user_id = ls.assigned_to
-)
-SELECT
-    user_id,
-    employee_id,
-    name,
-    total_calls,
-    total_sold,
-    rank_no
-FROM ranked
-WHERE rank_no <= 3
+        etm.normal_target,
+        etm.renewal_target
+
+) AS sales_performance
+
 ORDER BY
-    rank_no,
-    total_sold DESC,
-    total_calls DESC
+    rank_no
+
+LIMIT 5
 `,
       [],
       (err, result) => {
