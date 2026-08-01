@@ -51,29 +51,14 @@ module.exports = {
           return res.status(500).send("Something went wrong while generating the report");
         }
 
-        // Map data to clean user-friendly Excel column headers
+        // Map data to match the UI table columns
         const mappedData = results.map(row => ({
-          "Lead ID": row.lead_id,
-          "Customer ID": row.customer_id,
-          "Vehicle ID": row.vehicle_id,
-          "Policy ID": row.policy_id,
-          "Status ID": row.status_id,
+          "Customer Name": row.customer_name || "N/A",
+          "Vehicle ID": row.vehicle_id || "N/A",
           "Status Name": row.status_name || "N/A",
           "Assigned To": row.assigned_to || "Unassigned",
           "Assigned Date": row.assigned_date ? new Date(row.assigned_date).toLocaleDateString() : "N/A",
-          "Is Assigned": row.is_assigned === 1 ? "Yes" : "No",
-          "Remarks": row.remarks || "",
-          "Created At": row.created_at ? new Date(row.created_at).toLocaleString() : "N/A",
-          "Is Locked": row.is_locked === 1 ? "Yes" : "No",
-          "Work Status": row.work_status || "",
-          "Created By": row.created_by || "",
-          "Edited By": row.edited_by || "",
-          "Status Display Order": row.display_order || "",
-          "Status Active": row.status_is_active === 1 ? "Active" : "Inactive",
-          "Requires Follow-up": row.requires_followup === 1 ? "Yes" : "No",
-          "Is Call Required": row.is_call_required === 1 ? "Yes" : "No",
-          "Is Policy Required": row.is_policy_required === 1 ? "Yes" : "No",
-          "Is Follow-up Date Required": row.is_followup_date_required === 1 ? "Yes" : "No"
+          "Remarks": row.remarks || ""
         }));
 
         const workbook = xlsx.utils.book_new();
@@ -141,29 +126,14 @@ module.exports = {
           return res.status(500).send("Something went wrong while generating the report");
         }
 
-        // Map data to clean user-friendly Excel column headers
+        // Map data to match the UI table columns
         const mappedData = results.map(row => ({
-          "Lead ID": row.lead_id,
-          "Customer ID": row.customer_id,
-          "Vehicle ID": row.vehicle_id,
-          "Policy ID": row.policy_id,
-          "Status ID": row.status_id,
+          "Customer Name": row.customer_name || "N/A",
           "Status Name": row.status_name || "N/A",
           "Assigned To": row.employee_name ? `${row.employee_name} (${row.employee_id})` : (row.assigned_to || "Unassigned"),
           "Assigned Date": row.assigned_date ? new Date(row.assigned_date).toLocaleDateString() : "N/A",
-          "Is Assigned": row.is_assigned === 1 ? "Yes" : "No",
-          "Remarks": row.remarks || "",
-          "Created At": row.created_at ? new Date(row.created_at).toLocaleString() : "N/A",
-          "Is Locked": row.is_locked === 1 ? "Yes" : "No",
-          "Work Status": row.work_status || "",
-          "Created By": row.created_by || "",
-          "Edited By": row.edited_by || "",
-          "Status Display Order": row.display_order || "",
-          "Status Active": row.status_is_active === 1 ? "Active" : "Inactive",
-          "Requires Follow-up": row.requires_followup === 1 ? "Yes" : "No",
-          "Is Call Required": row.is_call_required === 1 ? "Yes" : "No",
-          "Is Policy Required": row.is_policy_required === 1 ? "Yes" : "No",
-          "Is Follow-up Date Required": row.is_followup_date_required === 1 ? "Yes" : "No"
+          "Work Status": row.work_status || "N/A",
+          "Remarks": row.remarks || ""
         }));
 
         const workbook = xlsx.utils.book_new();

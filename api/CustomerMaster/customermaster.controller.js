@@ -521,60 +521,60 @@ module.exports = {
         });
       }
 
-      if (!data.email || !data.email.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Email Address is required."
-        });
-      } else {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(data.email.trim())) {
-          return res.status(400).json({
-            success: 0,
-            message: "Invalid email address format."
-          });
-        }
-      }
+      // if (!data.email || !data.email.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Email Address is required."
+      //   });
+      // } else {
+      //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      //   if (!emailRegex.test(data.email.trim())) {
+      //     return res.status(400).json({
+      //       success: 0,
+      //       message: "Invalid email address format."
+      //     });
+      //   }
+      // }
 
-      if (!data.address || !data.address.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Address is required."
-        });
-      }
+      // if (!data.address || !data.address.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Address is required."
+      //   });
+      // }
 
-      if (!data.city || !data.city.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "City is required."
-        });
-      }
+      // if (!data.city || !data.city.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "City is required."
+      //   });
+      // }
 
-      if (!data.district || !data.district.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "District is required."
-        });
-      }
+      // if (!data.district || !data.district.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "District is required."
+      //   });
+      // }
 
-      if (!data.state || !data.state.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "State is required."
-        });
-      }
+      // if (!data.state || !data.state.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "State is required."
+      //   });
+      // }
 
-      if (!data.pincode || !data.pincode.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Pincode is required."
-        });
-      } else if (!/^\d{6}$/.test(data.pincode.trim())) {
-        return res.status(400).json({
-          success: 0,
-          message: "Pincode must be exactly 6 digits."
-        });
-      }
+      // if (!data.pincode || !data.pincode.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Pincode is required."
+      //   });
+      // } else if (!/^\d{6}$/.test(data.pincode.trim())) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Pincode must be exactly 6 digits."
+      //   });
+      // }
 
       const mappedCustomer = {
         customer_name: data.customer_name.trim(),
@@ -587,7 +587,7 @@ module.exports = {
         state: data.state ? data.state.trim() : null,
         pincode: data.pincode ? data.pincode.trim() : null,
         is_active: data.is_active !== undefined ? (data.is_active ? 1 : 0) : 1,
-        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer ? 1 : 0) : 0,
+        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer === 1 || data.is_previous_customer === true || data.is_previous_customer === "1" || data.is_previous_customer === "yes" ? 1 : 0) : 0,
         created_by: createdBy
       };
 
@@ -1134,60 +1134,60 @@ module.exports = {
         });
       }
 
-      if (!data.email || !data.email.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Email Address is required."
-        });
-      } else {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(data.email.trim())) {
-          return res.status(400).json({
-            success: 0,
-            message: "Invalid email address format."
-          });
-        }
-      }
+      // if (!data.email || !data.email.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Email Address is required."
+      //   });
+      // } else {
+      //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      //   if (!emailRegex.test(data.email.trim())) {
+      //     return res.status(400).json({
+      //       success: 0,
+      //       message: "Invalid email address format."
+      //     });
+      //   }
+      // }
 
-      if (!data.address || !data.address.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Address is required."
-        });
-      }
+      // if (!data.address || !data.address.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Address is required."
+      //   });
+      // }
 
-      if (!data.city || !data.city.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "City is required."
-        });
-      }
+      // if (!data.city || !data.city.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "City is required."
+      //   });
+      // }
 
-      if (!data.district || !data.district.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "District is required."
-        });
-      }
+      // if (!data.district || !data.district.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "District is required."
+      //   });
+      // }
 
-      if (!data.state || !data.state.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "State is required."
-        });
-      }
+      // if (!data.state || !data.state.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "State is required."
+      //   });
+      // }
 
-      if (!data.pincode || !data.pincode.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Pincode is required."
-        });
-      } else if (!/^\d{6}$/.test(data.pincode.trim())) {
-        return res.status(400).json({
-          success: 0,
-          message: "Pincode must be exactly 6 digits."
-        });
-      }
+      // if (!data.pincode || !data.pincode.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Pincode is required."
+      //   });
+      // } else if (!/^\d{6}$/.test(data.pincode.trim())) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Pincode must be exactly 6 digits."
+      //   });
+      // }
 
       const mappedCustomer = {
         customer_name: data.customer_name.trim(),
@@ -1200,7 +1200,7 @@ module.exports = {
         state: data.state ? data.state.trim() : null,
         pincode: data.pincode ? data.pincode.trim() : null,
         is_active: data.is_active !== undefined ? (data.is_active ? 1 : 0) : 1,
-        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer === "yes" || data.is_previous_customer === 1 ? 1 : 0) : 0
+        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer === 1 || data.is_previous_customer === true || data.is_previous_customer === "1" || data.is_previous_customer === "yes" ? 1 : 0) : 0
       };
 
       customerService.updateCustomer(customerId, mappedCustomer, (err, result) => {
