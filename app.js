@@ -45,6 +45,7 @@ const customermaster = require("./api/CustomerMaster/customermaster.router");
 const leaddetails = require("./api/LeadDetail/leads.router");
 const usermoduelright = require("./api/UserModuleRights/roleModuleRights.router");
 const reportsRouter = require("./api/reports/reports.router");
+const targetmaster = require("./api/TargetMaster/employeeTarget.router");
 const routeTrackerMiddleware = require("./Middleware/routeTracker.middleware");
 const socketMiddleware = require("./Middleware/socke.middlewar");
 const validateToken = require('./Validate/validateToken')
@@ -186,9 +187,22 @@ app.use(
 );
 
 
+app.use(
+    "/api/target",
+    routeTrackerMiddleware("EMPLOYEE_TARGET_ROUTER"),
+    socketMiddleware,
+    targetmaster,
+);
+
+
+
+
 const fileuploadRouter = express.Router();
+
 const employeemasterController = require("./api/EmployeeMaster/employeemaster.controller");
+
 fileuploadRouter.get("/getMedicalDocFile", verifyAccessToken, employeemasterController.getMedicalDocFile);
+
 app.use("/api/fileupload", fileuploadRouter);
 
 
