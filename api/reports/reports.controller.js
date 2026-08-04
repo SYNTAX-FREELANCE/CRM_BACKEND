@@ -5,7 +5,7 @@ module.exports = {
   getPolicyReport: (req, res) => {
     try {
       const { fromDate, toDate } = req.query;
-      
+
       if (!fromDate || !toDate) {
         return res.status(200).json({
           success: 0,
@@ -21,7 +21,7 @@ module.exports = {
             message: "Something went wrong while retrieving report data"
           });
         }
-        
+
         return res.status(200).json({
           success: 1,
           message: "Policy report retrieved successfully",
@@ -40,7 +40,7 @@ module.exports = {
   exportPolicyReportExcel: (req, res) => {
     try {
       const { fromDate, toDate } = req.query;
-      
+
       if (!fromDate || !toDate) {
         return res.status(400).send("fromDate and toDate parameters are required");
       }
@@ -64,7 +64,7 @@ module.exports = {
         const workbook = xlsx.utils.book_new();
         const worksheet = xlsx.utils.json_to_sheet(mappedData);
         xlsx.utils.book_append_sheet(workbook, worksheet, "Policy Report");
-        
+
         const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
 
         res.setHeader("Content-Disposition", `attachment; filename="policy_report_${fromDate}_to_${toDate}.xlsx"`);
@@ -80,7 +80,7 @@ module.exports = {
   getEmployeePerformance: (req, res) => {
     try {
       const { employeeId, fromDate, toDate } = req.query;
-      
+
       if (!employeeId) {
         return res.status(200).json({
           success: 0,
@@ -96,7 +96,7 @@ module.exports = {
             message: "Something went wrong while retrieving performance report data"
           });
         }
-        
+
         return res.status(200).json({
           success: 1,
           message: "Employee performance report retrieved successfully",
@@ -115,7 +115,7 @@ module.exports = {
   exportEmployeePerformanceExcel: (req, res) => {
     try {
       const { employeeId, fromDate, toDate } = req.query;
-      
+
       if (!employeeId) {
         return res.status(400).send("employeeId parameter is required");
       }
@@ -126,20 +126,58 @@ module.exports = {
           return res.status(500).send("Something went wrong while generating the report");
         }
 
-        // Map data to match the UI table columns
-        const mappedData = results.map(row => ({
-          "Customer Name": row.customer_name || "N/A",
-          "Status Name": row.status_name || "N/A",
-          "Assigned To": row.employee_name ? `${row.employee_name} (${row.employee_id})` : (row.assigned_to || "Unassigned"),
-          "Assigned Date": row.assigned_date ? new Date(row.assigned_date).toLocaleDateString() : "N/A",
-          "Work Status": row.work_status || "N/A",
-          "Remarks": row.remarks || ""
-        }));
+        // Calculate status summary counts
+        let totalCount = results.length;
+        let soldCount = 0;
+        let appointmentCount = 0;
+        let quoteCount = 0;
+        let callbackCount = 0;
+
+        results.forEach((row) => {
+          const name = (row.status_name || "").toUpperCase();
+          if (name.includes("SOLD")) {
+            soldCount++;
+          } else if (name.includes("APPOINMENT") || name.includes("APPOINTMENT")) {
+            appointmentCount++;
+          } else if (name.includes("QUOTE")) {
+            quoteCount++;
+          } else if (name.includes("CALLBACK") || name.includes("CALL BACK")) {
+            callbackCount++;
+          }
+        });
+
+        // Header & Summary rows
+        const summaryRows = [
+          ["EMPLOYEE PERFORMANCE REPORT"],
+          [`Employee ID: ${employeeId}`],
+          [fromDate && toDate ? `Period: ${fromDate} to ${toDate}` : "Period: All Time"],
+          [],
+          ["SUMMARY METRICS"],
+          ["Metric", "Count"],
+          ["Total Data Count", totalCount],
+          ["Sold Status Count", soldCount],
+          ["Appointment Status Count", appointmentCount],
+          ["Quote Status Count", quoteCount],
+          ["Callback Status Count", callbackCount],
+          [],
+          ["DETAILED RECORDS"],
+          ["Customer Name", "Status Name", "Assigned To", "Assigned Date", "Work Status", "Remarks"]
+        ];
+
+        // Detailed record rows
+        const dataRows = results.map(row => [
+          row.customer_name || "N/A",
+          row.status_name || "N/A",
+          row.employee_name ? `${row.employee_name} (${row.employee_id})` : (row.assigned_to || "Unassigned"),
+          row.assigned_date ? new Date(row.assigned_date).toLocaleDateString() : "N/A",
+          row.work_status || "N/A",
+          row.remarks || ""
+        ]);
 
         const workbook = xlsx.utils.book_new();
-        const worksheet = xlsx.utils.json_to_sheet(mappedData);
+        const worksheet = xlsx.utils.aoa_to_sheet([...summaryRows, ...dataRows]);
         xlsx.utils.book_append_sheet(workbook, worksheet, "Employee Performance");
-        
+
         const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
 
         res.setHeader("Content-Disposition", `attachment; filename="employee_performance_${employeeId}.xlsx"`);
@@ -155,7 +193,7 @@ module.exports = {
   getEmployeeAttendance: (req, res) => {
     try {
       const { employeeId, fromDate, toDate } = req.query;
-      
+
       if (!employeeId || !fromDate || !toDate) {
         return res.status(200).json({
           success: 0,
@@ -171,7 +209,7 @@ module.exports = {
             message: "Something went wrong while retrieving attendance report data"
           });
         }
-        
+
         return res.status(200).json({
           success: 1,
           message: "Employee attendance report retrieved successfully",
@@ -190,7 +228,7 @@ module.exports = {
   exportEmployeeAttendanceExcel: (req, res) => {
     try {
       const { employeeId, fromDate, toDate } = req.query;
-      
+
       if (!employeeId || !fromDate || !toDate) {
         return res.status(400).send("employeeId, fromDate and toDate parameters are required");
       }
@@ -236,7 +274,7 @@ module.exports = {
         const workbook = xlsx.utils.book_new();
         const worksheet = xlsx.utils.json_to_sheet(mappedData);
         xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
-        
+
         const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
 
         res.setHeader("Content-Disposition", `attachment; filename="attendance_report_${employeeId}_${fromDate}_to_${toDate}.xlsx"`);
@@ -252,7 +290,7 @@ module.exports = {
   getDetailedEmployeeAttendance: (req, res) => {
     try {
       const { employeeId, fromDate, toDate } = req.query;
-      
+
       if (!employeeId || !fromDate || !toDate) {
         return res.status(200).json({
           success: 0,
@@ -268,7 +306,7 @@ module.exports = {
             message: "Something went wrong while retrieving detailed attendance report data"
           });
         }
-        
+
         return res.status(200).json({
           success: 1,
           message: "Detailed employee attendance report retrieved successfully",
@@ -287,7 +325,7 @@ module.exports = {
   exportDetailedEmployeeAttendanceExcel: (req, res) => {
     try {
       const { employeeId, fromDate, toDate } = req.query;
-      
+
       if (!employeeId || !fromDate || !toDate) {
         return res.status(400).send("employeeId, fromDate and toDate parameters are required");
       }
@@ -333,7 +371,7 @@ module.exports = {
         const workbook = xlsx.utils.book_new();
         const worksheet = xlsx.utils.json_to_sheet(mappedData);
         xlsx.utils.book_append_sheet(workbook, worksheet, "Detailed Attendance Report");
-        
+
         const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
 
         res.setHeader("Content-Disposition", `attachment; filename="detailed_attendance_report_${employeeId}_${fromDate}_to_${toDate}.xlsx"`);
