@@ -527,6 +527,8 @@ module.exports = {
     v.registration_number,
     v.registration_date,
     v.vehicle_category,
+    v.rto,
+    v.vehicle_class,
     v.known_policy_expiry_date AS expiry_date
 FROM customers c
 JOIN vehicles v
