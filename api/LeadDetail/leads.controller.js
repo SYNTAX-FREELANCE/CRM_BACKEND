@@ -574,6 +574,21 @@ module.exports = {
     });
   },
 
-
+  getCallsLeftCount: (req, res) => {
+    const { empid } = req.params;
+    leadservie.getCallsLeftCount(empid, (err, count) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        count: count,
+      });
+    });
+  },
 
 };
+
