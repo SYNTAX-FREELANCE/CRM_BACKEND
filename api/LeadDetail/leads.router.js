@@ -107,4 +107,11 @@ router.get(
     leacontroller.getCustomerPolicyDetails,
 );
 
+router.get(
+    "/get-calls-left/:empid",
+    verifyAccessToken,
+    leacontroller.getCallsLeftCount,
+);
+
 module.exports = router;
+

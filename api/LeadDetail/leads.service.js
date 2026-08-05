@@ -2037,8 +2037,21 @@ ORDER BY
     );
   },
 
-
+  getCallsLeftCount: (empid, callback) => {
+    const sql = `
+      SELECT COUNT(*) AS calls_left 
+      FROM leads 
+      WHERE is_locked = 0 
+        AND work_status = 'PENDING' 
+        AND assigned_to = ?
+    `;
+    pool.query(sql, [empid], (err, result) => {
+      if (err) return callback(err);
+      callback(null, result?.[0]?.calls_left || 0);
+    });
+  },
 
 };
+
 
 
