@@ -91,59 +91,71 @@ module.exports = {
 
                     // STEP 3: FETCH NEXT 10 LEADS
                     const fetchQuery = `
-                          SELECT
-                            l.lead_id,
-                            l.status_id,
-                            ls.status_name,
-                            l.work_status,
+                        SELECT
+    l.lead_id,
+    l.status_id,
+    ls.status_name,
+    l.work_status,
 
-                            c.customer_id,
-                            c.customer_name,
-                            c.mobile_number_1,
-                            c.mobile_number_2,
-                            c.email,
-                            c.address,
-                            c.city,
-                            c.district,
-                            c.state,
+    c.customer_id,
+    c.customer_name,
+    c.mobile_number_1,
+    c.mobile_number_2,
+    c.email,
+    c.address,
+    c.city,
+    c.district,
+    c.state,
 
-                            v.vehicle_id,
-                            v.registration_number,
-                            v.model,
-                            v.vehicle_maker,
-                            v.engine_number,
-                            v.chassis_number,
+    v.vehicle_id,
+    v.registration_number,
+    v.model,
+    v.vehicle_maker,
+    v.engine_number,
+    v.chassis_number,
+    v.known_policy_expiry_date,
 
-                            p.policy_id,
-                            p.policy_number,
-                            p.policy_type,
-                            p.start_date,
-                            p.expiry_date,
-                            p.premium_amount
+    p.policy_id,
+    p.policy_number,
+    p.policy_type,
+    p.start_date,
+    p.expiry_date,
+    p.premium_amount
 
-                          FROM leads l
-                          INNER JOIN customers c ON c.customer_id = l.customer_id
-                          INNER JOIN vehicles v ON v.vehicle_id = l.vehicle_id
-                          LEFT JOIN policies p ON p.policy_id = l.policy_id
-                          INNER JOIN lead_status_master ls ON ls.status_id = l.status_id
+FROM leads l
+INNER JOIN customers c
+    ON c.customer_id = l.customer_id
+INNER JOIN vehicles v
+    ON v.vehicle_id = l.vehicle_id
+LEFT JOIN policies p
+    ON p.policy_id = l.policy_id
+INNER JOIN lead_status_master ls
+    ON ls.status_id = l.status_id
 
-                        WHERE l.assigned_to = ?
-                      AND l.status_id = 1
-                      AND l.work_status = 'PENDING'
-                      AND l.is_locked = 0
+WHERE l.assigned_to = ?
+  AND l.status_id = 1
+  AND l.work_status = 'PENDING'
+  AND l.is_locked = 0
 
-                      AND NOT EXISTS (
-                          SELECT 1
-                          FROM employee_active_batches eab
-                          WHERE eab.lead_id = l.lead_id
-                            AND eab.empid = l.assigned_to
-                            AND eab.is_active = 1
-                            AND eab.status = 'ACTIVE'
-                            AND eab.batch_source = 'FRESH_CALL'
-                      )
+  AND NOT EXISTS (
+      SELECT 1
+      FROM employee_active_batches eab
+      WHERE eab.lead_id = l.lead_id
+        AND eab.empid = l.assigned_to
+        AND eab.is_active = 1
+        AND eab.status = 'ACTIVE'
+        AND eab.batch_source = 'FRESH_CALL'
+  )
 
-                          ORDER BY l.created_at ASC
-                          LIMIT 10
+ORDER BY
+    CASE
+        WHEN v.known_policy_expiry_date IS NULL THEN 1
+        ELSE 0
+    END,
+    v.known_policy_expiry_date ASC,
+    l.created_at ASC
+
+LIMIT 10;
     `;
 
                     connection.query(fetchQuery, [empid], (err, leads) => {
