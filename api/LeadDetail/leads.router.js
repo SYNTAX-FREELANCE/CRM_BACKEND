@@ -113,5 +113,13 @@ router.get(
     leacontroller.getCallsLeftCount,
 );
 
+
+router.post(
+    "/multi-reallocation",
+    verifyAccessToken,
+    leacontroller.multiReallocation
+);
+
+
 module.exports = router;
 
