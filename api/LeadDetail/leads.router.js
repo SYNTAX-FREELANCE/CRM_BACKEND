@@ -107,4 +107,19 @@ router.get(
     leacontroller.getCustomerPolicyDetails,
 );
 
+router.get(
+    "/get-calls-left/:empid",
+    verifyAccessToken,
+    leacontroller.getCallsLeftCount,
+);
+
+
+router.post(
+    "/multi-reallocation",
+    verifyAccessToken,
+    leacontroller.multiReallocation
+);
+
+
 module.exports = router;
+

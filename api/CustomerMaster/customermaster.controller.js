@@ -521,60 +521,60 @@ module.exports = {
         });
       }
 
-      if (!data.email || !data.email.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Email Address is required."
-        });
-      } else {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(data.email.trim())) {
-          return res.status(400).json({
-            success: 0,
-            message: "Invalid email address format."
-          });
-        }
-      }
+      // if (!data.email || !data.email.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Email Address is required."
+      //   });
+      // } else {
+      //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      //   if (!emailRegex.test(data.email.trim())) {
+      //     return res.status(400).json({
+      //       success: 0,
+      //       message: "Invalid email address format."
+      //     });
+      //   }
+      // }
 
-      if (!data.address || !data.address.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Address is required."
-        });
-      }
+      // if (!data.address || !data.address.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Address is required."
+      //   });
+      // }
 
-      if (!data.city || !data.city.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "City is required."
-        });
-      }
+      // if (!data.city || !data.city.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "City is required."
+      //   });
+      // }
 
-      if (!data.district || !data.district.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "District is required."
-        });
-      }
+      // if (!data.district || !data.district.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "District is required."
+      //   });
+      // }
 
-      if (!data.state || !data.state.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "State is required."
-        });
-      }
+      // if (!data.state || !data.state.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "State is required."
+      //   });
+      // }
 
-      if (!data.pincode || !data.pincode.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Pincode is required."
-        });
-      } else if (!/^\d{6}$/.test(data.pincode.trim())) {
-        return res.status(400).json({
-          success: 0,
-          message: "Pincode must be exactly 6 digits."
-        });
-      }
+      // if (!data.pincode || !data.pincode.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Pincode is required."
+      //   });
+      // } else if (!/^\d{6}$/.test(data.pincode.trim())) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Pincode must be exactly 6 digits."
+      //   });
+      // }
 
       const mappedCustomer = {
         customer_name: data.customer_name.trim(),
@@ -587,7 +587,7 @@ module.exports = {
         state: data.state ? data.state.trim() : null,
         pincode: data.pincode ? data.pincode.trim() : null,
         is_active: data.is_active !== undefined ? (data.is_active ? 1 : 0) : 1,
-        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer ? 1 : 0) : 0,
+        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer === 1 || data.is_previous_customer === true || data.is_previous_customer === "1" || data.is_previous_customer === "yes" ? 1 : 0) : 0,
         created_by: createdBy
       };
 
@@ -866,8 +866,7 @@ module.exports = {
         vehicle_category: data.vehicle_category ? data.vehicle_category.trim() : null,
         fuel_type: data.fuel_type ? data.fuel_type.trim() : null,
         seat_capacity: data.seat_capacity ? parseInt(data.seat_capacity, 10) : null,
-        // known_policy_expiry_date: data.known_policy_expiry_date ? data.known_policy_expiry_date : null,
-        expiry_date: data.expiry_date ? data.expiry_date : null,
+        expiry_date: data.expiry_date ? data.expiry_date : (data.known_policy_expiry_date ? data.known_policy_expiry_date : null),
         created_by: data.created_by
       };
 
@@ -1134,60 +1133,60 @@ module.exports = {
         });
       }
 
-      if (!data.email || !data.email.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Email Address is required."
-        });
-      } else {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(data.email.trim())) {
-          return res.status(400).json({
-            success: 0,
-            message: "Invalid email address format."
-          });
-        }
-      }
+      // if (!data.email || !data.email.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Email Address is required."
+      //   });
+      // } else {
+      //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      //   if (!emailRegex.test(data.email.trim())) {
+      //     return res.status(400).json({
+      //       success: 0,
+      //       message: "Invalid email address format."
+      //     });
+      //   }
+      // }
 
-      if (!data.address || !data.address.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Address is required."
-        });
-      }
+      // if (!data.address || !data.address.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Address is required."
+      //   });
+      // }
 
-      if (!data.city || !data.city.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "City is required."
-        });
-      }
+      // if (!data.city || !data.city.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "City is required."
+      //   });
+      // }
 
-      if (!data.district || !data.district.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "District is required."
-        });
-      }
+      // if (!data.district || !data.district.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "District is required."
+      //   });
+      // }
 
-      if (!data.state || !data.state.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "State is required."
-        });
-      }
+      // if (!data.state || !data.state.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "State is required."
+      //   });
+      // }
 
-      if (!data.pincode || !data.pincode.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Pincode is required."
-        });
-      } else if (!/^\d{6}$/.test(data.pincode.trim())) {
-        return res.status(400).json({
-          success: 0,
-          message: "Pincode must be exactly 6 digits."
-        });
-      }
+      // if (!data.pincode || !data.pincode.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Pincode is required."
+      //   });
+      // } else if (!/^\d{6}$/.test(data.pincode.trim())) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Pincode must be exactly 6 digits."
+      //   });
+      // }
 
       const mappedCustomer = {
         customer_name: data.customer_name.trim(),
@@ -1200,7 +1199,7 @@ module.exports = {
         state: data.state ? data.state.trim() : null,
         pincode: data.pincode ? data.pincode.trim() : null,
         is_active: data.is_active !== undefined ? (data.is_active ? 1 : 0) : 1,
-        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer === "yes" || data.is_previous_customer === 1 ? 1 : 0) : 0
+        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer === 1 || data.is_previous_customer === true || data.is_previous_customer === "1" || data.is_previous_customer === "yes" ? 1 : 0) : 0
       };
 
       customerService.updateCustomer(customerId, mappedCustomer, (err, result) => {
@@ -1263,82 +1262,82 @@ module.exports = {
         });
       }
 
-      if (!data.rto || !data.rto.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "RTO Details is required."
-        });
-      }
+      // if (!data.rto || !data.rto.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "RTO Details is required."
+      //   });
+      // }
 
-      if (!data.registration_date) {
-        return res.status(400).json({
-          success: 0,
-          message: "Registration Date is required."
-        });
-      }
+      // if (!data.registration_date) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Registration Date is required."
+      //   });
+      // }
 
-      if (!data.vehicle_maker || !data.vehicle_maker.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Vehicle Maker is required."
-        });
-      }
+      // if (!data.vehicle_maker || !data.vehicle_maker.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Vehicle Maker is required."
+      //   });
+      // }
 
-      if (!data.model || !data.model.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Vehicle Model is required."
-        });
-      }
+      // if (!data.model || !data.model.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Vehicle Model is required."
+      //   });
+      // }
 
-      if (!data.engine_number || !data.engine_number.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Engine Number is required."
-        });
-      }
+      // if (!data.engine_number || !data.engine_number.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Engine Number is required."
+      //   });
+      // }
 
-      if (!data.chassis_number || !data.chassis_number.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Chassis Number is required."
-        });
-      }
+      // if (!data.chassis_number || !data.chassis_number.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Chassis Number is required."
+      //   });
+      // }
 
-      if (!data.vehicle_class || !data.vehicle_class.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Vehicle Class is required."
-        });
-      }
+      // if (!data.vehicle_class || !data.vehicle_class.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Vehicle Class is required."
+      //   });
+      // }
 
-      if (!data.vehicle_category || !data.vehicle_category.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Vehicle Category is required."
-        });
-      }
+      // if (!data.vehicle_category || !data.vehicle_category.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Vehicle Category is required."
+      //   });
+      // }
 
-      if (!data.fuel_type || !data.fuel_type.trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Fuel Type is required."
-        });
-      }
+      // if (!data.fuel_type || !data.fuel_type.trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Fuel Type is required."
+      //   });
+      // }
 
-      if (!data.seat_capacity || !data.seat_capacity.toString().trim()) {
-        return res.status(400).json({
-          success: 0,
-          message: "Seat capacity is required."
-        });
-      }
+      // if (!data.seat_capacity || !data.seat_capacity.toString().trim()) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Seat capacity is required."
+      //   });
+      // }
 
-      if (!/^\d+$/.test(data.seat_capacity.toString().trim())) {
-        return res.status(400).json({
-          success: 0,
-          message: "Seat capacity must be numeric."
-        });
-      }
+      // if (!/^\d+$/.test(data.seat_capacity.toString().trim())) {
+      //   return res.status(400).json({
+      //     success: 0,
+      //     message: "Seat capacity must be numeric."
+      //   });
+      // }
 
       const mappedVehicle = {
         customer_id: parseInt(data.customer_id, 10),
