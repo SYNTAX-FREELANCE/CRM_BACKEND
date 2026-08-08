@@ -46,7 +46,10 @@ const leaddetails = require("./api/LeadDetail/leads.router");
 const usermoduelright = require("./api/UserModuleRights/roleModuleRights.router");
 const reportsRouter = require("./api/reports/reports.router");
 const targetmaster = require("./api/TargetMaster/employeeTarget.router");
+const callOutcomeRoutes = require("./api/CallOutCome/callOutcome.routes");
 const routeTrackerMiddleware = require("./Middleware/routeTracker.middleware");
+const outcomeStatusMappingRoutes  = require("./api/CallOutComeMapMaster/outcomeStatusMapping.routes");
+
 const socketMiddleware = require("./Middleware/socke.middlewar");
 const validateToken = require('./Validate/validateToken')
 const verifyAccessToken = require('./middleware/verifyAccessToken');
@@ -194,6 +197,19 @@ app.use(
     targetmaster,
 );
 
+app.use(
+    "/api/calloutcome",
+    routeTrackerMiddleware("CALL_OUTCOME_ROUTER"),
+    socketMiddleware,
+    callOutcomeRoutes,
+);
+
+app.use(
+    "/api/outcomestatusmapping",
+    routeTrackerMiddleware("CALL_OUTCOME_MASTER_ROUTER"),
+    socketMiddleware,
+    outcomeStatusMappingRoutes,
+);
 
 
 
