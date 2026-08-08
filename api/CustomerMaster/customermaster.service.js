@@ -170,133 +170,197 @@ module.exports = {
     try {
       await connection.beginTransaction();
 
-      // 1. Get all unique mobile numbers from the batch
-      const mobileNumbers = [
-        ...new Set(combinedRows.map((row) => row.customer.mobile_number_1)),
-      ];
+      const duplicateRows = [];
+      const rowsToProcess = [];
 
-      // 2. Query the DB to check which mobile numbers already exist
-      const customerMap = new Map(); // mobile_number_1 -> customer_id
+      // 1. Check internal duplicates within the Excel file (by registration_number)
+      const seenRegNumbersInFile = new Set();
 
-      if (mobileNumbers.length > 0) {
-        const [existing] = await connection.query(
-          "SELECT customer_id, mobile_number_1 FROM customers WHERE mobile_number_1 IN (?)",
-          [mobileNumbers],
-        );
-        existing.forEach((row) => {
-          customerMap.set(row.mobile_number_1, row.customer_id);
+      combinedRows.forEach((item, index) => {
+        const rawReg = item.vehicle.registration_number || "";
+        const regNorm = String(rawReg).trim().toUpperCase();
+
+        if (regNorm !== "") {
+          if (seenRegNumbersInFile.has(regNorm)) {
+            duplicateRows.push({
+              row: item.originalRow || index + 2,
+              customer_name: item.customer.customer_name,
+              mobile_number_1: item.customer.mobile_number_1,
+              registration_number: item.vehicle.registration_number,
+              reason: `Duplicate entry in Excel file: Vehicle registration number '${item.vehicle.registration_number}' is repeated.`,
+              data: item.originalData || {}
+            });
+            return;
+          }
+          seenRegNumbersInFile.add(regNorm);
+        }
+        rowsToProcess.push(item);
+      });
+
+      // 2. Check duplicates against the database (vehicles table registration_number)
+      const nonDuplicateRows = [];
+      if (rowsToProcess.length > 0) {
+        const regNumbers = rowsToProcess
+          .map((item) => (item.vehicle.registration_number || "").trim())
+          .filter((reg) => reg !== "");
+
+        const existingDbRegSet = new Set();
+
+        if (regNumbers.length > 0) {
+          const [existingVehicles] = await connection.query(
+            "SELECT registration_number FROM vehicles WHERE UPPER(TRIM(registration_number)) IN (?)",
+            [regNumbers.map((r) => r.toUpperCase())]
+          );
+          existingVehicles.forEach((v) => {
+            if (v.registration_number) {
+              existingDbRegSet.add(v.registration_number.trim().toUpperCase());
+            }
+          });
+        }
+
+        rowsToProcess.forEach((item, index) => {
+          const rawReg = item.vehicle.registration_number || "";
+          const regNorm = String(rawReg).trim().toUpperCase();
+
+          if (regNorm !== "" && existingDbRegSet.has(regNorm)) {
+            duplicateRows.push({
+              row: item.originalRow || index + 2,
+              customer_name: item.customer.customer_name,
+              mobile_number_1: item.customer.mobile_number_1,
+              registration_number: item.vehicle.registration_number,
+              reason: `Duplicate entry in database: Vehicle registration number '${item.vehicle.registration_number}' already exists in system.`,
+              data: item.originalData || {}
+            });
+          } else {
+            nonDuplicateRows.push(item);
+          }
         });
       }
 
-      // 3. Identify unique customers to insert (those whose mobile is not in customerMap and not already queued for insert)
-      const newCustomersToInsert = [];
-      const insertedMobileSet = new Set();
-
-      combinedRows.forEach((row) => {
-        const mob = row.customer.mobile_number_1;
-        if (!customerMap.has(mob) && !insertedMobileSet.has(mob)) {
-          newCustomersToInsert.push(row.customer);
-          insertedMobileSet.add(mob);
-        }
-      });
-
-      // 4. Insert new customers. Insert sequentially to guarantee getting their insertIds.
-      for (const cust of newCustomersToInsert) {
-        const [result] = await connection.query(
-          `INSERT INTO customers 
-           (customer_name, mobile_number_1, mobile_number_2, email, address, city, district, state, pincode, is_active, is_previous_customer, created_by)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            cust.customer_name,
-            cust.mobile_number_1,
-            cust.mobile_number_2 || null,
-            cust.email || null,
-            cust.address || null,
-            cust.city || null,
-            cust.district || null,
-            cust.state || null,
-            cust.pincode || null,
-            cust.is_active !== undefined ? cust.is_active : 1,
-            cust.is_previous_customer !== undefined ? cust.is_previous_customer : 0,
-            cust.created_by || null,
-          ],
-        );
-        customerMap.set(cust.mobile_number_1, result.insertId);
-      }
-
-      // 5. Insert the vehicles linked to correct customer IDs.
-      const vehiclesToInsert = combinedRows.map((row) => {
-        const custId = customerMap.get(row.customer.mobile_number_1);
-        // return [
-        //   custId,
-        //   row.vehicle.registration_number,
-        //   row.vehicle.rto || null,
-        //   row.vehicle.registration_data || null,
-        //   row.vehicle.model || null,
-        //   row.vehicle.vechile_maker || null,
-        //   row.vehicle.engine_number || null,
-        //   row.vehicle.chassis_number || null,
-        //   row.vehicle.vechile_class || null,
-        //   row.vehicle.vehicle_category || null,
-        //   row.vehicle.fuel_type || null,
-        //   row.vehicle.seat_capacity || null,
-        // ];
-        return [
-          custId,
-          row.vehicle.registration_number,
-          row.vehicle.rto || null,
-          row.vehicle.registration_date || null,
-          row.vehicle.model || null,
-          row.vehicle.vehicle_maker || null,
-          row.vehicle.engine_number || null,
-          row.vehicle.chassis_number || null,
-          row.vehicle.vehicle_class || null,
-          row.vehicle.vehicle_category || null,
-          row.vehicle.fuel_type || null,
-          row.vehicle.seat_capacity || null,
-          row.vehicle.known_policy_expiry_date || null,
-        ];
-      });
-
+      // 3. Process Balance Data (nonDuplicateRows)
+      let insertedCustomersCount = 0;
       let insertedVehiclesCount = 0;
-      if (vehiclesToInsert.length > 0) {
-        // const [vehResult] = await connection.query(
-        //   `INSERT INTO vehicles
-        //    (customer_id, registration_number, rto, registration_data, model, vechile_maker, engine_number, chassis_number, vechile_class, vehicle_category, fuel_type, seat_capacity)
-        //    VALUES ?`,
-        //   [vehiclesToInsert]
-        // );
+      const insertedData = [];
 
-        const [vehResult] = await connection.query(
+      if (nonDuplicateRows.length > 0) {
+        // Get unique mobile numbers
+        const mobileNumbers = [
+          ...new Set(nonDuplicateRows.map((item) => item.customer.mobile_number_1).filter(Boolean)),
+        ];
 
-          `INSERT INTO vehicles
-   (
-     customer_id,
-     registration_number,
-     rto,
-     registration_date,
-     model,
-     vehicle_maker,
-     engine_number,
-     chassis_number,
-     vehicle_class,
-     vehicle_category,
-     fuel_type,
-     seat_capacity,
-     known_policy_expiry_date
-   )
-   VALUES ?`,
-          [vehiclesToInsert],
-        );
-        insertedVehiclesCount = vehResult.affectedRows;
+        const customerMap = new Map(); // mobile_number_1 -> customer_id
+
+        if (mobileNumbers.length > 0) {
+          const [existingCusts] = await connection.query(
+            "SELECT customer_id, mobile_number_1 FROM customers WHERE mobile_number_1 IN (?)",
+            [mobileNumbers]
+          );
+          existingCusts.forEach((c) => {
+            customerMap.set(c.mobile_number_1, c.customer_id);
+          });
+        }
+
+        // Identify new customers to insert
+        const newCustomersToInsert = [];
+        const insertedMobileSet = new Set();
+
+        nonDuplicateRows.forEach((item) => {
+          const mob = item.customer.mobile_number_1;
+          if (mob && !customerMap.has(mob) && !insertedMobileSet.has(mob)) {
+            newCustomersToInsert.push(item.customer);
+            insertedMobileSet.add(mob);
+          }
+        });
+
+        // Insert new customers
+        for (const cust of newCustomersToInsert) {
+          const [result] = await connection.query(
+            `INSERT INTO customers 
+             (customer_name, mobile_number_1, mobile_number_2, email, address, city, district, state, pincode, is_active, is_previous_customer, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              cust.customer_name,
+              cust.mobile_number_1,
+              cust.mobile_number_2 || null,
+              cust.email || null,
+              cust.address || null,
+              cust.city || null,
+              cust.district || null,
+              cust.state || null,
+              cust.pincode || null,
+              cust.is_active !== undefined ? cust.is_active : 1,
+              cust.is_previous_customer !== undefined ? cust.is_previous_customer : 0,
+              cust.created_by || null,
+            ]
+          );
+          customerMap.set(cust.mobile_number_1, result.insertId);
+        }
+        insertedCustomersCount = newCustomersToInsert.length;
+
+        // Prepare vehicles to insert
+        const vehiclesToInsert = [];
+        nonDuplicateRows.forEach((item) => {
+          const custId = customerMap.get(item.customer.mobile_number_1);
+
+          vehiclesToInsert.push([
+            custId,
+            item.vehicle.registration_number,
+            item.vehicle.rto || null,
+            item.vehicle.registration_date || null,
+            item.vehicle.model || null,
+            item.vehicle.vehicle_maker || null,
+            item.vehicle.engine_number || null,
+            item.vehicle.chassis_number || null,
+            item.vehicle.vehicle_class || null,
+            item.vehicle.vehicle_category || null,
+            item.vehicle.fuel_type || null,
+            item.vehicle.seat_capacity || null,
+            item.vehicle.known_policy_expiry_date || null,
+          ]);
+
+          insertedData.push({
+            customer_name: item.customer.customer_name,
+            mobile_number_1: item.customer.mobile_number_1,
+            registration_number: item.vehicle.registration_number,
+            model: item.vehicle.model,
+            vehicle_maker: item.vehicle.vehicle_maker,
+            fuel_type: item.vehicle.fuel_type
+          });
+        });
+
+        if (vehiclesToInsert.length > 0) {
+          const [vehResult] = await connection.query(
+            `INSERT INTO vehicles
+             (
+               customer_id,
+               registration_number,
+               rto,
+               registration_date,
+               model,
+               vehicle_maker,
+               engine_number,
+               chassis_number,
+               vehicle_class,
+               vehicle_category,
+               fuel_type,
+               seat_capacity,
+               known_policy_expiry_date
+             )
+             VALUES ?`,
+            [vehiclesToInsert]
+          );
+          insertedVehiclesCount = vehResult.affectedRows;
+        }
       }
 
       await connection.commit();
 
       return {
-        insertedCustomers: newCustomersToInsert.length,
+        insertedCustomers: insertedCustomersCount,
         insertedVehicles: insertedVehiclesCount,
         totalRows: combinedRows.length,
+        insertedData: insertedData,
+        duplicateRows: duplicateRows
       };
     } catch (err) {
       await connection.rollback();
@@ -317,70 +381,118 @@ module.exports = {
       let insertedVehiclesCount = 0;
       let updatedVehiclesCount = 0;
       const skippedRows = [];
+      const duplicateRows = [];
       const processedData = [];
 
-      // 1. Separate into insert list and update list
-      const insertList = [];
-      const updateList = [];
+      // 1. Fetch all existing vehicle registration numbers from DB for the batch
+      const allRegNumbers = combinedRows
+        .map((r) => (r.vehicle.registration_number || "").trim())
+        .filter((reg) => reg !== "");
 
-      combinedRows.forEach(row => {
-        if (row.customer.is_previous_customer === 1) {
-          updateList.push(row);
+      const existingVehicleMap = new Map(); // regNoUpper -> { vehicle_id, customer_id }
+
+      if (allRegNumbers.length > 0) {
+        const [existingVehs] = await connection.query(
+          "SELECT vehicle_id, customer_id, registration_number FROM vehicles WHERE UPPER(TRIM(registration_number)) IN (?)",
+          [allRegNumbers.map((r) => r.toUpperCase())]
+        );
+        existingVehs.forEach((v) => {
+          if (v.registration_number) {
+            existingVehicleMap.set(v.registration_number.trim().toUpperCase(), {
+              vehicle_id: v.vehicle_id,
+              customer_id: v.customer_id
+            });
+          }
+        });
+      }
+
+      // 2. Separate into updates, duplicate file rows, missing previous vehicles, and new insertions
+      const insertList = [];
+      const seenRegNumbersInFile = new Set();
+
+      combinedRows.forEach((row, index) => {
+        const rawReg = row.vehicle.registration_number || "";
+        const regNorm = String(rawReg).trim().toUpperCase();
+        const rowNum = row.originalRow || index + 2;
+
+        // Check internal file duplicates
+        if (regNorm !== "") {
+          if (seenRegNumbersInFile.has(regNorm)) {
+            duplicateRows.push({
+              row: rowNum,
+              customer_name: row.customer.customer_name,
+              mobile_number_1: row.customer.mobile_number_1,
+              registration_number: row.vehicle.registration_number,
+              reason: `Duplicate entry in Excel file: Vehicle registration number '${row.vehicle.registration_number}' is repeated.`,
+              data: row.originalData || {}
+            });
+            return;
+          }
+          seenRegNumbersInFile.add(regNorm);
+        }
+
+        // If vehicle exists in DB, handle as Renewal Update
+        if (regNorm !== "" && existingVehicleMap.has(regNorm)) {
+          const { vehicle_id, customer_id } = existingVehicleMap.get(regNorm);
+          const expiryDate = row.vehicle.known_policy_expiry_date;
+
+          insertList.push({
+            type: "update",
+            row,
+            vehicle_id,
+            customer_id,
+            expiryDate
+          });
+        } else if (row.customer.is_previous_customer === 1) {
+          // Explicitly marked as previous customer, but vehicle not found in DB
+          skippedRows.push({
+            row: rowNum,
+            data: row.originalData || {},
+            errors: ["Previous customer vehicle not found in database. Registration Number: " + rawReg]
+          });
         } else {
-          insertList.push(row);
+          // New customer and vehicle
+          insertList.push({
+            type: "insert",
+            row
+          });
         }
       });
 
-      // 2. Handle Update List
-      for (const row of updateList) {
-        const regNo = row.vehicle.registration_number;
-        const expiryDate = row.vehicle.known_policy_expiry_date;
-
-        // Find existing vehicle
-        const [vehResult] = await connection.query(
-          "SELECT vehicle_id, customer_id FROM vehicles WHERE registration_number = ?",
-          [regNo]
-        );
-
-        if (vehResult.length > 0) {
-          const vehicleId = vehResult[0].vehicle_id;
-          const customerId = vehResult[0].customer_id;
-
-          // Update vehicle known_policy_expiry_date
+      // 3. Execute Updates
+      const updateItems = insertList.filter((item) => item.type === "update");
+      for (const item of updateItems) {
+        if (item.expiryDate) {
           await connection.query(
             "UPDATE vehicles SET known_policy_expiry_date = ? WHERE vehicle_id = ?",
-            [expiryDate, vehicleId]
+            [item.expiryDate, item.vehicle_id]
           );
-          updatedVehiclesCount++;
-
-          // Update customer is_previous_customer = 1
-          await connection.query(
-            "UPDATE customers SET is_previous_customer = 1 WHERE customer_id = ?",
-            [customerId]
-          );
-
-          processedData.push({
-            customer_name: row.customer.customer_name,
-            mobile_number_1: row.customer.mobile_number_1,
-            registration_number: row.vehicle.registration_number,
-            model: row.vehicle.model,
-            vehicle_maker: row.vehicle.vehicle_maker,
-            fuel_type: row.vehicle.fuel_type,
-            status: "Updated"
-          });
-        } else {
-          skippedRows.push({
-            row: row.originalRow,
-            data: row.originalData || {},
-            errors: ["Previous customer vehicle not found in database. Registration Number: " + regNo]
-          });
         }
+        await connection.query(
+          "UPDATE customers SET is_previous_customer = 1 WHERE customer_id = ?",
+          [item.customer_id]
+        );
+        updatedVehiclesCount++;
+
+        processedData.push({
+          customer_name: item.row.customer.customer_name,
+          mobile_number_1: item.row.customer.mobile_number_1,
+          registration_number: item.row.vehicle.registration_number,
+          model: item.row.vehicle.model,
+          vehicle_maker: item.row.vehicle.vehicle_maker,
+          fuel_type: item.row.vehicle.fuel_type,
+          status: "Updated (Renewal)"
+        });
       }
 
-      // 3. Handle Insert List using similar logic to insertBulkCombined
-      if (insertList.length > 0) {
+      // 4. Execute New Insertions
+      const newItemsToInsert = insertList
+        .filter((item) => item.type === "insert")
+        .map((item) => item.row);
+
+      if (newItemsToInsert.length > 0) {
         const mobileNumbers = [
-          ...new Set(insertList.map((row) => row.customer.mobile_number_1)),
+          ...new Set(newItemsToInsert.map((row) => row.customer.mobile_number_1).filter(Boolean)),
         ];
 
         const customerMap = new Map();
@@ -388,7 +500,7 @@ module.exports = {
         if (mobileNumbers.length > 0) {
           const [existing] = await connection.query(
             "SELECT customer_id, mobile_number_1 FROM customers WHERE mobile_number_1 IN (?)",
-            [mobileNumbers],
+            [mobileNumbers]
           );
           existing.forEach((row) => {
             customerMap.set(row.mobile_number_1, row.customer_id);
@@ -398,9 +510,9 @@ module.exports = {
         const newCustomersToInsert = [];
         const insertedMobileSet = new Set();
 
-        insertList.forEach((row) => {
+        newItemsToInsert.forEach((row) => {
           const mob = row.customer.mobile_number_1;
-          if (!customerMap.has(mob) && !insertedMobileSet.has(mob)) {
+          if (mob && !customerMap.has(mob) && !insertedMobileSet.has(mob)) {
             newCustomersToInsert.push(row.customer);
             insertedMobileSet.add(mob);
           }
@@ -424,14 +536,14 @@ module.exports = {
               cust.is_active !== undefined ? cust.is_active : 1,
               cust.is_previous_customer !== undefined ? cust.is_previous_customer : 0,
               cust.created_by || null,
-            ],
+            ]
           );
           customerMap.set(cust.mobile_number_1, result.insertId);
         }
 
         insertedCustomersCount = newCustomersToInsert.length;
 
-        const vehiclesToInsert = insertList.map((row) => {
+        const vehiclesToInsert = newItemsToInsert.map((row) => {
           const custId = customerMap.get(row.customer.mobile_number_1);
 
           processedData.push({
@@ -480,7 +592,7 @@ module.exports = {
                known_policy_expiry_date
              )
              VALUES ?`,
-            [vehiclesToInsert],
+            [vehiclesToInsert]
           );
           insertedVehiclesCount = vehResult.affectedRows;
         }
@@ -493,6 +605,7 @@ module.exports = {
         insertedVehicles: insertedVehiclesCount,
         updatedVehicles: updatedVehiclesCount,
         skippedRows: skippedRows,
+        duplicateRows: duplicateRows,
         processedData: processedData
       };
     } catch (err) {
