@@ -19,6 +19,12 @@ router.get("/employee-performance", verifyAccessToken, reportsController.getEmpl
 // Export Employee Performance Report to Excel
 router.get("/employee-performance/export", verifyAccessToken, reportsController.exportEmployeePerformanceExcel);
 
+// Get All Employee Performance Report JSON data
+router.get("/all-employee-performance", verifyAccessToken, reportsController.getAllEmployeePerformance);
+
+// Export All Employee Performance Report to Excel
+router.get("/all-employee-performance/export", verifyAccessToken, reportsController.exportAllEmployeePerformanceExcel);
+
 // ==================== EMPLOYEE ATTENDANCE ROUTES ====================
 
 // Get Employee Attendance Report JSON data
