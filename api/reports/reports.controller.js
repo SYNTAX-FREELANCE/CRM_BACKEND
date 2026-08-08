@@ -155,7 +155,7 @@ module.exports = {
           ["SUMMARY METRICS"],
           ["Metric", "Count"],
           ["Total Data Count", totalCount],
-          ["Sold Status Count", soldCount],
+          ["Capture Status Count", soldCount],
           ["Appointment Status Count", appointmentCount],
           ["Quote Status Count", quoteCount],
           ["Callback Status Count", callbackCount],
@@ -186,6 +186,145 @@ module.exports = {
       });
     } catch (error) {
       console.error("exportEmployeePerformanceExcel controller error:", error);
+      return res.status(500).send("Internal server error");
+    }
+  },
+
+  getAllEmployeePerformance: (req, res) => {
+    try {
+      const { fromDate, toDate, employeeId } = req.query;
+      const roleName = (req.user?.role_name || "").trim().toLowerCase();
+      const roleId = String(req.user?.role || "").trim();
+      const isEmployee = roleName === "employee" || roleId === "2";
+
+      const filterEmployee = isEmployee ? (req.user?.username || req.user?.user_id || req.user?.id) : (employeeId || null);
+
+      reportsService.getAllEmployeePerformanceData(fromDate, toDate, filterEmployee, (err, results) => {
+        if (err) {
+          console.error("getAllEmployeePerformance error:", err);
+          return res.status(500).json({
+            success: 0,
+            message: "Something went wrong while retrieving performance report data"
+          });
+        }
+
+        return res.status(200).json({
+          success: 1,
+          message: "Performance report retrieved successfully",
+          data: results
+        });
+      });
+    } catch (error) {
+      console.error("getAllEmployeePerformance controller error:", error);
+      return res.status(500).json({
+        success: 0,
+        message: "Internal server error"
+      });
+    }
+  },
+
+  exportAllEmployeePerformanceExcel: (req, res) => {
+    try {
+      const { fromDate, toDate, employeeId } = req.query;
+      const roleName = (req.user?.role_name || "").trim().toLowerCase();
+      const roleId = String(req.user?.role || "").trim();
+      const isEmployee = roleName === "employee" || roleId === "2";
+
+      const filterEmployee = isEmployee ? (req.user?.username || req.user?.user_id || req.user?.id) : (employeeId || null);
+
+      reportsService.getAllEmployeePerformanceData(fromDate, toDate, filterEmployee, (err, results) => {
+        if (err) {
+          console.error("exportAllEmployeePerformanceExcel error:", err);
+          return res.status(500).send("Something went wrong while generating the report");
+        }
+
+        // Calculate per-employee summary counts & grand totals
+        const empMap = {};
+        let grandTotal = results.length;
+        let grandSold = 0;
+        let grandAppointment = 0;
+        let grandQuote = 0;
+        let grandCallback = 0;
+
+        results.forEach((row) => {
+          const empId = row.employee_id || row.assigned_to || "Unassigned";
+          const empName = row.employee_name ? `${row.employee_name} (${empId})` : (row.assigned_to ? `ID: ${row.assigned_to}` : "Unassigned");
+          const key = empId;
+
+          if (!empMap[key]) {
+            empMap[key] = {
+              name: empName,
+              totalCount: 0,
+              soldCount: 0,
+              appointmentCount: 0,
+              quoteCount: 0,
+              callbackCount: 0,
+            };
+          }
+
+          empMap[key].totalCount++;
+
+          const name = (row.status_name || "").toUpperCase();
+          if (name.includes("SOLD")) {
+            empMap[key].soldCount++;
+            grandSold++;
+          } else if (name.includes("APPOINMENT") || name.includes("APPOINTMENT")) {
+            empMap[key].appointmentCount++;
+            grandAppointment++;
+          } else if (name.includes("QUOTE")) {
+            empMap[key].quoteCount++;
+            grandQuote++;
+          } else if (name.includes("CALLBACK") || name.includes("CALL BACK")) {
+            empMap[key].callbackCount++;
+            grandCallback++;
+          }
+        });
+
+        const empSummaryRows = Object.values(empMap).map(emp => [
+          emp.name,
+          emp.totalCount,
+          emp.soldCount,
+          emp.appointmentCount,
+          emp.quoteCount,
+          emp.callbackCount
+        ]);
+
+        // Header & Summary rows
+        const summaryRows = [
+          ["ALL EMPLOYEE PERFORMANCE REPORT"],
+          [fromDate && toDate ? `Period: ${fromDate} to ${toDate}` : "Period: All Time"],
+          [],
+          ["EMPLOYEE PERFORMANCE SUMMARY"],
+          ["Employee", "Total Data Count", "Capture Status", "Appointment Status", "Quote Status", "Callback Status"],
+          ...empSummaryRows,
+          ["Total / Summary", grandTotal, grandSold, grandAppointment, grandQuote, grandCallback],
+          [],
+          ["DETAILED RECORDS"],
+          ["Customer Name", "Status Name", "Assigned To", "Assigned Date", "Work Status", "Remarks"]
+        ];
+
+        // Detailed record rows
+        const dataRows = results.map(row => [
+          row.customer_name || "N/A",
+          row.status_name || "N/A",
+          row.employee_name ? `${row.employee_name} (${row.employee_id})` : (row.assigned_to || "Unassigned"),
+          row.assigned_date ? new Date(row.assigned_date).toLocaleDateString() : "N/A",
+          row.work_status || "N/A",
+          row.remarks || ""
+        ]);
+
+        const workbook = xlsx.utils.book_new();
+        const worksheet = xlsx.utils.aoa_to_sheet([...summaryRows, ...dataRows]);
+        xlsx.utils.book_append_sheet(workbook, worksheet, "All Employee Performance");
+
+        const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+        res.setHeader("Content-Disposition", `attachment; filename="all_employee_performance.xlsx"`);
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        return res.send(buffer);
+      });
+    } catch (error) {
+      console.error("exportAllEmployeePerformanceExcel controller error:", error);
       return res.status(500).send("Internal server error");
     }
   },

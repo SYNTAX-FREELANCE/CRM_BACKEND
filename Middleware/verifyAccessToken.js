@@ -34,8 +34,10 @@ const verifyAccessToken = (req, res, next) => {
             // Attach user info to request
             req.user = {
                 id: user.id,
+                user_id: user.user_id,
                 username: user.username,
                 role: user.role,
+                role_name: user.role_name,
             };
             
             // Call next

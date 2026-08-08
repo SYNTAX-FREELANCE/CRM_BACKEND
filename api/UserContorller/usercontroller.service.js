@@ -137,7 +137,11 @@ module.exports = {
     // Validate token - get user by ID
     getUserByIdForValidation: (userId, callback) => {
         db.query(
-            "SELECT id, username, role FROM users WHERE id = ?",
+            `SELECT u.id, u.username, u.role, r.role_name, um.user_id 
+             FROM users u
+             LEFT JOIN users_master um ON u.username = um.employee_id
+             LEFT JOIN roles r ON r.role_id = um.role_id
+             WHERE u.id = ?`,
             [userId],
             (err, result) => {
                 if (err) {
