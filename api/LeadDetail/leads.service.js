@@ -565,9 +565,7 @@ LIMIT 10;
         lf.next_followup_date,
         lf.created_at AS followup_created_at
         
-        
-        
-
+      
     FROM leads l
 
     INNER JOIN customers c
