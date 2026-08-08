@@ -19,19 +19,39 @@ const getMappingValue = (row, keySynonyms) => {
   return "";
 };
 
-// Helper function to safely parse Excel serial dates or return standard strings
+// Helper function to safely parse Excel serial dates or string date formats to YYYY-MM-DD
 const parseDate = (val) => {
-  if (!val) return null;
+  if (val === null || val === undefined) return null;
   val = String(val).trim();
-  // If it's a 5 digit number string (Excel serial date)
-  if (/^\d{5}$/.test(val)) {
-    const serial = parseInt(val, 10);
-    // Excel epoch starts at Jan 1 1900. 25569 is the difference in days between 1900 and 1970 UNIX epoch.
-    // (Note: This assumes dates are after March 1, 1900, which is universally true for vehicle reg/expiry dates)
-    const excelEpochDiff = 25569;
-    const date = new Date(Math.round((serial - excelEpochDiff) * 86400 * 1000));
-    return date.toISOString().split('T')[0];
+  if (val === "") return null;
+
+  // Handle Excel serial date numbers (e.g., 45678 or "45678.0")
+  const numericVal = Number(val);
+  if (!isNaN(numericVal) && numericVal > 25000 && numericVal < 75000) {
+    const date = new Date(Math.round((numericVal - 25569) * 86400 * 1000));
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
   }
+
+  // Handle DD/MM/YYYY or DD-MM-YYYY
+  const ddmmyyyyMatch = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (ddmmyyyyMatch) {
+    const day = ddmmyyyyMatch[1].padStart(2, "0");
+    const month = ddmmyyyyMatch[2].padStart(2, "0");
+    const year = ddmmyyyyMatch[3];
+    return `${year}-${month}-${day}`;
+  }
+
+  // Handle standard YYYY-MM-DD or standard parseable date string
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   return val;
 };
 
@@ -142,7 +162,7 @@ module.exports = {
           district: getMappingValue(row, mappings.district),
           state: getMappingValue(row, mappings.state),
           pincode: getMappingValue(row, mappings.pincode),
-          is_previous_customer: getMappingValue(row, mappings.is_previous_customer).toLowerCase() === 'yes' ? 1 : 0,
+          is_previous_customer: (["yes", "1", "true"].includes(String(getMappingValue(row, mappings.is_previous_customer)).trim().toLowerCase())) ? 1 : 0,
           is_active: 1,
           created_by: createdBy
         };
@@ -193,7 +213,9 @@ module.exports = {
         } else {
           validCombinedRows.push({
             customer: mappedCustomer,
-            vehicle: mappedVehicle
+            vehicle: mappedVehicle,
+            originalRow: rowNumber,
+            originalData: row
           });
         }
       });
@@ -208,30 +230,31 @@ module.exports = {
         try {
           const result = await customerService.insertBulkCombined(validCombinedRows);
 
+          const duplicateCount = result.duplicateRows ? result.duplicateRows.length : 0;
+          let msg = `Successfully processed file. Inserted ${result.insertedCustomers} customer(s) and ${result.insertedVehicles} vehicle(s).`;
+          if (duplicateCount > 0) {
+            msg += ` Skipped ${duplicateCount} duplicate entry(ies).`;
+          }
+
           return res.status(200).json({
             success: 1,
-            message: `Successfully processed file. Mapped and inserted ${result.insertedCustomers} customer(s) and ${result.insertedVehicles} vehicle(s).`,
+            message: msg,
             fileType: "excel",
             stats: {
               totalRows: rawRows.length,
-              insertedCount: validCombinedRows.length,
+              insertedCount: result.insertedVehicles,
+              duplicateCount: duplicateCount,
               failedCount: failedRows.length
             },
+            duplicateRows: result.duplicateRows || [],
             failedRows: failedRows,
-            insertedData: validCombinedRows.map(row => ({
-              customer_name: row.customer.customer_name,
-              mobile_number_1: row.customer.mobile_number_1,
-              registration_number: row.vehicle.registration_number,
-              model: row.vehicle.model,
-              vehicle_maker: row.vehicle.vehicle_maker,
-              fuel_type: row.vehicle.fuel_type
-            }))
+            insertedData: result.insertedData || []
           });
         } catch (dbErr) {
           console.error("Combined bulk insert database error:", dbErr);
           return res.status(500).json({
             success: 0,
-            message: "Failed to insert customer and vehicle data into database. Possibly duplicate vehicle registration number or other constraint violation.",
+            message: "Failed to insert customer and vehicle data into database.",
             error: dbErr.message
           });
         }
@@ -242,8 +265,10 @@ module.exports = {
           stats: {
             totalRows: rawRows.length,
             insertedCount: 0,
+            duplicateCount: 0,
             failedCount: failedRows.length
           },
+          duplicateRows: [],
           failedRows: failedRows
         });
       }
@@ -346,7 +371,9 @@ module.exports = {
 
       // Map and validate rows
       rawRows.forEach((row, index) => {
-        const isPrev = getMappingValue(row, mappings.is_previous_customer).toLowerCase() === 'yes' ? 1 : 0;
+        const isPrevStr = String(getMappingValue(row, mappings.is_previous_customer)).trim().toLowerCase();
+        const isPrev = (isPrevStr === 'yes' || isPrevStr === '1' || isPrevStr === 'true') ? 1 : 0;
+
         const mappedCustomer = {
           customer_name: getMappingValue(row, mappings.customer_name),
           mobile_number_1: getMappingValue(row, mappings.mobile_number_1),
@@ -434,24 +461,25 @@ module.exports = {
             failedRows.push(...result.skippedRows);
           }
 
+          const duplicateCount = result.duplicateRows ? result.duplicateRows.length : 0;
+          let msg = `Successfully processed file. Inserted ${result.insertedCustomers} customer(s), updated ${result.updatedVehicles} existing vehicle(s).`;
+          if (duplicateCount > 0) {
+            msg += ` Skipped ${duplicateCount} duplicate entry(ies).`;
+          }
+
           return res.status(200).json({
             success: 1,
-            message: `Successfully processed file. Inserted ${result.insertedCustomers} customer(s), updated ${result.updatedVehicles} existing vehicle(s).`,
+            message: msg,
             fileType: "excel",
             stats: {
               totalRows: rawRows.length,
-              insertedCount: result.insertedCustomers + result.updatedVehicles,
+              insertedCount: result.insertedVehicles + result.updatedVehicles,
+              duplicateCount: duplicateCount,
               failedCount: failedRows.length
             },
+            duplicateRows: result.duplicateRows || [],
             failedRows: failedRows,
-            insertedData: result.processedData || validCombinedRows.map(row => ({
-              customer_name: row.customer.customer_name,
-              mobile_number_1: row.customer.mobile_number_1,
-              registration_number: row.vehicle.registration_number,
-              model: row.vehicle.model,
-              vehicle_maker: row.vehicle.vehicle_maker,
-              fuel_type: row.vehicle.fuel_type
-            }))
+            insertedData: result.processedData || []
           });
         } catch (dbErr) {
           console.error("Renewal bulk process database error:", dbErr);
@@ -468,8 +496,10 @@ module.exports = {
           stats: {
             totalRows: rawRows.length,
             insertedCount: 0,
+            duplicateCount: 0,
             failedCount: failedRows.length
           },
+          duplicateRows: [],
           failedRows: failedRows
         });
       }
