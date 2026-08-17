@@ -120,86 +120,152 @@ module.exports = {
         return res.status(400).send("employeeId parameter is required");
       }
 
-      reportsService.getEmployeePerformanceData(employeeId, fromDate, toDate, (err, results) => {
-        if (err) {
-          console.error("exportEmployeePerformanceExcel error:", err);
-          return res.status(500).send("Something went wrong while generating the report");
-        }
+      reportsService.getEmployeePerformanceData(
+        employeeId,
+        fromDate,
+        toDate,
+        (err, results) => {
+          if (err) {
+            console.error(
+              "exportEmployeePerformanceExcel error:",
+              err
+            );
 
-        // Calculate status summary counts
-        let totalCount = results.length;
-        let soldCount = 0;
-        let appointmentCount = 0;
-        let quoteCount = 0;
-        let callbackCount = 0;
-
-        results.forEach((row) => {
-          const name = (row.status_name || "").toUpperCase();
-          if (name.includes("SOLD")) {
-            soldCount++;
-          } else if (name.includes("APPOINMENT") || name.includes("APPOINTMENT")) {
-            appointmentCount++;
-          } else if (name.includes("QUOTE")) {
-            quoteCount++;
-          } else if (name.includes("CALLBACK") || name.includes("CALL BACK")) {
-            callbackCount++;
+            return res.status(500).send(
+              "Something went wrong while generating the report"
+            );
           }
-        });
 
-        // Header & Summary rows
-        const summaryRows = [
-          ["EMPLOYEE PERFORMANCE REPORT"],
-          [`Employee ID: ${employeeId}`],
-          [fromDate && toDate ? `Period: ${fromDate} to ${toDate}` : "Period: All Time"],
-          [],
-          ["SUMMARY METRICS"],
-          ["Metric", "Count"],
-          ["Total Data Count", totalCount],
-          ["Capture Status Count", soldCount],
-          ["Appointment Status Count", appointmentCount],
-          ["Quote Status Count", quoteCount],
-          ["Callback Status Count", callbackCount],
-          [],
-          ["DETAILED RECORDS"],
-          ["Customer Name", "Status Name", "Assigned To", "Assigned Date", "Work Status", "Remarks"]
-        ];
+          /* =========================================
+             NO DATA
+             ========================================= */
 
-        // Detailed record rows
-        const dataRows = results.map(row => [
-          row.customer_name || "N/A",
-          row.status_name || "N/A",
-          row.employee_name ? `${row.employee_name} (${row.employee_id})` : (row.assigned_to || "Unassigned"),
-          row.assigned_date ? new Date(row.assigned_date).toLocaleDateString() : "N/A",
-          row.work_status || "N/A",
-          row.remarks || ""
-        ]);
+          if (!results || results.length === 0) {
+            return res.status(404).send(
+              "No performance data found for the selected employee and date range"
+            );
+          }
 
-        const workbook = xlsx.utils.book_new();
-        const worksheet = xlsx.utils.aoa_to_sheet([...summaryRows, ...dataRows]);
-        xlsx.utils.book_append_sheet(workbook, worksheet, "Employee Performance");
+          /*
+           * getEmployeePerformanceData returns
+           * one aggregated row for the employee.
+           */
 
-        const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+          const row = results[0];
 
-        res.setHeader("Content-Disposition", `attachment; filename="employee_performance_${employeeId}.xlsx"`);
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        return res.send(buffer);
-      });
+          const totalCalls = Number(row.total_calls || 0);
+          const callbackCount = Number(row.callback_count || 0);
+          const quoteCount = Number(row.quote_count || 0);
+          const appointmentCount = Number(row.appointment_count || 0);
+          const capturedCount = Number(row.captured_count || 0);
+          const lostCount = Number(row.lost_count || 0);
+
+          const employeeName = row.employee_name || "N/A";
+          const employeeCode = row.employee_id || employeeId;
+
+          /* =========================================
+             EXCEL SUMMARY
+             ========================================= */
+
+          const summaryRows = [
+            ["EMPLOYEE PERFORMANCE REPORT"],
+
+            [`Employee: ${employeeName}`],
+
+            [`Employee ID: ${employeeCode}`],
+
+            [
+              fromDate && toDate
+                ? `Period: ${fromDate} to ${toDate}`
+                : "Period: All Time"
+            ],
+
+            [],
+
+            ["PERFORMANCE SUMMARY"],
+
+            ["Metric", "Count"],
+
+            ["Total Calls", totalCalls],
+
+            ["Captured", capturedCount],
+
+            ["Appointment", appointmentCount],
+
+            ["Quote", quoteCount],
+
+            ["Callback", callbackCount],
+
+            ["Lost", lostCount],
+
+            [],
+
+            [
+              "Total Status Outcomes",
+              capturedCount +
+              appointmentCount +
+              quoteCount +
+              callbackCount +
+              lostCount
+            ]
+          ];
+
+          /* =========================================
+             CREATE WORKBOOK
+             ========================================= */
+
+          const workbook = xlsx.utils.book_new();
+
+          const worksheet = xlsx.utils.aoa_to_sheet(summaryRows);
+
+          worksheet["!cols"] = [
+            { wch: 30 },
+            { wch: 20 }
+          ];
+
+          xlsx.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "Employee Performance"
+          );
+
+          /* =========================================
+             GENERATE EXCEL
+             ========================================= */
+
+          const buffer = xlsx.write(workbook, {
+            type: "buffer",
+            bookType: "xlsx"
+          });
+
+          res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="employee_performance_${employeeCode}.xlsx"`
+          );
+
+          res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          );
+
+          return res.send(buffer);
+        }
+      );
     } catch (error) {
-      console.error("exportEmployeePerformanceExcel controller error:", error);
+      console.error(
+        "exportEmployeePerformanceExcel controller error:",
+        error
+      );
+
       return res.status(500).send("Internal server error");
     }
   },
 
   getAllEmployeePerformance: (req, res) => {
     try {
-      const { fromDate, toDate, employeeId } = req.query;
-      const roleName = (req.user?.role_name || "").trim().toLowerCase();
-      const roleId = String(req.user?.role || "").trim();
-      const isEmployee = roleName === "employee" || roleId === "2";
+      const { fromDate, toDate } = req.query;
 
-      const filterEmployee = isEmployee ? (req.user?.username || req.user?.user_id || req.user?.id) : (employeeId || null);
-
-      reportsService.getAllEmployeePerformanceData(fromDate, toDate, filterEmployee, (err, results) => {
+      reportsService.getAllEmployeePerformanceData(fromDate, toDate, (err, results) => {
         if (err) {
           console.error("getAllEmployeePerformance error:", err);
           return res.status(500).json({
@@ -225,106 +291,157 @@ module.exports = {
 
   exportAllEmployeePerformanceExcel: (req, res) => {
     try {
-      const { fromDate, toDate, employeeId } = req.query;
-      const roleName = (req.user?.role_name || "").trim().toLowerCase();
-      const roleId = String(req.user?.role || "").trim();
-      const isEmployee = roleName === "employee" || roleId === "2";
+      const { fromDate, toDate } = req.query;
 
-      const filterEmployee = isEmployee ? (req.user?.username || req.user?.user_id || req.user?.id) : (employeeId || null);
+      reportsService.getAllEmployeePerformanceData(
+        fromDate,
+        toDate,
+        (err, results) => {
+          if (err) {
+            console.error(
+              "exportAllEmployeePerformanceExcel error:",
+              err
+            );
 
-      reportsService.getAllEmployeePerformanceData(fromDate, toDate, filterEmployee, (err, results) => {
-        if (err) {
-          console.error("exportAllEmployeePerformanceExcel error:", err);
-          return res.status(500).send("Something went wrong while generating the report");
+            return res.status(500).send(
+              "Something went wrong while generating the report"
+            );
+          }
+
+          /* =========================================
+             GRAND TOTALS
+             ========================================= */
+
+          let grandTotalCalls = 0;
+          let grandCallback = 0;
+          let grandQuote = 0;
+          let grandAppointment = 0;
+          let grandCaptured = 0;
+          let grandLost = 0;
+
+          results.forEach((row) => {
+            grandTotalCalls += Number(row.total_calls || 0);
+            grandCallback += Number(row.callback_count || 0);
+            grandQuote += Number(row.quote_count || 0);
+            grandAppointment += Number(row.appointment_count || 0);
+            grandCaptured += Number(row.captured_count || 0);
+            grandLost += Number(row.lost_count || 0);
+          });
+
+          /* =========================================
+             EMPLOYEE SUMMARY
+             ========================================= */
+
+          const empSummaryRows = results.map((row) => [
+            row.employee_name
+              ? `${row.employee_name} (${row.employee_id})`
+              : row.employee_id || "Unknown",
+
+            Number(row.total_calls || 0),
+            Number(row.captured_count || 0),
+            Number(row.appointment_count || 0),
+            Number(row.quote_count || 0),
+            Number(row.callback_count || 0),
+            Number(row.lost_count || 0)
+          ]);
+
+          /* =========================================
+             SUMMARY
+             ========================================= */
+
+          const summaryRows = [
+            ["ALL EMPLOYEE PERFORMANCE REPORT"],
+
+            [
+              fromDate && toDate
+                ? `Period: ${fromDate} to ${toDate}`
+                : "Period: All Time"
+            ],
+
+            [],
+
+            ["EMPLOYEE PERFORMANCE SUMMARY"],
+
+            [
+              "Employee",
+              "Total Calls",
+              "Captured",
+              "Appointment",
+              "Quote",
+              "Callback",
+              "Lost"
+            ],
+
+            ...empSummaryRows,
+
+            [
+              "TOTAL",
+              grandTotalCalls,
+              grandCaptured,
+              grandAppointment,
+              grandQuote,
+              grandCallback,
+              grandLost
+            ],
+
+            []
+          ];
+
+
+          const workbook = xlsx.utils.book_new();
+
+          const worksheet = xlsx.utils.aoa_to_sheet([
+            ...summaryRows,
+          ]);
+
+          /* =========================================
+             COLUMN WIDTHS
+             ========================================= */
+
+          worksheet["!cols"] = [
+            { wch: 30 },
+            { wch: 18 },
+            { wch: 18 },
+            { wch: 18 },
+            { wch: 18 },
+            { wch: 18 },
+            { wch: 18 }
+          ];
+
+          xlsx.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "Employee Performance"
+          );
+
+          /* =========================================
+             WRITE FILE
+             ========================================= */
+
+          const buffer = xlsx.write(workbook, {
+            type: "buffer",
+            bookType: "xlsx"
+          });
+
+          res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="all_employee_performance.xlsx"`
+          );
+
+          res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          );
+
+          return res.send(buffer);
         }
-
-        // Calculate per-employee summary counts & grand totals
-        const empMap = {};
-        let grandTotal = results.length;
-        let grandSold = 0;
-        let grandAppointment = 0;
-        let grandQuote = 0;
-        let grandCallback = 0;
-
-        results.forEach((row) => {
-          const empId = row.employee_id || row.assigned_to || "Unassigned";
-          const empName = row.employee_name ? `${row.employee_name} (${empId})` : (row.assigned_to ? `ID: ${row.assigned_to}` : "Unassigned");
-          const key = empId;
-
-          if (!empMap[key]) {
-            empMap[key] = {
-              name: empName,
-              totalCount: 0,
-              soldCount: 0,
-              appointmentCount: 0,
-              quoteCount: 0,
-              callbackCount: 0,
-            };
-          }
-
-          empMap[key].totalCount++;
-
-          const name = (row.status_name || "").toUpperCase();
-          if (name.includes("SOLD")) {
-            empMap[key].soldCount++;
-            grandSold++;
-          } else if (name.includes("APPOINMENT") || name.includes("APPOINTMENT")) {
-            empMap[key].appointmentCount++;
-            grandAppointment++;
-          } else if (name.includes("QUOTE")) {
-            empMap[key].quoteCount++;
-            grandQuote++;
-          } else if (name.includes("CALLBACK") || name.includes("CALL BACK")) {
-            empMap[key].callbackCount++;
-            grandCallback++;
-          }
-        });
-
-        const empSummaryRows = Object.values(empMap).map(emp => [
-          emp.name,
-          emp.totalCount,
-          emp.soldCount,
-          emp.appointmentCount,
-          emp.quoteCount,
-          emp.callbackCount
-        ]);
-
-        // Header & Summary rows
-        const summaryRows = [
-          ["ALL EMPLOYEE PERFORMANCE REPORT"],
-          [fromDate && toDate ? `Period: ${fromDate} to ${toDate}` : "Period: All Time"],
-          [],
-          ["EMPLOYEE PERFORMANCE SUMMARY"],
-          ["Employee", "Total Data Count", "Capture Status", "Appointment Status", "Quote Status", "Callback Status"],
-          ...empSummaryRows,
-          ["Total / Summary", grandTotal, grandSold, grandAppointment, grandQuote, grandCallback],
-          [],
-          ["DETAILED RECORDS"],
-          ["Customer Name", "Status Name", "Assigned To", "Assigned Date", "Work Status", "Remarks"]
-        ];
-
-        // Detailed record rows
-        const dataRows = results.map(row => [
-          row.customer_name || "N/A",
-          row.status_name || "N/A",
-          row.employee_name ? `${row.employee_name} (${row.employee_id})` : (row.assigned_to || "Unassigned"),
-          row.assigned_date ? new Date(row.assigned_date).toLocaleDateString() : "N/A",
-          row.work_status || "N/A",
-          row.remarks || ""
-        ]);
-
-        const workbook = xlsx.utils.book_new();
-        const worksheet = xlsx.utils.aoa_to_sheet([...summaryRows, ...dataRows]);
-        xlsx.utils.book_append_sheet(workbook, worksheet, "All Employee Performance");
-
-        const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
-
-        res.setHeader("Content-Disposition", `attachment; filename="all_employee_performance.xlsx"`);
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        return res.send(buffer);
-      });
+      );
     } catch (error) {
-      console.error("exportAllEmployeePerformanceExcel controller error:", error);
+      console.error(
+        "exportAllEmployeePerformanceExcel controller error:",
+        error
+      );
+
       return res.status(500).send("Internal server error");
     }
   },
