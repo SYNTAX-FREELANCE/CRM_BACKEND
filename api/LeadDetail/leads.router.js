@@ -120,6 +120,7 @@ router.post(
     leacontroller.multiReallocation
 );
 
+router.post('/update-registration', verifyAccessToken, leacontroller.updateRegistartionDate);
 
 module.exports = router;
 

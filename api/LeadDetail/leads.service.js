@@ -798,6 +798,7 @@ ORDER BY
           ON lsm.status_id = l.status_id
       WHERE l.assigned_to = ?
         AND lsm.requires_followup = 1
+         AND l.status_id != 6
     `;
 
       //   const followupQuery = `
@@ -913,6 +914,7 @@ INNER JOIN lead_status_master lsm
 
 WHERE l.assigned_to = ?
   AND lsm.requires_followup = 1
+  AND l.status_id != 6
 
 ORDER BY lf.next_followup_date ASC;
 `;
@@ -2061,75 +2063,75 @@ ORDER BY
     });
   },
   multiReallocation: (data, callback) => {
-  pool.getConnection((err, connection) => {
-    if (err) return callback(err);
+    pool.getConnection((err, connection) => {
+      if (err) return callback(err);
 
-    connection.beginTransaction(async (err) => {
-      if (err) {
-        connection.release();
-        return callback(err);
-      }
-
-      try {
-        const {
-          selectedEmployees,
-          remarks,
-          is_locked,
-          work_status,
-          leads,
-          assigned_by,
-        } = data;
-
-        if (
-          !selectedEmployees ||
-          !Array.isArray(selectedEmployees) ||
-          selectedEmployees.length === 0
-        ) {
-          throw new Error("No Employees Selected");
+      connection.beginTransaction(async (err) => {
+        if (err) {
+          connection.release();
+          return callback(err);
         }
 
-        if (!leads || leads.length === 0) {
-          throw new Error("No Leads Selected");
-        }
+        try {
+          const {
+            selectedEmployees,
+            remarks,
+            is_locked,
+            work_status,
+            leads,
+            assigned_by,
+          } = data;
 
-        // ------------------------------------------
-        // Generate Batch Number For Every Employee
-        // ------------------------------------------
+          if (
+            !selectedEmployees ||
+            !Array.isArray(selectedEmployees) ||
+            selectedEmployees.length === 0
+          ) {
+            throw new Error("No Employees Selected");
+          }
 
-        const batchMap = {};
+          if (!leads || leads.length === 0) {
+            throw new Error("No Leads Selected");
+          }
 
-        for (const empId of selectedEmployees) {
-          const [batchResult] = await connection.promise().query(
-            `
+          // ------------------------------------------
+          // Generate Batch Number For Every Employee
+          // ------------------------------------------
+
+          const batchMap = {};
+
+          for (const empId of selectedEmployees) {
+            const [batchResult] = await connection.promise().query(
+              `
             SELECT COALESCE(MAX(batch_no),0)+1 AS batchNo
             FROM employee_active_batches
             WHERE empid = ?
             `,
-            [empId]
-          );
+              [empId]
+            );
 
-          batchMap[empId] = batchResult[0].batchNo;
-        }
-
-        // ------------------------------------------
-        // Round Robin Allocation
-        // ------------------------------------------
-
-        for (let i = 0; i < leads.length; i++) {
-          const lead = leads[i];
-
-          // Pick Employee (Round Robin)
-          const employeeId =
-            selectedEmployees[i % selectedEmployees.length];
-
-          const batchNo = batchMap[employeeId];
+            batchMap[empId] = batchResult[0].batchNo;
+          }
 
           // ------------------------------------------
-          // Assignment History
+          // Round Robin Allocation
           // ------------------------------------------
 
-          await connection.promise().query(
-            `
+          for (let i = 0; i < leads.length; i++) {
+            const lead = leads[i];
+
+            // Pick Employee (Round Robin)
+            const employeeId =
+              selectedEmployees[i % selectedEmployees.length];
+
+            const batchNo = batchMap[employeeId];
+
+            // ------------------------------------------
+            // Assignment History
+            // ------------------------------------------
+
+            await connection.promise().query(
+              `
             INSERT INTO lead_assignment_history
             (
                 lead_id,
@@ -2143,21 +2145,21 @@ ORDER BY
                 ?,?,?,?,?
             )
             `,
-            [
-              lead.lead_id,
-              lead.user_id,
-              employeeId,
-              assigned_by,
-              remarks,
-            ]
-          );
+              [
+                lead.lead_id,
+                lead.user_id,
+                employeeId,
+                assigned_by,
+                remarks,
+              ]
+            );
 
-          // ------------------------------------------
-          // Update Lead
-          // ------------------------------------------
+            // ------------------------------------------
+            // Update Lead
+            // ------------------------------------------
 
-          await connection.promise().query(
-            `
+            await connection.promise().query(
+              `
             UPDATE leads
             SET
                 assigned_to = ?,
@@ -2169,21 +2171,21 @@ ORDER BY
                 work_status = ?
             WHERE lead_id = ?
             `,
-            [
-              employeeId,
-              assigned_by,
-              is_locked,
-              work_status,
-              lead.lead_id,
-            ]
-          );
+              [
+                employeeId,
+                assigned_by,
+                is_locked,
+                work_status,
+                lead.lead_id,
+              ]
+            );
 
-          // ------------------------------------------
-          // Close Previous Batch
-          // ------------------------------------------
+            // ------------------------------------------
+            // Close Previous Batch
+            // ------------------------------------------
 
-          await connection.promise().query(
-            `
+            await connection.promise().query(
+              `
             UPDATE employee_active_batches
             SET
                 is_active = 0,
@@ -2193,18 +2195,18 @@ ORDER BY
                 AND empid = ?
                 AND is_active = 1
             `,
-            [
-              lead.lead_id,
-              lead.user_id,
-            ]
-          );
+              [
+                lead.lead_id,
+                lead.user_id,
+              ]
+            );
 
-          // ------------------------------------------
-          // Create New Batch Entry
-          // ------------------------------------------
+            // ------------------------------------------
+            // Create New Batch Entry
+            // ------------------------------------------
 
-          await connection.promise().query(
-            `
+            await connection.promise().query(
+              `
             INSERT INTO employee_active_batches
             (
                 empid,
@@ -2219,45 +2221,58 @@ ORDER BY
                 ?, ?, ?, 'ACTIVE', 'REALLOCATION', 1
             )
             `,
-            [
-              employeeId,
-              lead.lead_id,
-              batchNo,
-            ]
-          );
-        }
-                // ------------------------------------------
-        // Commit Transaction
-        // ------------------------------------------
-
-        connection.commit((err) => {
-          if (err) {
-            return connection.rollback(() => {
-              connection.release();
-              callback(err);
-            });
+              [
+                employeeId,
+                lead.lead_id,
+                batchNo,
+              ]
+            );
           }
+          // ------------------------------------------
+          // Commit Transaction
+          // ------------------------------------------
 
-          connection.release();
+          connection.commit((err) => {
+            if (err) {
+              return connection.rollback(() => {
+                connection.release();
+                callback(err);
+              });
+            }
 
-          callback(null, {
-            success: 1,
-            message: `${leads.length} Lead(s) 
+            connection.release();
+
+            callback(null, {
+              success: 1,
+              message: `${leads.length} Lead(s) 
             allocated successfully
              among ${selectedEmployees.length} employee(s).`,
+            });
           });
-        });
 
-      } catch (error) {
-        connection.rollback(() => {
-          connection.release();
-          callback(error);
-        });
-      }
+        } catch (error) {
+          connection.rollback(() => {
+            connection.release();
+            callback(error);
+          });
+        }
+      });
     });
-  });
-},
-
+  },
+  updateRegistrationDate: (vehicle_id, edited_by, registration_date, callback) => {
+    pool.query(
+      `UPDATE vehicles
+     SET
+        registration_date = ?,
+        edited_by = ?
+     WHERE vehicle_id = ?`,
+      [registration_date, edited_by, vehicle_id],
+      (err, result) => {
+        if (err) return callback(err, null);
+        callback(null, result);
+      },
+    );
+  },
 };
 
 

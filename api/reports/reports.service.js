@@ -42,61 +42,131 @@ module.exports = {
   },
 
   getEmployeePerformanceData: (employeeId, fromDate, toDate, callback) => {
-    let query = `
-      SELECT 
-        l.lead_id, 
-        l.customer_id, 
-        l.vehicle_id, 
-        l.policy_id, 
-        l.status_id, 
-        l.assigned_to, 
-        l.assigned_date, 
-        l.is_assigned, 
-        l.remarks, 
-        l.created_at, 
-        l.is_locked, 
-        l.work_status, 
-        l.created_by, 
-        l.edited_by,
-        ls.status_name, 
-        ls.display_order, 
-        ls.is_active AS status_is_active, 
-        ls.requires_followup, 
-        ls.is_call_required, 
-        ls.is_policy_required, 
-        ls.is_followup_date_required,
+    const startDateTime = `${fromDate} 00:00:00`;
+    const endDateTime = `${toDate} 23:59:59.999999`;
+    const query = `
+    SELECT
+    user_id,
+    employee_id,
+    employee_name,
+
+    SUM(total_calls) AS total_calls,
+    SUM(callback_count) AS callback_count,
+    SUM(quote_count) AS quote_count,
+    SUM(appointment_count) AS appointment_count,
+    SUM(captured_count) AS captured_count,
+    SUM(lost_count) AS lost_count
+
+FROM
+(
+    /* =========================================
+       FOLLOW-UP / CALL ACTIVITY
+       ========================================= */
+
+    SELECT
+        lf.created_by AS user_id,
+
         um.employee_id,
         um.name AS employee_name,
-        cs.customer_name,
-        lf.call_outcome
-      FROM leads l
-      LEFT JOIN lead_status_master ls ON l.status_id = ls.status_id
-      INNER JOIN users_master um ON l.assigned_to = um.user_id
-      LEFT JOIN customers cs ON l.customer_id = cs.customer_id
-      LEFT JOIN (
-        SELECT lf1.*
-        FROM lead_followups lf1
-        INNER JOIN (
-          SELECT lead_id, MAX(followup_id) AS max_followup_id
-          FROM lead_followups
-          GROUP BY lead_id
-        ) lf2 ON lf1.followup_id = lf2.max_followup_id
-      ) lf ON l.lead_id = lf.lead_id
 
-      WHERE um.employee_id = ?
-        AND l.status_id != 1
-        AND (lf.call_outcome IS NULL OR lf.call_outcome NOT IN ('NO_ANSWER', 'SWITCHED_OFF', 'BUSY', 'WRONG NUMBER', 'WRONG_NUMBER', 'NOT INTERESTED', 'NOT_INTERESTED'))
-    `;
-    const params = [employeeId];
+        COUNT(lf.followup_id) AS total_calls,
 
-    if (fromDate && toDate) {
-      query += ` AND DATE(l.status_changed_at) BETWEEN ? AND ?`;
-      params.push(fromDate, toDate);
-    }
+        SUM(
+            CASE
+                WHEN lf.status_id = 2 THEN 1
+                ELSE 0
+            END
+        ) AS callback_count,
 
-    query += ` ORDER BY l.status_changed_at DESC`;
+        SUM(
+            CASE
+                WHEN lf.status_id = 3 THEN 1
+                ELSE 0
+            END
+        ) AS quote_count,
 
-    pool.query(query, params, (err, results) => {
+        SUM(
+            CASE
+                WHEN lf.status_id = 4 THEN 1
+                ELSE 0
+            END
+        ) AS appointment_count,
+
+        0 AS captured_count,
+        0 AS lost_count
+
+    FROM lead_followups lf
+
+    INNER JOIN users_master um
+        ON um.user_id = lf.created_by
+
+    WHERE lf.created_by = ?
+
+      AND lf.created_at >= ?
+      AND lf.created_at <  ?
+
+    GROUP BY
+        lf.created_by,
+        um.employee_id,
+        um.name
+
+
+    UNION ALL
+
+
+    /* =========================================
+       STATUS CHANGE ACTIVITY
+       ========================================= */
+
+    SELECT
+        lsh.changed_by AS user_id,
+
+        um.employee_id,
+        um.name AS employee_name,
+
+        0 AS total_calls,
+        0 AS callback_count,
+        0 AS quote_count,
+        0 AS appointment_count,
+
+        SUM(
+            CASE
+                WHEN lsh.new_status_id = 5 THEN 1
+                ELSE 0
+            END
+        ) AS captured_count,
+
+        SUM(
+            CASE
+                WHEN lsh.new_status_id = 6 THEN 1
+                ELSE 0
+            END
+        ) AS lost_count
+
+    FROM lead_status_history lsh
+
+    INNER JOIN users_master um
+        ON um.user_id = lsh.changed_by
+
+    WHERE lsh.changed_by = ?
+
+      AND lsh.changed_at >= ?
+      AND lsh.changed_at <  ?
+
+    GROUP BY
+        lsh.changed_by,
+        um.employee_id,
+        um.name
+
+) report
+
+GROUP BY
+    user_id,
+    employee_id,
+    employee_name
+    `
+    
+    pool.query(query, [employeeId, startDateTime, endDateTime, employeeId, startDateTime, endDateTime], (err, results) => {
       if (err) {
         return callback(err, null);
       }
@@ -104,72 +174,132 @@ module.exports = {
     });
   },
 
-  getAllEmployeePerformanceData: (fromDate, toDate, filterEmployee, callback) => {
-    // Handle overload if filterEmployee is omitted
-    if (typeof filterEmployee === 'function') {
-      callback = filterEmployee;
-      filterEmployee = null;
-    }
+  getAllEmployeePerformanceData: (fromDate, toDate, callback) => {
+    const startDateTime = `${fromDate} 00:00:00`;
+    const endDateTime = `${toDate} 23:59:59.999999`;
+    const query = `
+    SELECT
+    u.user_id,
+    u.employee_id,
+    u.name AS employee_name,
 
-    let query = `
-      SELECT 
-        l.lead_id, 
-        l.customer_id, 
-        l.vehicle_id, 
-        l.policy_id, 
-        l.status_id, 
-        l.assigned_to, 
-        l.assigned_date, 
-        l.is_assigned, 
-        l.remarks, 
-        l.created_at, 
-        l.is_locked, 
-        l.work_status, 
-        l.created_by, 
-        l.edited_by,
-        ls.status_name, 
-        ls.display_order, 
-        ls.is_active AS status_is_active, 
-        ls.requires_followup, 
-        ls.is_call_required, 
-        ls.is_policy_required, 
-        ls.is_followup_date_required,
-        um.employee_id,
-        um.name AS employee_name,
-        cs.customer_name,
-        lf.call_outcome
-      FROM leads l
-      LEFT JOIN lead_status_master ls ON l.status_id = ls.status_id
-      INNER JOIN users_master um ON l.assigned_to = um.user_id
-      LEFT JOIN customers cs ON l.customer_id = cs.customer_id
-      LEFT JOIN (
-        SELECT lf1.*
-        FROM lead_followups lf1
-        INNER JOIN (
-          SELECT lead_id, MAX(followup_id) AS max_followup_id
-          FROM lead_followups
-          GROUP BY lead_id
-        ) lf2 ON lf1.followup_id = lf2.max_followup_id
-      ) lf ON l.lead_id = lf.lead_id
+    COALESCE(a.total_calls, 0) AS total_calls,
+    COALESCE(a.callback_count, 0) AS callback_count,
+    COALESCE(a.quote_count, 0) AS quote_count,
+    COALESCE(a.appointment_count, 0) AS appointment_count,
+    COALESCE(a.captured_count, 0) AS captured_count,
+    COALESCE(a.lost_count, 0) AS lost_count
 
-      WHERE l.status_id != 1
-        AND (lf.call_outcome IS NULL OR lf.call_outcome NOT IN ('NO_ANSWER', 'SWITCHED_OFF', 'BUSY', 'WRONG NUMBER', 'WRONG_NUMBER', 'NOT INTERESTED', 'NOT_INTERESTED'))
-    `;
-    const params = [];
+FROM users_master u
 
-    if (filterEmployee) {
-      query += ` AND (um.employee_id = ? OR um.user_id = ?)`;
-      params.push(filterEmployee, filterEmployee);
-    }
+LEFT JOIN
+(
+    SELECT
+        user_id,
 
-    if (fromDate && toDate) {
-      query += ` AND DATE(l.status_changed_at) BETWEEN ? AND ?`;
-      params.push(fromDate, toDate);
-    }
+        SUM(total_calls) AS total_calls,
+        SUM(callback_count) AS callback_count,
+        SUM(quote_count) AS quote_count,
+        SUM(appointment_count) AS appointment_count,
+        SUM(captured_count) AS captured_count,
+        SUM(lost_count) AS lost_count
 
-    query += ` ORDER BY l.status_changed_at DESC`;
+    FROM
+    (
+        /* =========================================
+           FOLLOW-UP / CALL ACTIVITY
+           ========================================= */
 
-    pool.query(query, params, (err, results) => {
+        SELECT
+            lf.created_by AS user_id,
+
+            COUNT(lf.followup_id) AS total_calls,
+
+            SUM(
+                CASE
+                    WHEN lf.status_id = 2 THEN 1
+                    ELSE 0
+                END
+            ) AS callback_count,
+
+            SUM(
+                CASE
+                    WHEN lf.status_id = 3 THEN 1
+                    ELSE 0
+                END
+            ) AS quote_count,
+
+            SUM(
+                CASE
+                    WHEN lf.status_id = 4 THEN 1
+                    ELSE 0
+                END
+            ) AS appointment_count,
+
+            0 AS captured_count,
+            0 AS lost_count
+
+        FROM lead_followups lf
+
+        WHERE lf.created_at >= ?
+          AND lf.created_at < ?
+
+        GROUP BY
+            lf.created_by
+
+
+        UNION ALL
+
+
+        /* =========================================
+           STATUS CHANGE ACTIVITY
+           ========================================= */
+
+        SELECT
+            lsh.changed_by AS user_id,
+
+            0 AS total_calls,
+            0 AS callback_count,
+            0 AS quote_count,
+            0 AS appointment_count,
+
+            SUM(
+                CASE
+                    WHEN lsh.new_status_id = 5 THEN 1
+                    ELSE 0
+                END
+            ) AS captured_count,
+
+            SUM(
+                CASE
+                    WHEN lsh.new_status_id = 6 THEN 1
+                    ELSE 0
+                END
+            ) AS lost_count
+
+        FROM lead_status_history lsh
+
+        WHERE lsh.changed_at >= ?
+          AND lsh.changed_at <  ?
+
+        GROUP BY
+            lsh.changed_by
+
+    ) activity
+
+    GROUP BY
+        user_id
+
+) a
+    ON a.user_id = u.user_id
+
+WHERE u.is_active = 1
+  AND u.role_id != 6
+
+ORDER BY
+    u.name
+    `
+    pool.query(query, [startDateTime, endDateTime, startDateTime, endDateTime], (err, results) => {
       if (err) {
         return callback(err, null);
       }

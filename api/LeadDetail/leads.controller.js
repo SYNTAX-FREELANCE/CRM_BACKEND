@@ -469,7 +469,7 @@ module.exports = {
         console.log({
           err
         });
-        
+
         return res.status(500).json({
           success: 0,
           message: "Database Error",
@@ -593,19 +593,42 @@ module.exports = {
     const data = req.body;
 
     leadservie.multiReallocation(data, (err, result) => {
-        if (err) {
-            return res.status(500).json({
-                success: 0,
-                message: "Database Error",
-            });
-        }
-
-        return res.status(200).json({
-            success: 1,
-            data: result,
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
         });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        data: result,
+      });
     });
-},
+  },
+  updateRegistartionDate: (req, res) => {
+    const { vehicle_id, edited_by, registration_date } = req.body;
+
+    if (!vehicle_id || !edited_by) {
+      return res.status(200).json({
+        success: 0,
+        message: "Required Id's are Missing!",
+      });
+    }
+
+    leadservie.updateRegistrationDate(vehicle_id, edited_by, registration_date, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        message: "Update SuccessFully",
+      });
+    });
+  },
 
 };
 
