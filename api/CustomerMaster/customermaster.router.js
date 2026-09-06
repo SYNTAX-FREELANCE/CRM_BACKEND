@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const customerController = require("./customermaster.controller");
 const { uploadCustomer } = require("./customermaster.upload");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // ==================== CUSTOMER MASTER ROUTES ====================
 
@@ -69,5 +69,13 @@ router.post("/allocate-customer", verifyAccessToken, customerController.CreateNe
 
 //employee policy detail 
 router.get("/employee-policy-taken/:empid", verifyAccessToken, customerController.getEmployeePolicyTaken);
+
+
+router.post(
+    "/create-previous-customer",
+    verifyAccessToken,
+    customerController.CreatePreviousCustomerWithLead
+);
+
 
 module.exports = router;

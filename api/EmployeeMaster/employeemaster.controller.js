@@ -12,7 +12,7 @@ const jwt = require("jsonwebtoken");
 const {
   generateTokens,
   generateAccessToken,
-} = require("../../Middleware/generateTokens");
+} = require("../../middleware/generateTokens");
 const {
   getPolicyDocumentsService,
   deletePolicyDocumentService,

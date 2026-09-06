@@ -3,7 +3,7 @@
 const express = require("express");
 const router = express.Router();
 const callOutcomeController = require("./callOutcome.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 // ==================== CALL OUTCOME MASTER ROUTES ====================
 // Create Call Outcome
 

@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const employeeTargetController = require("./employeeTarget.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // Create
 router.post(

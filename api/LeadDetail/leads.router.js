@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const leacontroller = require("./leads.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 // const validateTokenController = require('../controllers/validateToken.controller');
 
 // Public routes
@@ -121,6 +121,9 @@ router.post(
 );
 
 router.post('/update-registration', verifyAccessToken, leacontroller.updateRegistartionDate);
+
+
+
 
 module.exports = router;
 

@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const leadMasterController = require("./leadMaster.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // ==================== LEAD MASTER ROUTES ====================
 

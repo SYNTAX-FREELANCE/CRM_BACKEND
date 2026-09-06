@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const roleMasterController = require("../RoleMaster/roleMaster.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // ==================== ROLE MASTER ROUTES ====================
 

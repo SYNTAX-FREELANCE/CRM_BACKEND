@@ -7,7 +7,7 @@ const {
   // <<<<<<< HEAD
   generateTokens,
   generateAccessToken,
-} = require("../../Middleware/generateTokens");
+} = require("../../middleware/generateTokens");
 
 module.exports = {
   login: (req, res) => {

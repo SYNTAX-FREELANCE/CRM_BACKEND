@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const statusMasterController = require("./statusMaster.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // ==================== STATUS MASTER ROUTES ====================
 

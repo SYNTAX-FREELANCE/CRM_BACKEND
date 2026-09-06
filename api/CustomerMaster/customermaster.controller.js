@@ -1500,5 +1500,130 @@ module.exports = {
     }
   },
 
+  CreatePreviousCustomerWithLead : (req, res) => {
+
+    try {
+
+        const payload = req.body;
+
+
+        // =========================================
+        // BASIC VALIDATION
+        // =========================================
+
+        if (!payload) {
+            return res.status(400).json({
+                success: 0,
+                message: "Payload is required"
+            });
+        }
+
+
+        const {
+            customer,
+            vehicle,
+            sale,
+            lead
+        } = payload;
+
+
+        if (!customer) {
+            return res.status(400).json({
+                success: 0,
+                message: "Customer details are required"
+            });
+        }
+
+
+        if (!vehicle) {
+            return res.status(400).json({
+                success: 0,
+                message: "Vehicle details are required"
+            });
+        }
+
+
+        if (!sale) {
+            return res.status(400).json({
+                success: 0,
+                message: "Sale details are required"
+            });
+        }
+
+
+        if (!lead) {
+            return res.status(400).json({
+                success: 0,
+                message: "Lead details are required"
+            });
+        }
+
+
+        if (!lead.assigned_to) {
+            return res.status(400).json({
+                success: 0,
+                message: "assigned_to is required"
+            });
+        }
+
+
+        if (!lead.status_id) {
+            return res.status(400).json({
+                success: 0,
+                message: "status_id is required"
+            });
+        }
+
+
+        // =========================================
+        // CREATE EVERYTHING
+        // =========================================
+
+        customerService.createPreviousCustomerWithLead(
+            payload,
+            (error, result) => {
+
+                if (error) {
+
+                    console.error(
+                        "CreatePreviousCustomerWithLead error:",
+                        error
+                    );
+
+                    return res.status(500).json({
+                        success: 0,
+                        message: "Failed to create customer, vehicle, lead and policy",
+                        error: error.message
+                    });
+                }
+
+
+                return res.status(201).json({
+                    success: 1,
+                    message: "Customer, vehicle, lead and policy created successfully",
+                    data: result
+                });
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "CreatePreviousCustomerWithLead controller error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: 0,
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+},
+
+
 
 };
+
+
+

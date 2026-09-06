@@ -1,5 +1,5 @@
 // api/CustomerMaster/customermaster.upload.js
-const createUpload = require("../../Middleware/multer");
+const createUpload = require("../../middleware/multer");
 
 // C Drive Upload Paths for Customers
 const CUSTOMER_UPLOAD_DIR = "C:/uploads/customers";

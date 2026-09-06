@@ -2,38 +2,104 @@ const pool = require("../../dbconfig/dbconfig");
 
 module.exports = {
   getPolicyReportData: (fromDate, toDate, callback) => {
+    const startDateTime = `${fromDate} 00:00:00`;
+    const endDateTime = `${toDate} 23:59:59.999999`;
     const query = `
-      SELECT 
-        l.lead_id, 
-        l.customer_id, 
-        l.vehicle_id, 
-        l.policy_id, 
-        l.status_id, 
-        l.assigned_to, 
-        l.assigned_date, 
-        l.is_assigned, 
-        l.remarks, 
-        l.created_at, 
-        l.is_locked, 
-        l.work_status, 
-        l.created_by, 
-        l.edited_by,
-        ls.status_name, 
-        ls.display_order, 
-        ls.is_active AS status_is_active, 
-        ls.requires_followup, 
-        ls.is_call_required, 
-        ls.is_policy_required, 
-        ls.is_followup_date_required,
-        cs.customer_name
-      FROM leads l
-      LEFT JOIN lead_status_master ls ON l.status_id = ls.status_id
-      LEFT JOIN customers cs ON l.customer_id = cs.customer_id
-      WHERE DATE(l.created_at) BETWEEN ? AND ?
-      ORDER BY l.created_at DESC
+    SELECT 
+    l.lead_id,
+    l.customer_id,
+    l.vehicle_id,
+    l.policy_id,
+    l.status_id,
+    l.assigned_to,
+    l.assigned_date,
+    l.is_assigned,
+    l.remarks,
+    l.created_at,
+    l.is_locked,
+    l.work_status,
+    l.created_by,
+    l.edited_by,
+
+    ls.status_name,
+    ls.display_order,
+    ls.is_active AS status_is_active,
+    ls.requires_followup,
+    ls.is_call_required,
+    ls.is_policy_required,
+    ls.is_followup_date_required,
+
+    cs.customer_name,
+
+    /* EMPLOYEE */
+    u.user_id AS employee_user_id,
+    u.employee_id,
+    u.name AS employee_name,
+    u.mobile_number_1 AS employee_mobile,
+    u.email AS employee_email,
+    u.role_id AS employee_role_id,
+    u.company_id AS employee_company_id,
+
+    v.registration_number,
+    v.model,
+
+    /* POLICY */
+    p.policy_id AS policy_detail_id,
+    p.policy_number,
+    p.policy_type,
+    p.renewal_year,
+    p.renewal_cycle,
+    p.start_date AS policy_start_date,
+    p.expiry_date AS policy_expiry_date,
+    p.premium_amount,
+    p.insured_declared_value,
+    p.paid_amount,
+    p.discount_amount,
+    p.policy_status,
+    p.sale_date,
+    p.created_at AS policy_created_at,
+
+    /* REPORT DATE */
+    COALESCE(
+        p.sale_date,
+        DATE(p.created_at),
+        DATE(l.created_at)
+    ) AS capture_date
+
+FROM leads l
+
+LEFT JOIN lead_status_master ls
+    ON l.status_id = ls.status_id
+
+LEFT JOIN customers cs
+    ON l.customer_id = cs.customer_id
+
+LEFT JOIN vehicles v
+    ON l.vehicle_id = v.vehicle_id
+
+LEFT JOIN users_master u
+    ON l.assigned_to = u.user_id
+
+LEFT JOIN policies p
+    ON p.policy_id = l.policy_id
+
+WHERE l.status_id = 5
+
+  AND COALESCE(
+        p.sale_date,
+        DATE(p.created_at),
+        DATE(l.created_at)
+      ) BETWEEN ? AND ?
+
+ORDER BY
+    COALESCE(
+        p.sale_date,
+        DATE(p.created_at),
+        DATE(l.created_at)
+    ) DESC
     `;
 
-    pool.query(query, [fromDate, toDate], (err, results) => {
+    pool.query(query, [startDateTime, endDateTime], (err, results) => {
       if (err) {
         return callback(err, null);
       }
@@ -164,147 +230,173 @@ GROUP BY
     user_id,
     employee_id,
     employee_name
-    `
-    
-    pool.query(query, [employeeId, startDateTime, endDateTime, employeeId, startDateTime, endDateTime], (err, results) => {
-      if (err) {
-        return callback(err, null);
-      }
-      return callback(null, results);
-    });
+    `;
+
+    pool.query(
+      query,
+      [
+        employeeId,
+        startDateTime,
+        endDateTime,
+        employeeId,
+        startDateTime,
+        endDateTime,
+      ],
+      (err, results) => {
+        if (err) {
+          return callback(err, null);
+        }
+        return callback(null, results);
+      },
+    );
   },
 
   getAllEmployeePerformanceData: (fromDate, toDate, callback) => {
     const startDateTime = `${fromDate} 00:00:00`;
     const endDateTime = `${toDate} 23:59:59.999999`;
+
     const query = `
     SELECT
-    u.user_id,
-    u.employee_id,
-    u.name AS employee_name,
+        u.user_id,
+        u.employee_id,
+        u.name AS employee_name,
 
-    COALESCE(a.total_calls, 0) AS total_calls,
-    COALESCE(a.callback_count, 0) AS callback_count,
-    COALESCE(a.quote_count, 0) AS quote_count,
-    COALESCE(a.appointment_count, 0) AS appointment_count,
-    COALESCE(a.captured_count, 0) AS captured_count,
-    COALESCE(a.lost_count, 0) AS lost_count
+        COALESCE(a.total_calls, 0) AS total_calls,
+        COALESCE(a.callback_count, 0) AS callback_count,
+        COALESCE(a.quote_count, 0) AS quote_count,
+        COALESCE(a.appointment_count, 0) AS appointment_count,
+        COALESCE(a.captured_count, 0) AS captured_count,
+        COALESCE(a.lost_count, 0) AS lost_count
 
-FROM users_master u
+    FROM users_master u
 
-LEFT JOIN
-(
-    SELECT
-        user_id,
-
-        SUM(total_calls) AS total_calls,
-        SUM(callback_count) AS callback_count,
-        SUM(quote_count) AS quote_count,
-        SUM(appointment_count) AS appointment_count,
-        SUM(captured_count) AS captured_count,
-        SUM(lost_count) AS lost_count
-
-    FROM
+    LEFT JOIN
     (
-        /* =========================================
-           FOLLOW-UP / CALL ACTIVITY
-           ========================================= */
-
         SELECT
-            lf.created_by AS user_id,
+            user_id,
 
-            COUNT(lf.followup_id) AS total_calls,
+            SUM(total_calls) AS total_calls,
+            SUM(callback_count) AS callback_count,
+            SUM(quote_count) AS quote_count,
+            SUM(appointment_count) AS appointment_count,
+            SUM(captured_count) AS captured_count,
+            SUM(lost_count) AS lost_count
 
-            SUM(
-                CASE
-                    WHEN lf.status_id = 2 THEN 1
-                    ELSE 0
-                END
-            ) AS callback_count,
+        FROM
+        (
+            /* =========================================
+               FOLLOW-UP / CALL ACTIVITY
+               ========================================= */
 
-            SUM(
-                CASE
-                    WHEN lf.status_id = 3 THEN 1
-                    ELSE 0
-                END
-            ) AS quote_count,
+            SELECT
+                lf.created_by AS user_id,
 
-            SUM(
-                CASE
-                    WHEN lf.status_id = 4 THEN 1
-                    ELSE 0
-                END
-            ) AS appointment_count,
+                COUNT(lf.followup_id) AS total_calls,
 
-            0 AS captured_count,
-            0 AS lost_count
+                SUM(
+                    CASE
+                        WHEN lf.status_id = 2 THEN 1
+                        ELSE 0
+                    END
+                ) AS callback_count,
 
-        FROM lead_followups lf
+                SUM(
+                    CASE
+                        WHEN lf.status_id = 3 THEN 1
+                        ELSE 0
+                    END
+                ) AS quote_count,
 
-        WHERE lf.created_at >= ?
-          AND lf.created_at < ?
+                SUM(
+                    CASE
+                        WHEN lf.status_id = 4 THEN 1
+                        ELSE 0
+                    END
+                ) AS appointment_count,
 
-        GROUP BY
-            lf.created_by
+                0 AS captured_count,
+                0 AS lost_count
+
+            FROM lead_followups lf
+
+            WHERE lf.created_at >= ?
+              AND lf.created_at < ?
+
+            GROUP BY lf.created_by
 
 
-        UNION ALL
+            UNION ALL
 
 
-        /* =========================================
-           STATUS CHANGE ACTIVITY
-           ========================================= */
+            /* =========================================
+               STATUS CHANGE ACTIVITY
+               ========================================= */
 
-        SELECT
-            lsh.changed_by AS user_id,
+            SELECT
+                lsh.changed_by AS user_id,
 
-            0 AS total_calls,
-            0 AS callback_count,
-            0 AS quote_count,
-            0 AS appointment_count,
+                0 AS total_calls,
+                0 AS callback_count,
+                0 AS quote_count,
+                0 AS appointment_count,
 
-            SUM(
-                CASE
-                    WHEN lsh.new_status_id = 5 THEN 1
-                    ELSE 0
-                END
-            ) AS captured_count,
+                SUM(
+                    CASE
+                        WHEN lsh.new_status_id = 5 THEN 1
+                        ELSE 0
+                    END
+                ) AS captured_count,
 
-            SUM(
-                CASE
-                    WHEN lsh.new_status_id = 6 THEN 1
-                    ELSE 0
-                END
-            ) AS lost_count
+                SUM(
+                    CASE
+                        WHEN lsh.new_status_id = 6 THEN 1
+                        ELSE 0
+                    END
+                ) AS lost_count
 
-        FROM lead_status_history lsh
+            FROM lead_status_history lsh
 
-        WHERE lsh.changed_at >= ?
-          AND lsh.changed_at <  ?
+            WHERE lsh.changed_at >= ?
+              AND lsh.changed_at < ?
 
-        GROUP BY
-            lsh.changed_by
+            GROUP BY lsh.changed_by
 
-    ) activity
+        ) activity
 
-    GROUP BY
-        user_id
+        GROUP BY user_id
 
-) a
-    ON a.user_id = u.user_id
+    ) a
+        ON a.user_id = u.user_id
 
-WHERE u.is_active = 1
-  AND u.role_id != 6
+    WHERE u.is_active = 1
+      AND u.role_id != 6
 
-ORDER BY
-    u.name
-    `
-    pool.query(query, [startDateTime, endDateTime, startDateTime, endDateTime], (err, results) => {
-      if (err) {
-        return callback(err, null);
-      }
-      return callback(null, results);
-    });
+      /* =========================================
+         REMOVE EMPLOYEES WITH ALL COUNTS = 0
+         ========================================= */
+      AND (
+          COALESCE(a.total_calls, 0) > 0
+          OR COALESCE(a.callback_count, 0) > 0
+          OR COALESCE(a.quote_count, 0) > 0
+          OR COALESCE(a.appointment_count, 0) > 0
+          OR COALESCE(a.captured_count, 0) > 0
+          OR COALESCE(a.lost_count, 0) > 0
+      )
+
+    ORDER BY u.name
+    `;
+
+    pool.query(
+      query,
+      [startDateTime, endDateTime, startDateTime, endDateTime],
+      (err, results) => {
+        if (err) {
+          return callback(err, null);
+        }
+
+        return callback(null, results);
+      },
+    );
   },
 
   getEmployeeAttendanceData: (employeeId, fromDate, toDate, callback) => {
@@ -335,7 +427,12 @@ ORDER BY
     });
   },
 
-  getDetailedEmployeeAttendanceData: (employeeId, fromDate, toDate, callback) => {
+  getDetailedEmployeeAttendanceData: (
+    employeeId,
+    fromDate,
+    toDate,
+    callback,
+  ) => {
     const query = `
       SELECT 
         ua.id, 
@@ -359,5 +456,5 @@ ORDER BY
       }
       return callback(null, results);
     });
-  }
+  },
 };
