@@ -203,55 +203,70 @@ module.exports = {
     etm.normal_target,
     etm.renewal_target,
 
-    COALESCE(
-        SUM(
-            CASE
-                WHEN l.status_id = 5
-                     AND c.is_previous_customer = 0
-                THEN 1
-                ELSE 0
-            END
-        ), 0
+    COUNT(
+        DISTINCT CASE
+            WHEN c.is_previous_customer = 0
+            THEN p.policy_id
+        END
     ) AS normal_sold,
 
-    COALESCE(
-        SUM(
-            CASE
-                WHEN l.status_id = 5
-                     AND c.is_previous_customer = 1
-                THEN 1
-                ELSE 0
-            END
-        ), 0
+    COUNT(
+        DISTINCT CASE
+            WHEN c.is_previous_customer = 1
+            THEN p.policy_id
+        END
     ) AS renewal_sold,
 
-    COALESCE(
-        SUM(
-            CASE
-                WHEN l.status_id = 5
-                THEN 1
-                ELSE 0
-            END
-        ), 0
+    COUNT(
+        DISTINCT p.policy_id
     ) AS total_sold
 
 FROM employee_target_master etm
 
 LEFT JOIN leads l
     ON l.assigned_to = etm.employee_id
-    AND YEAR(l.assigned_date) = YEAR(etm.target_date)
-    AND MONTH(l.assigned_date) = MONTH(etm.target_date)
+    AND l.status_id = 5
 
 LEFT JOIN customers c
     ON c.customer_id = l.customer_id
 
-WHERE etm.employee_id = ?
+LEFT JOIN policies p
+    ON p.customer_id = c.customer_id
+    AND p.is_active = 1
+
+    /* =========================================
+       CAPTURE MONTH
+
+       sale_date available -> sale_date
+       sale_date NULL      -> created_at
+       ========================================= */
+    AND YEAR(
+        COALESCE(
+            p.sale_date,
+            DATE(p.created_at)
+        )
+    ) = YEAR(etm.target_date)
+
+    AND MONTH(
+        COALESCE(
+            p.sale_date,
+            DATE(p.created_at)
+        )
+    ) = MONTH(etm.target_date)
+
+WHERE
+    etm.employee_id = 4
     AND etm.is_active = 1
+
     AND YEAR(etm.target_date) = YEAR(CURDATE())
     AND MONTH(etm.target_date) = MONTH(CURDATE())
 
 GROUP BY
-    etm.target_id`,
+    etm.target_id,
+    etm.employee_id,
+    etm.target_date,
+    etm.normal_target,
+    etm.renewal_target`,
             [employee_id],
             (err, result) => {
                 if (err) {

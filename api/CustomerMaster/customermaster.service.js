@@ -27,7 +27,7 @@ module.exports = {
     ]);
 
     pool.query(query, [values], (err, result) => {
-      console.log('error', err);
+      console.log("error", err);
 
       if (err) {
         return callback(err, null);
@@ -188,7 +188,7 @@ module.exports = {
               mobile_number_1: item.customer.mobile_number_1,
               registration_number: item.vehicle.registration_number,
               reason: `Duplicate entry in Excel file: Vehicle registration number '${item.vehicle.registration_number}' is repeated.`,
-              data: item.originalData || {}
+              data: item.originalData || {},
             });
             return;
           }
@@ -209,7 +209,7 @@ module.exports = {
         if (regNumbers.length > 0) {
           const [existingVehicles] = await connection.query(
             "SELECT registration_number FROM vehicles WHERE UPPER(TRIM(registration_number)) IN (?)",
-            [regNumbers.map((r) => r.toUpperCase())]
+            [regNumbers.map((r) => r.toUpperCase())],
           );
           existingVehicles.forEach((v) => {
             if (v.registration_number) {
@@ -229,7 +229,7 @@ module.exports = {
               mobile_number_1: item.customer.mobile_number_1,
               registration_number: item.vehicle.registration_number,
               reason: `Duplicate entry in database: Vehicle registration number '${item.vehicle.registration_number}' already exists in system.`,
-              data: item.originalData || {}
+              data: item.originalData || {},
             });
           } else {
             nonDuplicateRows.push(item);
@@ -245,7 +245,11 @@ module.exports = {
       if (nonDuplicateRows.length > 0) {
         // Get unique mobile numbers
         const mobileNumbers = [
-          ...new Set(nonDuplicateRows.map((item) => item.customer.mobile_number_1).filter(Boolean)),
+          ...new Set(
+            nonDuplicateRows
+              .map((item) => item.customer.mobile_number_1)
+              .filter(Boolean),
+          ),
         ];
 
         const customerMap = new Map(); // mobile_number_1 -> customer_id
@@ -253,7 +257,7 @@ module.exports = {
         if (mobileNumbers.length > 0) {
           const [existingCusts] = await connection.query(
             "SELECT customer_id, mobile_number_1 FROM customers WHERE mobile_number_1 IN (?)",
-            [mobileNumbers]
+            [mobileNumbers],
           );
           existingCusts.forEach((c) => {
             customerMap.set(c.mobile_number_1, c.customer_id);
@@ -289,9 +293,11 @@ module.exports = {
               cust.state || null,
               cust.pincode || null,
               cust.is_active !== undefined ? cust.is_active : 1,
-              cust.is_previous_customer !== undefined ? cust.is_previous_customer : 0,
+              cust.is_previous_customer !== undefined
+                ? cust.is_previous_customer
+                : 0,
               cust.created_by || null,
-            ]
+            ],
           );
           customerMap.set(cust.mobile_number_1, result.insertId);
         }
@@ -324,7 +330,7 @@ module.exports = {
             registration_number: item.vehicle.registration_number,
             model: item.vehicle.model,
             vehicle_maker: item.vehicle.vehicle_maker,
-            fuel_type: item.vehicle.fuel_type
+            fuel_type: item.vehicle.fuel_type,
           });
         });
 
@@ -347,7 +353,7 @@ module.exports = {
                known_policy_expiry_date
              )
              VALUES ?`,
-            [vehiclesToInsert]
+            [vehiclesToInsert],
           );
           insertedVehiclesCount = vehResult.affectedRows;
         }
@@ -360,7 +366,7 @@ module.exports = {
         insertedVehicles: insertedVehiclesCount,
         totalRows: combinedRows.length,
         insertedData: insertedData,
-        duplicateRows: duplicateRows
+        duplicateRows: duplicateRows,
       };
     } catch (err) {
       await connection.rollback();
@@ -394,13 +400,13 @@ module.exports = {
       if (allRegNumbers.length > 0) {
         const [existingVehs] = await connection.query(
           "SELECT vehicle_id, customer_id, registration_number FROM vehicles WHERE UPPER(TRIM(registration_number)) IN (?)",
-          [allRegNumbers.map((r) => r.toUpperCase())]
+          [allRegNumbers.map((r) => r.toUpperCase())],
         );
         existingVehs.forEach((v) => {
           if (v.registration_number) {
             existingVehicleMap.set(v.registration_number.trim().toUpperCase(), {
               vehicle_id: v.vehicle_id,
-              customer_id: v.customer_id
+              customer_id: v.customer_id,
             });
           }
         });
@@ -424,7 +430,7 @@ module.exports = {
               mobile_number_1: row.customer.mobile_number_1,
               registration_number: row.vehicle.registration_number,
               reason: `Duplicate entry in Excel file: Vehicle registration number '${row.vehicle.registration_number}' is repeated.`,
-              data: row.originalData || {}
+              data: row.originalData || {},
             });
             return;
           }
@@ -441,20 +447,23 @@ module.exports = {
             row,
             vehicle_id,
             customer_id,
-            expiryDate
+            expiryDate,
           });
         } else if (row.customer.is_previous_customer === 1) {
           // Explicitly marked as previous customer, but vehicle not found in DB
           skippedRows.push({
             row: rowNum,
             data: row.originalData || {},
-            errors: ["Previous customer vehicle not found in database. Registration Number: " + rawReg]
+            errors: [
+              "Previous customer vehicle not found in database. Registration Number: " +
+                rawReg,
+            ],
           });
         } else {
           // New customer and vehicle
           insertList.push({
             type: "insert",
-            row
+            row,
           });
         }
       });
@@ -465,12 +474,12 @@ module.exports = {
         if (item.expiryDate) {
           await connection.query(
             "UPDATE vehicles SET known_policy_expiry_date = ? WHERE vehicle_id = ?",
-            [item.expiryDate, item.vehicle_id]
+            [item.expiryDate, item.vehicle_id],
           );
         }
         await connection.query(
           "UPDATE customers SET is_previous_customer = 1 WHERE customer_id = ?",
-          [item.customer_id]
+          [item.customer_id],
         );
         updatedVehiclesCount++;
 
@@ -481,7 +490,7 @@ module.exports = {
           model: item.row.vehicle.model,
           vehicle_maker: item.row.vehicle.vehicle_maker,
           fuel_type: item.row.vehicle.fuel_type,
-          status: "Updated (Renewal)"
+          status: "Updated (Renewal)",
         });
       }
 
@@ -492,7 +501,11 @@ module.exports = {
 
       if (newItemsToInsert.length > 0) {
         const mobileNumbers = [
-          ...new Set(newItemsToInsert.map((row) => row.customer.mobile_number_1).filter(Boolean)),
+          ...new Set(
+            newItemsToInsert
+              .map((row) => row.customer.mobile_number_1)
+              .filter(Boolean),
+          ),
         ];
 
         const customerMap = new Map();
@@ -500,7 +513,7 @@ module.exports = {
         if (mobileNumbers.length > 0) {
           const [existing] = await connection.query(
             "SELECT customer_id, mobile_number_1 FROM customers WHERE mobile_number_1 IN (?)",
-            [mobileNumbers]
+            [mobileNumbers],
           );
           existing.forEach((row) => {
             customerMap.set(row.mobile_number_1, row.customer_id);
@@ -534,9 +547,11 @@ module.exports = {
               cust.state || null,
               cust.pincode || null,
               cust.is_active !== undefined ? cust.is_active : 1,
-              cust.is_previous_customer !== undefined ? cust.is_previous_customer : 0,
+              cust.is_previous_customer !== undefined
+                ? cust.is_previous_customer
+                : 0,
               cust.created_by || null,
-            ]
+            ],
           );
           customerMap.set(cust.mobile_number_1, result.insertId);
         }
@@ -553,7 +568,7 @@ module.exports = {
             model: row.vehicle.model,
             vehicle_maker: row.vehicle.vehicle_maker,
             fuel_type: row.vehicle.fuel_type,
-            status: "Inserted"
+            status: "Inserted",
           });
 
           return [
@@ -592,7 +607,7 @@ module.exports = {
                known_policy_expiry_date
              )
              VALUES ?`,
-            [vehiclesToInsert]
+            [vehiclesToInsert],
           );
           insertedVehiclesCount = vehResult.affectedRows;
         }
@@ -606,7 +621,7 @@ module.exports = {
         updatedVehicles: updatedVehiclesCount,
         skippedRows: skippedRows,
         duplicateRows: duplicateRows,
-        processedData: processedData
+        processedData: processedData,
       };
     } catch (err) {
       await connection.rollback();
@@ -734,14 +749,14 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
         v.seat_capacity || null,
         // v.known_policy_expiry_date || null,
         v.expiry_date || null,
-        v.created_by || null
+        v.created_by || null,
       ],
       (err, result) => {
         if (err) {
           return callback(err, null);
         }
         callback(null, result);
-      }
+      },
     );
   },
 
@@ -782,7 +797,6 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
   },
 
   CreateNewLead: (values, callback) => {
-
     pool.query(
       `INSERT INTO leads (
                 customer_id,
@@ -797,65 +811,506 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
                 created_by
             )
             VALUES ?`,
-      [
-        values
-      ],
+      [values],
       (err, result) => {
         if (err) {
           return callback(err, null);
         }
         callback(null, result);
-      }
+      },
     );
   },
 
   getEmployeePolicyTaken: (empid, callback) => {
-    const query = `
-      SELECT
-          COUNT(DISTINCT p.policy_id) AS total_sold,
+    // =====================================================
+    // CHECK USER
+    // =====================================================
+    const userQuery = `
+    SELECT
+      user_id,
+      is_admin
+    FROM users_master
+    WHERE user_id = ?
+    LIMIT 1
+  `;
 
-          SUM(
-              CASE
-                  WHEN YEAR(p.start_date) = YEAR(CURDATE())
-                  AND MONTH(p.start_date) = MONTH(CURDATE())
-                  THEN 1
-                  ELSE 0
-              END
-          ) AS this_month,
-
-          COALESCE(SUM(p.premium_amount), 0) AS total_premium,
-
-          SUM(
-              CASE
-                  WHEN p.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-                      AND p.policy_status = 'ACTIVE'
-                  THEN 1
-                  ELSE 0
-              END
-          ) AS renewal_due,
-
-          SUM(
-              CASE
-                  WHEN p.expiry_date < CURDATE()
-                  THEN 1
-                  ELSE 0
-              END
-          ) AS expired
-
-      FROM policies p
-      INNER JOIN leads l
-          ON l.lead_id = p.lead_id
-      INNER JOIN lead_status_master sm
-          ON sm.status_id = l.status_id
-      WHERE sm.status_id = 5
-        AND l.assigned_to = ?	;
-    `;
-    pool.query(query, [empid], (err, results) => {
+    pool.query(userQuery, [empid], (err, userResults) => {
       if (err) {
         return callback(err, null);
       }
-      callback(null, results[0] || null);
+
+      if (!userResults.length) {
+        return callback(null, null);
+      }
+
+      const user = userResults[0];
+
+      // =====================================================
+      // ADMIN
+      // Show combined statistics of ALL employees
+      // =====================================================
+      if (Number(user.is_admin) === 1) {
+        const adminQuery = `
+        SELECT
+
+          COUNT(DISTINCT p.policy_id) AS total_sold,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN YEAR(p.start_date) = YEAR(CURDATE())
+                AND MONTH(p.start_date) = MONTH(CURDATE())
+                THEN 1
+                ELSE 0
+              END
+            ),
+            0
+          ) AS this_month,
+
+          COALESCE(
+            SUM(p.premium_amount),
+            0
+          ) AS total_premium,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN p.expiry_date BETWEEN CURDATE()
+                  AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                  AND p.policy_status = 'ACTIVE'
+                THEN 1
+                ELSE 0
+              END
+            ),
+            0
+          ) AS renewal_due,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN p.expiry_date < CURDATE()
+                THEN 1
+                ELSE 0
+              END
+            ),
+            0
+          ) AS expired
+
+        FROM policies p
+
+        INNER JOIN leads l
+          ON l.lead_id = p.lead_id
+
+        INNER JOIN users_master u
+          ON u.user_id = l.assigned_to
+          AND u.is_active = 1
+          AND u.is_admin = 0
+
+        WHERE
+          l.status_id = 5
+      `;
+
+        return pool.query(adminQuery, (err, results) => {
+          if (err) {
+            return callback(err, null);
+          }
+
+          callback(
+            null,
+            results[0] || {
+              total_sold: 0,
+              this_month: 0,
+              total_premium: 0,
+              renewal_due: 0,
+              expired: 0,
+            },
+          );
+        });
+      }
+
+      // =====================================================
+      // NORMAL EMPLOYEE
+      // =====================================================
+      const employeeQuery = `
+      SELECT
+
+        COUNT(DISTINCT p.policy_id) AS total_sold,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN YEAR(p.start_date) = YEAR(CURDATE())
+              AND MONTH(p.start_date) = MONTH(CURDATE())
+              THEN 1
+              ELSE 0
+            END
+          ),
+          0
+        ) AS this_month,
+
+        COALESCE(
+          SUM(p.premium_amount),
+          0
+        ) AS total_premium,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN p.expiry_date BETWEEN CURDATE()
+                AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                AND p.policy_status = 'ACTIVE'
+              THEN 1
+              ELSE 0
+            END
+          ),
+          0
+        ) AS renewal_due,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN p.expiry_date < CURDATE()
+              THEN 1
+              ELSE 0
+            END
+          ),
+          0
+        ) AS expired
+
+      FROM policies p
+
+      INNER JOIN leads l
+        ON l.lead_id = p.lead_id
+
+      WHERE
+        l.status_id = 5
+        AND l.assigned_to = ?
+    `;
+
+      pool.query(employeeQuery, [empid], (err, results) => {
+        if (err) {
+          return callback(err, null);
+        }
+
+        callback(
+          null,
+          results[0] || {
+            total_sold: 0,
+            this_month: 0,
+            total_premium: 0,
+            renewal_due: 0,
+            expired: 0,
+          },
+        );
+      });
     });
   },
+  createPreviousCustomerWithLead: (payload, callback) => {
+    const { customer, vehicle, sale, lead } = payload;
 
+    pool.getConnection((connectionError, connection) => {
+      if (connectionError) {
+        console.error("Database connection error:", connectionError);
+        return callback(connectionError, null);
+      }
+
+      connection.beginTransaction((transactionError) => {
+        if (transactionError) {
+          connection.release();
+          console.error("Transaction begin error:", transactionError);
+          return callback(transactionError, null);
+        }
+
+        // =========================================================
+        // 1. INSERT CUSTOMER
+        // =========================================================
+
+        const customerSql = `
+                INSERT INTO customers (
+                    customer_name,
+                    mobile_number_1,
+                    mobile_number_2,
+                    email,
+                    address,
+                    city,
+                    district,
+                    state,
+                    pincode,
+                    is_active,
+                    is_previous_customer,
+                    created_by
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+            `;
+
+        const customerValues = [
+          customer.customer_name,
+          customer.mobile_number_1,
+          customer.mobile_number_2 || null,
+          customer.email || null,
+          customer.address || null,
+          customer.city || null,
+          customer.district || null,
+          customer.state || null,
+          customer.pincode || null,
+          customer.is_active ?? 1,
+          customer.is_previous_customer ?? 1,
+          customer.created_by ?? 1,
+        ];
+
+        connection.query(
+          customerSql,
+          customerValues,
+          (customerError, customerResult) => {
+            if (customerError) {
+              return connection.rollback(() => {
+                connection.release();
+
+                console.error("Customer insert error:", customerError);
+
+                callback(customerError, null);
+              });
+            }
+
+            const customerId = customerResult.insertId;
+
+            // =====================================================
+            // 2. INSERT VEHICLE
+            // =====================================================
+
+            const vehicleSql = `
+                        INSERT INTO vehicles (
+                            registration_number,
+                            rto,
+                            registration_date,
+                            model,
+                            vehicle_maker,
+                            engine_number,
+                            chassis_number,
+                            vehicle_class,
+                            vehicle_category,
+                            fuel_type,
+                            seat_capacity,
+                            known_policy_expiry_date,
+                            created_by,
+                            customer_id
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+                    `;
+
+            const vehicleValues = [
+              vehicle.registration_number,
+              vehicle.rto || null,
+              vehicle.registration_date || null,
+              vehicle.model || null,
+              vehicle.vehicle_maker || null,
+              vehicle.engine_number || null,
+              vehicle.chassis_number || null,
+              vehicle.vehicle_class || null,
+              vehicle.vehicle_category || null,
+              vehicle.fuel_type || null,
+              vehicle.seat_capacity || null,
+              vehicle.known_policy_expiry_date || null,
+              vehicle.created_by || null,
+              customerId,
+            ];
+
+            connection.query(
+              vehicleSql,
+              vehicleValues,
+              (vehicleError, vehicleResult) => {
+                if (vehicleError) {
+                  return connection.rollback(() => {
+                    connection.release();
+
+                    console.error("Vehicle insert error:", vehicleError);
+
+                    callback(vehicleError, null);
+                  });
+                }
+
+                const vehicleId = vehicleResult.insertId;
+
+                // =================================================
+                // 3. INSERT LEAD WITHOUT POLICY
+                // =================================================
+
+                const leadSql = `
+                                INSERT INTO leads (
+                                    customer_id,
+                                    vehicle_id,
+                                    policy_id,
+                                    status_id,
+                                    assigned_to,
+                                    assigned_date,
+                                    is_assigned,
+                                    remarks,
+                                    created_by,
+                                    work_status,
+                                    is_locked,
+                                    status_changed_at
+                                )
+                                VALUES (?, ?, NULL, ?, ?, NOW(), 1, ?, ?, ?, ?, NOW())
+                            `;
+
+                const leadValues = [
+                  customerId,
+                  vehicleId,
+                  lead.status_id,
+                  lead.assigned_to,
+                  sale.remarks || null,
+                  lead.assigned_to,
+                  lead.work_status,
+                  lead.is_locked,
+                ];
+
+                connection.query(
+                  leadSql,
+                  leadValues,
+                  (leadError, leadResult) => {
+                    if (leadError) {
+                      return connection.rollback(() => {
+                        connection.release();
+
+                        console.error("Lead insert error:", leadError);
+
+                        callback(leadError, null);
+                      });
+                    }
+
+                    const leadId = leadResult.insertId;
+
+                    // =============================================
+                    // 4. INSERT POLICY / SALE
+                    // =============================================
+
+                    const policySql = `
+                                        INSERT INTO policies (
+                                            customer_id,
+                                            vehicle_id,
+                                            sale_date,
+                                            paid_amount,
+                                            discount_amount,
+                                            source_id,
+                                            insurance_company_id,
+                                            policy_number,
+                                            renewal_cycle,
+                                            start_date,
+                                            expiry_date,
+                                            premium_amount,
+                                            insured_declared_value,
+                                            reminder_days,
+                                            renewal_year,
+                                            remarks,
+                                            lead_id
+                                        )
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+                                    `;
+
+                    const policyValues = [
+                      customerId,
+                      vehicleId,
+                      sale.sale_date || null,
+                      sale.paid_amount || 0,
+                      sale.discount_amount || 0,
+                      sale.source_id || null,
+                      sale.insurance_company_id || null,
+                      sale.policy_number || null,
+                      sale.renewal_cycle || null,
+                      sale.start_date || null,
+                      sale.expiry_date || null,
+                      sale.premium_amount || 0,
+                      sale.insured_declared_value || 0,
+                      sale.reminder_days || 0,
+                      sale.renewal_year || null,
+                      sale.remarks || null,
+                      leadId,
+                    ];
+
+                    connection.query(
+                      policySql,
+                      policyValues,
+                      (policyError, policyResult) => {
+                        if (policyError) {
+                          return connection.rollback(() => {
+                            connection.release();
+
+                            console.error("Policy insert error:", policyError);
+
+                            callback(policyError, null);
+                          });
+                        }
+
+                        const policyId = policyResult.insertId;
+
+                        // =============================================
+                        // 5. UPDATE LEAD WITH POLICY ID
+                        // =============================================
+
+                        const updateLeadSql = `
+                                                UPDATE leads
+                                                SET policy_id = ?
+                                                WHERE lead_id = ?
+                                            `;
+
+                        connection.query(
+                          updateLeadSql,
+                          [policyId, leadId],
+                          (updateError) => {
+                            if (updateError) {
+                              return connection.rollback(() => {
+                                connection.release();
+
+                                console.error(
+                                  "Lead policy update error:",
+                                  updateError,
+                                );
+
+                                callback(updateError, null);
+                              });
+                            }
+
+                            // =============================================
+                            // 6. COMMIT
+                            // =============================================
+
+                            connection.commit((commitError) => {
+                              if (commitError) {
+                                return connection.rollback(() => {
+                                  connection.release();
+
+                                  console.error(
+                                    "Transaction commit error:",
+                                    commitError,
+                                  );
+
+                                  callback(commitError, null);
+                                });
+                              }
+
+                              connection.release();
+
+                              return callback(null, {
+                                customer_id: customerId,
+
+                                vehicle_id: vehicleId,
+
+                                lead_id: leadId,
+
+                                policy_id: policyId,
+                              });
+                            });
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      });
+    });
+  },
 };

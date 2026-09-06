@@ -230,12 +230,14 @@ LIMIT 10;
                                   }
 
                                   const existingLeadIds = new Set(
-                                    existingRows?.map((row) => row?.lead_id)
+                                    existingRows?.map((row) => row?.lead_id),
                                   );
 
                                   // Only insert leads that are NOT already in an ACTIVE REALLOCATION batch
                                   const values = leadIds
-                                    .filter((leadId) => !existingLeadIds.has(leadId))
+                                    .filter(
+                                      (leadId) => !existingLeadIds.has(leadId),
+                                    )
                                     ?.map((leadId) => [
                                       empid,
                                       leadId,
@@ -267,11 +269,12 @@ LIMIT 10;
 
                                           callback(null, {
                                             success: 1,
-                                            message: "Existing reallocated batch returned.",
+                                            message:
+                                              "Existing reallocated batch returned.",
                                             data: leads,
                                           });
                                         });
-                                      }
+                                      },
                                     );
 
                                     return;
@@ -313,17 +316,18 @@ LIMIT 10;
 
                                             callback(null, {
                                               success: 1,
-                                              message: "Next 10 leads assigned successfully",
+                                              message:
+                                                "Next 10 leads assigned successfully",
                                               data: leads,
                                             });
                                           });
-                                        }
+                                        },
                                       );
-                                    }
+                                    },
                                   );
-                                }
+                                },
                               );
-                            }
+                            },
                           );
                         },
                       );
@@ -355,7 +359,12 @@ LIMIT 10;
     );
   },
 
-  updateExpiryDetailsService: (vehicle_id, edited_by, known_policy_expiry_date, callback) => {
+  updateExpiryDetailsService: (
+    vehicle_id,
+    edited_by,
+    known_policy_expiry_date,
+    callback,
+  ) => {
     pool.query(
       `UPDATE vehicles
      SET
@@ -383,9 +392,6 @@ LIMIT 10;
       },
     );
   },
-
-
-
 
   updateLeadFollowupDetail: (data, callback) => {
     pool.query(
@@ -515,105 +521,286 @@ LIMIT 10;
     );
   },
 
+  // getEmployeeActiveBatchService: (empid, callback) => {
+  //   pool.query(
+  //     `
+  //       SELECT
+  //       l.lead_id,
+  //       l.status_id,
+  //       ls.status_name,
+  //       ls.requires_followup,
+  //       ls.is_call_required,
+  //       ls.is_policy_required,
+  //       ls.is_followup_date_required,
+  //       l.work_status,
 
+  //       c.customer_id,
+  //       c.customer_name,
+  //       c.mobile_number_1,
+  //       c.mobile_number_2,
+  //       c.email,
+  //       c.address,
+  //       c.city,
+  //       c.district,
+  //       c.state,
+  //       c.is_previous_customer,
+
+  //       v.vehicle_id,
+  //       v.registration_number,
+  //       v.model,
+  //       v.vehicle_maker,
+  //       v.engine_number,
+  //       v.chassis_number,
+  //       v.known_policy_expiry_date,
+  //       v.registration_date,
+
+  //     p.policy_id,
+  //       p.policy_number,
+  //       p.policy_type,
+  //       p.start_date,
+  //       p.expiry_date as policy_expiry_date,
+  //       p.policy_status,
+  //       p.premium_amount,
+  //       p.renewal_cycle,
+  //       p.sale_date,
+  //       p.paid_amount,
+  //       p.discount_amount,
+
+  //       lf.followup_id,
+  //       lf.call_outcome,
+  //       lf.remarks AS followup_remarks,
+  //       lf.next_followup_date,
+  //       lf.created_at AS followup_created_at
+
+  //   FROM leads l
+
+  //   INNER JOIN customers c
+  //       ON c.customer_id = l.customer_id
+
+  //   INNER JOIN vehicles v
+  //       ON v.vehicle_id = l.vehicle_id
+
+  //   INNER JOIN lead_status_master ls
+  //       ON ls.status_id = l.status_id
+
+  //   LEFT JOIN policies p
+  //       ON p.vehicle_id = l.vehicle_id
+  //       AND p.policy_status = 'ACTIVE'
+  //       AND p.is_active = 1
+
+  //   LEFT JOIN (
+  //       SELECT lf1.*
+  //       FROM lead_followups lf1
+  //       INNER JOIN (
+  //           SELECT
+  //               lead_id,
+  //               MAX(followup_id) AS latest_followup_id
+  //           FROM lead_followups
+  //           GROUP BY lead_id
+  //       ) latest
+  //           ON latest.latest_followup_id = lf1.followup_id
+  //   ) lf
+  //       ON lf.lead_id = l.lead_id
+
+  //   WHERE
+  //       l.assigned_to = ?
+  //       AND l.is_locked = 1
+
+  //   ORDER BY
+  //       l.assigned_date DESC,
+  //       l.created_at DESC
+  //   `,
+  //     [empid],
+  //     (err, results) => {
+  //       if (err) return callback(err);
+  //       callback(null, results);
+  //     },
+  //   );
+  // },
   getEmployeeActiveBatchService: (empid, callback) => {
+    // First check whether the requested user is admin
     pool.query(
       `
-        SELECT
-        l.lead_id,
-        l.status_id,
-        ls.status_name,
-        ls.requires_followup,
-        ls.is_call_required,
-        ls.is_policy_required,
-        ls.is_followup_date_required,
-        l.work_status,
-
-        c.customer_id,
-        c.customer_name,
-        c.mobile_number_1,
-        c.mobile_number_2,
-        c.email,
-        c.address,
-        c.city,
-        c.district,
-        c.state,
-        c.is_previous_customer,
-
-        v.vehicle_id,
-        v.registration_number,
-        v.model,
-        v.vehicle_maker,
-        v.engine_number,
-        v.chassis_number,
-        v.known_policy_expiry_date,
-        v.registration_date,
-      
-        
-      p.policy_id,
-        p.policy_number,
-        p.policy_type,
-        p.start_date,
-        p.expiry_date as policy_expiry_date,
-        p.policy_status,
-        p.premium_amount,
-        p.renewal_cycle,
-        
-        lf.followup_id,
-        lf.call_outcome,
-        lf.remarks AS followup_remarks,
-        lf.next_followup_date,
-        lf.created_at AS followup_created_at
-        
-      
-    FROM leads l
-
-    INNER JOIN customers c
-        ON c.customer_id = l.customer_id
-
-    INNER JOIN vehicles v
-        ON v.vehicle_id = l.vehicle_id
-
-    INNER JOIN lead_status_master ls
-        ON ls.status_id = l.status_id
-
-    LEFT JOIN policies p
-        ON p.vehicle_id = l.vehicle_id
-        AND p.policy_status = 'ACTIVE'
-        AND p.is_active = 1
-
-    LEFT JOIN (
-        SELECT lf1.*
-        FROM lead_followups lf1
-        INNER JOIN (
-            SELECT
-                lead_id,
-                MAX(followup_id) AS latest_followup_id
-            FROM lead_followups
-            GROUP BY lead_id
-        ) latest
-            ON latest.latest_followup_id = lf1.followup_id
-    ) lf
-        ON lf.lead_id = l.lead_id
-
-    WHERE
-        l.assigned_to = ?
-        AND l.is_locked = 1
-
-    ORDER BY
-        l.assigned_date DESC,
-        l.created_at DESC
+      SELECT
+        user_id,
+        employee_id,
+        name,
+        mobile_number_1,
+        mobile_number_2,
+        email,
+        role_id,
+        company_id,
+        is_admin,
+        user_status,
+        is_active
+      FROM users_master
+      WHERE user_id = ?
+      LIMIT 1
     `,
       [empid],
-      (err, results) => {
+      (err, userResults) => {
         if (err) return callback(err);
-        callback(null, results);
+
+        if (!userResults.length) {
+          return callback(null, []);
+        }
+
+        const user = userResults[0];
+
+        // =====================================================
+        // ADMIN
+        // Show all employees
+        // =====================================================
+        let employeeCondition = "";
+        let params = [];
+
+        if (Number(user.is_admin) === 1) {
+          employeeCondition = `
+          u.is_active = 1
+          AND u.is_admin = 0
+        `;
+        } else {
+          // =====================================================
+          // NORMAL EMPLOYEE
+          // Show only his own records
+          // =====================================================
+          employeeCondition = `
+          u.user_id = ?
+          AND u.is_active = 1
+        `;
+
+          params.push(empid);
+        }
+
+        const sql = `
+        SELECT
+
+          /* =================================================
+             EMPLOYEE DETAILS
+             ================================================= */
+          u.user_id AS employee_user_id,
+          u.employee_id AS employee_code,
+          u.name AS employee_name,
+          u.mobile_number_1 AS employee_mobile,
+          u.email AS employee_email,
+          u.role_id,
+          u.company_id,
+
+          /* =================================================
+             LEAD
+             ================================================= */
+          l.lead_id,
+          l.status_id,
+          ls.status_name,
+          ls.requires_followup,
+          ls.is_call_required,
+          ls.is_policy_required,
+          ls.is_followup_date_required,
+          l.work_status,
+
+          /* =================================================
+             CUSTOMER
+             ================================================= */
+          c.customer_id,
+          c.customer_name,
+          c.mobile_number_1,
+          c.mobile_number_2,
+          c.email,
+          c.address,
+          c.city,
+          c.district,
+          c.state,
+          c.is_previous_customer,
+
+          /* =================================================
+             VEHICLE
+             ================================================= */
+          v.vehicle_id,
+          v.registration_number,
+          v.model,
+          v.vehicle_maker,
+          v.engine_number,
+          v.chassis_number,
+          v.known_policy_expiry_date,
+          v.registration_date,
+
+          /* =================================================
+             POLICY
+             ================================================= */
+          p.policy_id,
+          p.policy_number,
+          p.policy_type,
+          p.start_date,
+          p.expiry_date AS policy_expiry_date,
+          p.policy_status,
+          p.premium_amount,
+          p.renewal_cycle,
+          p.sale_date,
+          p.paid_amount,
+          p.discount_amount,
+
+          /* =================================================
+             LATEST FOLLOWUP
+             ================================================= */
+          lf.followup_id,
+          lf.call_outcome,
+          lf.remarks AS followup_remarks,
+          lf.next_followup_date,
+          lf.created_at AS followup_created_at
+
+        FROM users_master u
+
+        INNER JOIN leads l
+          ON l.assigned_to = u.user_id
+          AND l.is_locked = 1
+
+        INNER JOIN customers c
+          ON c.customer_id = l.customer_id
+
+        INNER JOIN vehicles v
+          ON v.vehicle_id = l.vehicle_id
+
+        INNER JOIN lead_status_master ls
+          ON ls.status_id = l.status_id
+
+        LEFT JOIN policies p
+          ON p.vehicle_id = l.vehicle_id
+          AND p.policy_status = 'ACTIVE'
+          AND p.is_active = 1
+
+        LEFT JOIN (
+          SELECT lf1.*
+          FROM lead_followups lf1
+
+          INNER JOIN (
+            SELECT
+              lead_id,
+              MAX(followup_id) AS latest_followup_id
+            FROM lead_followups
+            GROUP BY lead_id
+          ) latest
+            ON latest.latest_followup_id = lf1.followup_id
+
+        ) lf
+          ON lf.lead_id = l.lead_id
+
+        WHERE
+          ${employeeCondition}
+
+        ORDER BY
+          u.name ASC,
+          l.assigned_date DESC,
+          l.created_at DESC
+      `;
+
+        pool.query(sql, params, (err, results) => {
+          if (err) return callback(err);
+
+          callback(null, results);
+        });
       },
     );
   },
-
-
-
   updateEmployeeBatchStatus: (data, callback) => {
     pool.query(
       `UPDATE employee_active_batches
@@ -685,6 +872,10 @@ WHERE
   updateLeadPolicy: (data, callback) => {
     const policy = data.policy;
 
+    console.log({
+      policy,
+    });
+
     pool.query(
       `INSERT INTO policies
     (
@@ -705,10 +896,14 @@ WHERE
       remarks,
       is_active,
       created_by,
+      paid_amount,
+      discount_amount,
+      sale_date,
+      source_id,
       lead_id
     )
     VALUES
-    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.customer_id,
         data.vehicle_id,
@@ -736,7 +931,11 @@ WHERE
 
         1,
 
-        data.created_by,
+        policy.created_by,
+        policy.paid_amount,
+        policy.discount_amount,
+        policy.sale_date,
+        policy.source_id,
 
         data.lead_id,
       ],
@@ -1258,14 +1457,10 @@ WHERE
 ORDER BY
     l.assigned_date DESC,
     l.lead_id DESC`;
-    pool.query(
-      sql,
-      [empid],
-      (err, result) => {
-        if (err) return callback(err);
-        callback(null, result);
-      }
-    );
+    pool.query(sql, [empid], (err, result) => {
+      if (err) return callback(err);
+      callback(null, result);
+    });
   },
 
   getActiveEmployees: (callback) => {
@@ -1547,16 +1742,11 @@ l.lead_id
   // },
 
   releaseBatchLock: (data, callback) => {
-    const {
-      employee_id,
-      batch_no,
-      unlocked_by
-    } = data;
+    const { employee_id, batch_no, unlocked_by } = data;
 
     pool.getConnection((err, connection) => {
       if (err) return callback(err);
       connection.beginTransaction((err) => {
-
         if (err) {
           connection.release();
           return callback(err);
@@ -1571,7 +1761,6 @@ l.lead_id
                 `,
           [employee_id],
           (err) => {
-
             if (err) {
               return connection.rollback(() => {
                 connection.release();
@@ -1589,13 +1778,8 @@ l.lead_id
                         )
                         VALUES (?,?,?)
                         `,
-              [
-                employee_id,
-                batch_no,
-                unlocked_by
-              ],
+              [employee_id, batch_no, unlocked_by],
               (err, result) => {
-
                 if (err) {
                   return connection.rollback(() => {
                     connection.release();
@@ -1604,7 +1788,6 @@ l.lead_id
                 }
 
                 connection.commit((err) => {
-
                   if (err) {
                     return connection.rollback(() => {
                       connection.release();
@@ -1615,20 +1798,130 @@ l.lead_id
                   connection.release();
                   callback(null, result);
                 });
-
-              }
+              },
             );
-
-          }
+          },
         );
-
       });
-
     });
-
   },
-  getTopEmployees: (callback) => {
+  //   getTopEmployees: (callback) => {
 
+  //     pool.query(
+  //       `
+  // SELECT
+  //     ROW_NUMBER() OVER (
+  //         ORDER BY achievement_percentage DESC
+  //     ) AS rank_no,
+
+  //     employee_id,
+  //     employee_code,
+  //     name,
+
+  //     normal_target,
+  //     renewal_target,
+  //     total_calls,
+
+  //     normal_sold,
+  //     renewal_sold,
+  //     total_sold,
+
+  //     achievement_percentage
+
+  // FROM (
+
+  //     SELECT
+  //         etm.employee_id,
+  //         u.employee_id AS employee_code,
+  //         u.name AS name,
+
+  //         etm.normal_target,
+  //         etm.renewal_target,
+
+  //         (etm.normal_target + etm.renewal_target) AS total_calls,
+
+  //         COUNT(
+  //             CASE
+  //                 WHEN l.status_id = 5
+  //                 AND c.is_previous_customer = 0
+  //                 THEN 1
+  //             END
+  //         ) AS normal_sold,
+
+  //         COUNT(
+  //             CASE
+  //                 WHEN l.status_id = 5
+  //                 AND c.is_previous_customer = 1
+  //                 THEN 1
+  //             END
+  //         ) AS renewal_sold,
+
+  //         COUNT(
+  //             CASE
+  //                 WHEN l.status_id = 5
+  //                 THEN 1
+  //             END
+  //         ) AS total_sold,
+
+  //         ROUND(
+  //             (
+  //                 COUNT(
+  //                     CASE
+  //                         WHEN l.status_id = 5 THEN 1
+  //                     END
+  //                 )
+  //                 /
+  //                 NULLIF(
+  //                     (etm.normal_target + etm.renewal_target),
+  //                     0
+  //                 )
+  //             ) * 100,
+  //             2
+  //         ) AS achievement_percentage
+
+  //     FROM employee_target_master etm
+
+  // JOIN users_master u
+  //     ON u.user_id = etm.employee_id
+  //     AND u.is_active = 1
+  //     AND u.is_admin = 0
+
+  //     LEFT JOIN leads l
+  //         ON l.assigned_to = etm.employee_id
+  //         AND YEAR(l.assigned_date) = YEAR(CURDATE())
+  //         AND MONTH(l.assigned_date) = MONTH(CURDATE())
+
+  //     LEFT JOIN customers c
+  //         ON c.customer_id = l.customer_id
+
+  //     WHERE
+  //         etm.is_active = 1
+  //         AND YEAR(etm.target_date) = YEAR(CURDATE())
+  //         AND MONTH(etm.target_date) = MONTH(CURDATE())
+
+  //     GROUP BY
+  //         etm.employee_id,
+  //         u.employee_id,
+  //         u.name,
+  //         etm.normal_target,
+  //         etm.renewal_target
+
+  // ) AS sales_performance
+
+  // ORDER BY
+  //     rank_no
+
+  // LIMIT 5
+  // `,
+  //       [],
+  //       (err, result) => {
+  //         if (err) return callback(err);
+
+  //         callback(null, result);
+  //       },
+  //     );
+  //   },
+  getTopEmployees: (callback) => {
     pool.query(
       `
 SELECT
@@ -1660,65 +1953,125 @@ FROM (
         etm.normal_target,
         etm.renewal_target,
 
-        (etm.normal_target + etm.renewal_target) AS total_calls,
+        (
+            etm.normal_target +
+            etm.renewal_target
+        ) AS total_calls,
 
+        /* =========================================
+           NORMAL CUSTOMER CAPTURED
+           ========================================= */
         COUNT(
-            CASE
-                WHEN l.status_id = 5
-                AND c.is_previous_customer = 0
-                THEN 1
+            DISTINCT CASE
+                WHEN c.is_previous_customer = 0
+                THEN p.policy_id
             END
         ) AS normal_sold,
 
+        /* =========================================
+           PREVIOUS CUSTOMER / RENEWAL CAPTURED
+           ========================================= */
         COUNT(
-            CASE
-                WHEN l.status_id = 5
-                AND c.is_previous_customer = 1
-                THEN 1
+            DISTINCT CASE
+                WHEN c.is_previous_customer = 1
+                THEN p.policy_id
             END
         ) AS renewal_sold,
 
+        /* =========================================
+           TOTAL CAPTURED
+           ========================================= */
         COUNT(
-            CASE
-                WHEN l.status_id = 5
-                THEN 1
-            END
+            DISTINCT p.policy_id
         ) AS total_sold,
 
-        ROUND(
-            (
-                COUNT(
-                    CASE
-                        WHEN l.status_id = 5 THEN 1
-                    END
-                )
-                /
-                NULLIF(
-                    (etm.normal_target + etm.renewal_target),
-                    0
-                )
-            ) * 100,
-            2
+        /* =========================================
+           ACHIEVEMENT %
+           ========================================= */
+        COALESCE(
+            ROUND(
+                (
+                    COUNT(
+                        DISTINCT p.policy_id
+                    )
+                    /
+                    NULLIF(
+                        (
+                            etm.normal_target +
+                            etm.renewal_target
+                        ),
+                        0
+                    )
+                ) * 100,
+                2
+            ),
+            0
         ) AS achievement_percentage
 
     FROM employee_target_master etm
 
-JOIN users_master u
-    ON u.user_id = etm.employee_id
-    AND u.is_active = 1
-    AND u.is_admin = 0
+    /* =========================================
+       EMPLOYEE
+       ========================================= */
+    JOIN users_master u
+        ON u.user_id = etm.employee_id
+        AND u.is_active = 1
+        AND u.is_admin = 0
 
+    /* =========================================
+       LEADS
+
+       LEFT JOIN means employee will still appear
+       even when there is no captured lead.
+       ========================================= */
     LEFT JOIN leads l
         ON l.assigned_to = etm.employee_id
-        AND YEAR(l.assigned_date) = YEAR(CURDATE())
-        AND MONTH(l.assigned_date) = MONTH(CURDATE())
+        AND l.status_id = 5
 
+    /* =========================================
+       CUSTOMER
+       ========================================= */
     LEFT JOIN customers c
         ON c.customer_id = l.customer_id
 
+    /* =========================================
+       POLICY
+
+       LEFT JOIN means employee will still appear
+       even when there is no policy.
+       ========================================= */
+    LEFT JOIN policies p
+        ON p.customer_id = c.customer_id
+        AND p.is_active = 1
+
+        /* =====================================
+           CURRENT MONTH CAPTURE
+
+           sale_date exists -> sale_date
+           sale_date NULL   -> created_at
+           ===================================== */
+        AND YEAR(
+            COALESCE(
+                p.sale_date,
+                DATE(p.created_at)
+            )
+        ) = YEAR(CURDATE())
+
+        AND MONTH(
+            COALESCE(
+                p.sale_date,
+                DATE(p.created_at)
+            )
+        ) = MONTH(CURDATE())
+
+    /* =========================================
+       CURRENT MONTH TARGET
+       ========================================= */
     WHERE
         etm.is_active = 1
+
         AND YEAR(etm.target_date) = YEAR(CURDATE())
+
         AND MONTH(etm.target_date) = MONTH(CURDATE())
 
     GROUP BY
@@ -1728,10 +2081,10 @@ JOIN users_master u
         etm.normal_target,
         etm.renewal_target
 
-) AS sales_performance
+) AS capture_performance
 
 ORDER BY
-    rank_no
+    achievement_percentage DESC
 
 LIMIT 5
 `,
@@ -1743,7 +2096,6 @@ LIMIT 5
       },
     );
   },
-
 
   getEmployeeActivity: (empId, callback) => {
     const sql = `
@@ -1841,7 +2193,7 @@ ORDER BY
           FROM employee_active_batches
           WHERE empid = ?
           `,
-            [selectedEmployee]
+            [selectedEmployee],
           );
 
           const batchNo = nextBatch[0].batchNo;
@@ -1851,7 +2203,6 @@ ORDER BY
           // ----------------------------------------------------
 
           for (const lead of leads) {
-
             // 1. Assignment History
             await connection.promise().query(
               `
@@ -1871,7 +2222,7 @@ ORDER BY
                 selectedEmployee,
                 assigned_by,
                 remarks,
-              ]
+              ],
             );
 
             // 2. Update Lead
@@ -1894,7 +2245,7 @@ ORDER BY
                 is_locked,
                 work_status,
                 lead.lead_id,
-              ]
+              ],
             );
 
             // 3. Close previous employee batch
@@ -1909,10 +2260,7 @@ ORDER BY
               AND empid = ?
               AND is_active = 1
             `,
-              [
-                lead.lead_id,
-                lead.user_id,
-              ]
+              [lead.lead_id, lead.user_id],
             );
 
             // 4. Create NEW batch entry for new employee
@@ -1932,11 +2280,7 @@ ORDER BY
               ?, ?, ?, 'ACTIVE','REALLOCATION', 1
             )
             `,
-              [
-                selectedEmployee,
-                lead.lead_id,
-                batchNo,
-              ]
+              [selectedEmployee, lead.lead_id, batchNo],
             );
           }
 
@@ -1955,7 +2299,6 @@ ORDER BY
               message: "Lead(s) reallocated successfully.",
             });
           });
-
         } catch (error) {
           connection.rollback(() => {
             connection.release();
@@ -1965,7 +2308,6 @@ ORDER BY
       });
     });
   },
-
 
   getCustomerPolicyDetail: (customerid, callback) => {
     const sql = `
@@ -2039,14 +2381,10 @@ ORDER BY
 
         ORDER BY p.expiry_date DESC
 `;
-    pool.query(
-      sql,
-      [customerid],
-      (err, result) => {
-        if (err) return callback(err);
-        callback(null, result);
-      },
-    );
+    pool.query(sql, [customerid], (err, result) => {
+      if (err) return callback(err);
+      callback(null, result);
+    });
   },
 
   getCallsLeftCount: (empid, callback) => {
@@ -2107,7 +2445,7 @@ ORDER BY
             FROM employee_active_batches
             WHERE empid = ?
             `,
-              [empId]
+              [empId],
             );
 
             batchMap[empId] = batchResult[0].batchNo;
@@ -2121,8 +2459,7 @@ ORDER BY
             const lead = leads[i];
 
             // Pick Employee (Round Robin)
-            const employeeId =
-              selectedEmployees[i % selectedEmployees.length];
+            const employeeId = selectedEmployees[i % selectedEmployees.length];
 
             const batchNo = batchMap[employeeId];
 
@@ -2145,13 +2482,7 @@ ORDER BY
                 ?,?,?,?,?
             )
             `,
-              [
-                lead.lead_id,
-                lead.user_id,
-                employeeId,
-                assigned_by,
-                remarks,
-              ]
+              [lead.lead_id, lead.user_id, employeeId, assigned_by, remarks],
             );
 
             // ------------------------------------------
@@ -2171,13 +2502,7 @@ ORDER BY
                 work_status = ?
             WHERE lead_id = ?
             `,
-              [
-                employeeId,
-                assigned_by,
-                is_locked,
-                work_status,
-                lead.lead_id,
-              ]
+              [employeeId, assigned_by, is_locked, work_status, lead.lead_id],
             );
 
             // ------------------------------------------
@@ -2195,10 +2520,7 @@ ORDER BY
                 AND empid = ?
                 AND is_active = 1
             `,
-              [
-                lead.lead_id,
-                lead.user_id,
-              ]
+              [lead.lead_id, lead.user_id],
             );
 
             // ------------------------------------------
@@ -2221,11 +2543,7 @@ ORDER BY
                 ?, ?, ?, 'ACTIVE', 'REALLOCATION', 1
             )
             `,
-              [
-                employeeId,
-                lead.lead_id,
-                batchNo,
-              ]
+              [employeeId, lead.lead_id, batchNo],
             );
           }
           // ------------------------------------------
@@ -2249,7 +2567,6 @@ ORDER BY
              among ${selectedEmployees.length} employee(s).`,
             });
           });
-
         } catch (error) {
           connection.rollback(() => {
             connection.release();
@@ -2259,7 +2576,12 @@ ORDER BY
       });
     });
   },
-  updateRegistrationDate: (vehicle_id, edited_by, registration_date, callback) => {
+  updateRegistrationDate: (
+    vehicle_id,
+    edited_by,
+    registration_date,
+    callback,
+  ) => {
     pool.query(
       `UPDATE vehicles
      SET
@@ -2274,6 +2596,3 @@ ORDER BY
     );
   },
 };
-
-
-

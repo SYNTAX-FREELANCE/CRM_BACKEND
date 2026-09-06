@@ -3,7 +3,7 @@
 const express = require("express");
 const router = express.Router();
 const authController = require("./usercontroller.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 // const validateTokenController = require('../controllers/validateToken.controller');
 
 // Public routes

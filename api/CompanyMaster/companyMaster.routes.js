@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const companyMasterController = require("./companyMaster.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // ==================== COMPANY MASTER ROUTES ====================
 
