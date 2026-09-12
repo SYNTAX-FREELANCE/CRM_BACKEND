@@ -1202,9 +1202,13 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
                                             reminder_days,
                                             renewal_year,
                                             remarks,
+                                            customer_pay_type_id,
+                                            payment_method_id,
+                                            cp_reference_no,
+                                            pm_reference_no,
                                             lead_id
                                         )
-                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?)
                                     `;
 
                     const policyValues = [
@@ -1224,6 +1228,10 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
                       sale.reminder_days || 0,
                       sale.renewal_year || null,
                       sale.remarks || null,
+                      sale.customer_pay_type_id || null,
+                      sale.payment_method_id || null,
+                      sale.cp_reference_no || null,
+                      sale.pm_reference_no || null,
                       leadId,
                     ];
 

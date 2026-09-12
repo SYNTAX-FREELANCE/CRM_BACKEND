@@ -31,8 +31,8 @@ module.exports = {
           `INSERT INTO users_master 
                     (employee_id, name, age, gender, qualification_id, date_of_join, 
                      experience, mobile_number_1, mobile_number_2, aadhar_number, 
-                     company_id, role_id, user_status, is_active, dob, email, address)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                     company_id, role_id, user_status, is_active, dob, email, address,employee_level_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 
           [
             nextEmployeeId,
@@ -52,6 +52,7 @@ module.exports = {
             userData.dob,
             userData.email,
             userData.address,
+            userData.employee_level_id
           ],
           (err, masterResult) => {
             if (err) {
@@ -145,12 +146,14 @@ module.exports = {
                 q.qualification_name,
                 c.company_name,
                 r.role_name,
-                s.status_name
+                s.status_name,
+                elm.level_name
             FROM users_master um
             LEFT JOIN qualifications q ON um.qualification_id = q.qualification_id
             LEFT JOIN companies c ON um.company_id = c.company_id
             LEFT JOIN roles r ON um.role_id = r.role_id
             LEFT JOIN statuses s ON um.user_status = s.status_id
+             LEFT JOIN employee_level_master elm ON elm.employee_level_id = um.employee_level_id
             ORDER BY um.created_at DESC`,
       [],
       (err, result) => {
@@ -170,12 +173,14 @@ module.exports = {
                 q.qualification_name,
                 c.company_name,
                 r.role_name,
-                s.status_name
+                s.status_name,
+                elm.level_name
             FROM users_master um
             LEFT JOIN qualifications q ON um.qualification_id = q.qualification_id
             LEFT JOIN companies c ON um.company_id = c.company_id
             LEFT JOIN roles r ON um.role_id = r.role_id
             LEFT JOIN statuses s ON um.user_status = s.status_id
+            LEFT JOIN employee_level_master elm ON elm.employee_level_id = um.employee_level_id
             WHERE um.user_id = ?`,
       [userId],
       (err, result) => {
@@ -213,6 +218,7 @@ module.exports = {
              dob = ?,
              email = ?,
              address = ?,
+             employee_level_id = ?,
              updated_at = CURRENT_TIMESTAMP
          WHERE user_id = ?`,
       [
@@ -232,6 +238,7 @@ module.exports = {
         userData.dob,
         userData.email,
         userData.address,
+        userData.employee_level_id,
         userId,
       ],
       (err, result) => {

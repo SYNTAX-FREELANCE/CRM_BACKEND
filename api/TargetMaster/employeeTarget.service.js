@@ -255,7 +255,7 @@ LEFT JOIN policies p
     ) = MONTH(etm.target_date)
 
 WHERE
-    etm.employee_id = 4
+    etm.employee_id = ?
     AND etm.is_active = 1
 
     AND YEAR(etm.target_date) = YEAR(CURDATE())
