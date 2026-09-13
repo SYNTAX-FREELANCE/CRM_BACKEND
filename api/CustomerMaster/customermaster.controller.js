@@ -3,12 +3,15 @@ const fs = require("fs");
 const path = require("path");
 const xlsx = require("xlsx");
 const customerService = require("./customermaster.service");
+const { createPreviousCustomerExcel } = require("./customer.excel");
 
 // Helper function to standardise keys for case-insensitive and synonym matching
 const getMappingValue = (row, keySynonyms) => {
   const keys = Object.keys(row);
   for (const synonym of keySynonyms) {
-    const matchedKey = keys.find(k => k.trim().toLowerCase() === synonym.toLowerCase());
+    const matchedKey = keys.find(
+      (k) => k.trim().toLowerCase() === synonym.toLowerCase(),
+    );
     if (matchedKey) {
       const val = String(row[matchedKey]).trim();
       if (val !== "") {
@@ -30,7 +33,7 @@ const parseDate = (val) => {
   if (!isNaN(numericVal) && numericVal > 25000 && numericVal < 75000) {
     const date = new Date(Math.round((numericVal - 25569) * 86400 * 1000));
     if (!isNaN(date.getTime())) {
-      return date.toISOString().split('T')[0];
+      return date.toISOString().split("T")[0];
     }
   }
 
@@ -72,7 +75,8 @@ module.exports = {
       if (!file) {
         return res.status(400).json({
           success: 0,
-          message: "No file uploaded or invalid file type. Please upload Excel (.xlsx, .xls) files."
+          message:
+            "No file uploaded or invalid file type. Please upload Excel (.xlsx, .xls) files.",
         });
       }
 
@@ -83,7 +87,8 @@ module.exports = {
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return res.status(400).json({
           success: 0,
-          message: "Invalid file type. Please upload an Excel file (.xlsx or .xls)."
+          message:
+            "Invalid file type. Please upload an Excel file (.xlsx or .xls).",
         });
       }
 
@@ -100,7 +105,7 @@ module.exports = {
 
         return res.status(400).json({
           success: 0,
-          message: "Failed to read Excel file. The file may be corrupt."
+          message: "Failed to read Excel file. The file may be corrupt.",
         });
       }
 
@@ -114,7 +119,8 @@ module.exports = {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         return res.status(400).json({
           success: 0,
-          message: "Excel sheet is empty. Please add customer and vehicle details."
+          message:
+            "Excel sheet is empty. Please add customer and vehicle details.",
         });
       }
 
@@ -125,29 +131,106 @@ module.exports = {
       const mappings = {
         // Customer mappings
         customer_name: ["customer_name", "customer name", "name", "customer"],
-        mobile_number_1: ["mobile_number_1", "mobile number 1", "mobile", "mobile1", "mobile_1", "phone", "phone_number", "contact"],
-        mobile_number_2: ["mobile_number_2", "mobile number 2", "mobile2", "mobile_2", "phone2", "alternate_mobile", "alternate phone"],
+        mobile_number_1: [
+          "mobile_number_1",
+          "mobile number 1",
+          "mobile",
+          "mobile1",
+          "mobile_1",
+          "phone",
+          "phone_number",
+          "contact",
+        ],
+        mobile_number_2: [
+          "mobile_number_2",
+          "mobile number 2",
+          "mobile2",
+          "mobile_2",
+          "phone2",
+          "alternate_mobile",
+          "alternate phone",
+        ],
         email: ["email", "email_address", "email address", "mail"],
         address: ["address", "street", "location"],
         city: ["city", "town"],
         district: ["district", "region"],
         state: ["state", "province"],
         pincode: ["pincode", "zip", "zipcode", "zip_code", "pin_code"],
-        is_previous_customer: ["is_previous_customer", "previous_customer", "is previous customer", "previous customer"],
+        is_previous_customer: [
+          "is_previous_customer",
+          "previous_customer",
+          "is previous customer",
+          "previous customer",
+        ],
 
         // Vehicle mappings
-        registration_number: ["registration_number", "registration number", "reg_no", "reg no", "registration_no", "registrationno"],
+        registration_number: [
+          "registration_number",
+          "registration number",
+          "reg_no",
+          "reg no",
+          "registration_no",
+          "registrationno",
+        ],
         rto: ["rto"],
-        registration_data: ["registration_data", "registration data", "registration_date", "registration date", "registrationdata", "registrationdate"],
+        registration_data: [
+          "registration_data",
+          "registration data",
+          "registration_date",
+          "registration date",
+          "registrationdata",
+          "registrationdate",
+        ],
         model: ["model"],
-        vehicle_maker: ["vehicle_maker", "vehicle maker", "vechile_maker", "vechile maker", "maker"],
-        engine_number: ["engine_number", "engine number", "engine_no", "engine no"],
-        chassis_number: ["chassis_number", "chassis number", "chassis_no", "chassis no"],
-        vehicle_class: ["vehicle_class", "vehicle class", "vechile_class", "vechile class", "class"],
-        vehicle_category: ["vehicle_category", "vehicle category", "category", "vechile_category", "vechile category"],
+        vehicle_maker: [
+          "vehicle_maker",
+          "vehicle maker",
+          "vechile_maker",
+          "vechile maker",
+          "maker",
+        ],
+        engine_number: [
+          "engine_number",
+          "engine number",
+          "engine_no",
+          "engine no",
+        ],
+        chassis_number: [
+          "chassis_number",
+          "chassis number",
+          "chassis_no",
+          "chassis no",
+        ],
+        vehicle_class: [
+          "vehicle_class",
+          "vehicle class",
+          "vechile_class",
+          "vechile class",
+          "class",
+        ],
+        vehicle_category: [
+          "vehicle_category",
+          "vehicle category",
+          "category",
+          "vechile_category",
+          "vechile category",
+        ],
         fuel_type: ["fuel_type", "fuel type", "fuel"],
-        seat_capacity: ["seat_capacity", "seat capacity", "seats", "seating", "seating_capacity"],
-        known_policy_expiry_date: ["known_policy_expiry_date", "policy_expiry_date", "policy expiry date", "expiry date", "expiry_date", "known policy expiry date"]
+        seat_capacity: [
+          "seat_capacity",
+          "seat capacity",
+          "seats",
+          "seating",
+          "seating_capacity",
+        ],
+        known_policy_expiry_date: [
+          "known_policy_expiry_date",
+          "policy_expiry_date",
+          "policy expiry date",
+          "expiry date",
+          "expiry_date",
+          "known policy expiry date",
+        ],
       };
 
       // Map and validate rows
@@ -162,15 +245,26 @@ module.exports = {
           district: getMappingValue(row, mappings.district),
           state: getMappingValue(row, mappings.state),
           pincode: getMappingValue(row, mappings.pincode),
-          is_previous_customer: (["yes", "1", "true"].includes(String(getMappingValue(row, mappings.is_previous_customer)).trim().toLowerCase())) ? 1 : 0,
+          is_previous_customer: ["yes", "1", "true"].includes(
+            String(getMappingValue(row, mappings.is_previous_customer))
+              .trim()
+              .toLowerCase(),
+          )
+            ? 1
+            : 0,
           is_active: 1,
-          created_by: createdBy
+          created_by: createdBy,
         };
 
         const mappedVehicle = {
-          registration_number: getMappingValue(row, mappings.registration_number),
+          registration_number: getMappingValue(
+            row,
+            mappings.registration_number,
+          ),
           rto: getMappingValue(row, mappings.rto),
-          registration_date: parseDate(getMappingValue(row, mappings.registration_data)),
+          registration_date: parseDate(
+            getMappingValue(row, mappings.registration_data),
+          ),
           model: getMappingValue(row, mappings.model),
           vehicle_maker: getMappingValue(row, mappings.vehicle_maker),
           engine_number: getMappingValue(row, mappings.engine_number),
@@ -178,8 +272,12 @@ module.exports = {
           vehicle_class: getMappingValue(row, mappings.vehicle_class),
           vehicle_category: getMappingValue(row, mappings.vehicle_category),
           fuel_type: getMappingValue(row, mappings.fuel_type),
-          seat_capacity: parseIntOrNull(getMappingValue(row, mappings.seat_capacity)),
-          known_policy_expiry_date: parseDate(getMappingValue(row, mappings.known_policy_expiry_date))
+          seat_capacity: parseIntOrNull(
+            getMappingValue(row, mappings.seat_capacity),
+          ),
+          known_policy_expiry_date: parseDate(
+            getMappingValue(row, mappings.known_policy_expiry_date),
+          ),
         };
 
         // Validation
@@ -195,7 +293,10 @@ module.exports = {
         } else if (!/^\d+$/.test(mappedCustomer.mobile_number_1)) {
           errors.push("Mobile Number 1 must be numeric.");
         }
-        if (mappedCustomer.mobile_number_2 && !/^\d+$/.test(mappedCustomer.mobile_number_2)) {
+        if (
+          mappedCustomer.mobile_number_2 &&
+          !/^\d+$/.test(mappedCustomer.mobile_number_2)
+        ) {
           errors.push("Mobile Number 2 must be numeric.");
         }
 
@@ -208,14 +309,14 @@ module.exports = {
           failedRows.push({
             row: rowNumber,
             data: row,
-            errors: errors
+            errors: errors,
           });
         } else {
           validCombinedRows.push({
             customer: mappedCustomer,
             vehicle: mappedVehicle,
             originalRow: rowNumber,
-            originalData: row
+            originalData: row,
           });
         }
       });
@@ -228,9 +329,12 @@ module.exports = {
       // Insert valid rows in transactional method
       if (validCombinedRows.length > 0) {
         try {
-          const result = await customerService.insertBulkCombined(validCombinedRows);
+          const result =
+            await customerService.insertBulkCombined(validCombinedRows);
 
-          const duplicateCount = result.duplicateRows ? result.duplicateRows.length : 0;
+          const duplicateCount = result.duplicateRows
+            ? result.duplicateRows.length
+            : 0;
           let msg = `Successfully processed file. Inserted ${result.insertedCustomers} customer(s) and ${result.insertedVehicles} vehicle(s).`;
           if (duplicateCount > 0) {
             msg += ` Skipped ${duplicateCount} duplicate entry(ies).`;
@@ -244,32 +348,34 @@ module.exports = {
               totalRows: rawRows.length,
               insertedCount: result.insertedVehicles,
               duplicateCount: duplicateCount,
-              failedCount: failedRows.length
+              failedCount: failedRows.length,
             },
             duplicateRows: result.duplicateRows || [],
             failedRows: failedRows,
-            insertedData: result.insertedData || []
+            insertedData: result.insertedData || [],
           });
         } catch (dbErr) {
           console.error("Combined bulk insert database error:", dbErr);
           return res.status(500).json({
             success: 0,
-            message: "Failed to insert customer and vehicle data into database.",
-            error: dbErr.message
+            message:
+              "Failed to insert customer and vehicle data into database.",
+            error: dbErr.message,
           });
         }
       } else {
         return res.status(400).json({
           success: 0,
-          message: "No valid rows found in Excel sheet. Check validation errors.",
+          message:
+            "No valid rows found in Excel sheet. Check validation errors.",
           stats: {
             totalRows: rawRows.length,
             insertedCount: 0,
             duplicateCount: 0,
-            failedCount: failedRows.length
+            failedCount: failedRows.length,
           },
           duplicateRows: [],
-          failedRows: failedRows
+          failedRows: failedRows,
         });
       }
     } catch (error) {
@@ -277,7 +383,7 @@ module.exports = {
       return res.status(500).json({
         success: 0,
         message: "An error occurred while processing the file.",
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -291,7 +397,8 @@ module.exports = {
       if (!file) {
         return res.status(400).json({
           success: 0,
-          message: "No file uploaded or invalid file type. Please upload Excel (.xlsx, .xls) files."
+          message:
+            "No file uploaded or invalid file type. Please upload Excel (.xlsx, .xls) files.",
         });
       }
 
@@ -302,7 +409,8 @@ module.exports = {
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return res.status(400).json({
           success: 0,
-          message: "Invalid file type. Please upload an Excel file (.xlsx or .xls)."
+          message:
+            "Invalid file type. Please upload an Excel file (.xlsx or .xls).",
         });
       }
 
@@ -319,7 +427,7 @@ module.exports = {
 
         return res.status(400).json({
           success: 0,
-          message: "Failed to read Excel file. The file may be corrupt."
+          message: "Failed to read Excel file. The file may be corrupt.",
         });
       }
 
@@ -333,7 +441,8 @@ module.exports = {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         return res.status(400).json({
           success: 0,
-          message: "Excel sheet is empty. Please add customer and vehicle details."
+          message:
+            "Excel sheet is empty. Please add customer and vehicle details.",
         });
       }
 
@@ -344,35 +453,119 @@ module.exports = {
       const mappings = {
         // Customer mappings
         customer_name: ["customer_name", "customer name", "name", "customer"],
-        mobile_number_1: ["mobile_number_1", "mobile number 1", "mobile", "mobile1", "mobile_1", "phone", "phone_number", "contact"],
-        mobile_number_2: ["mobile_number_2", "mobile number 2", "mobile2", "mobile_2", "phone2", "alternate_mobile", "alternate phone"],
+        mobile_number_1: [
+          "mobile_number_1",
+          "mobile number 1",
+          "mobile",
+          "mobile1",
+          "mobile_1",
+          "phone",
+          "phone_number",
+          "contact",
+        ],
+        mobile_number_2: [
+          "mobile_number_2",
+          "mobile number 2",
+          "mobile2",
+          "mobile_2",
+          "phone2",
+          "alternate_mobile",
+          "alternate phone",
+        ],
         email: ["email", "email_address", "email address", "mail"],
         address: ["address", "street", "location"],
         city: ["city", "town"],
         district: ["district", "region"],
         state: ["state", "province"],
         pincode: ["pincode", "zip", "zipcode", "zip_code", "pin_code"],
-        is_previous_customer: ["is_previous_customer", "previous_customer", "is previous customer", "previous customer"],
+        is_previous_customer: [
+          "is_previous_customer",
+          "previous_customer",
+          "is previous customer",
+          "previous customer",
+        ],
 
         // Vehicle mappings
-        registration_number: ["registration_number", "registration number", "reg_no", "reg no", "registration_no", "registrationno"],
+        registration_number: [
+          "registration_number",
+          "registration number",
+          "reg_no",
+          "reg no",
+          "registration_no",
+          "registrationno",
+        ],
         rto: ["rto"],
-        registration_data: ["registration_data", "registration data", "registration_date", "registration date", "registrationdata", "registrationdate"],
+        registration_data: [
+          "registration_data",
+          "registration data",
+          "registration_date",
+          "registration date",
+          "registrationdata",
+          "registrationdate",
+        ],
         model: ["model"],
-        vehicle_maker: ["vehicle_maker", "vehicle maker", "vechile_maker", "vechile maker", "maker"],
-        engine_number: ["engine_number", "engine number", "engine_no", "engine no"],
-        chassis_number: ["chassis_number", "chassis number", "chassis_no", "chassis no"],
-        vehicle_class: ["vehicle_class", "vehicle class", "vechile_class", "vechile class", "class"],
-        vehicle_category: ["vehicle_category", "vehicle category", "category", "vechile_category", "vechile category"],
+        vehicle_maker: [
+          "vehicle_maker",
+          "vehicle maker",
+          "vechile_maker",
+          "vechile maker",
+          "maker",
+        ],
+        engine_number: [
+          "engine_number",
+          "engine number",
+          "engine_no",
+          "engine no",
+        ],
+        chassis_number: [
+          "chassis_number",
+          "chassis number",
+          "chassis_no",
+          "chassis no",
+        ],
+        vehicle_class: [
+          "vehicle_class",
+          "vehicle class",
+          "vechile_class",
+          "vechile class",
+          "class",
+        ],
+        vehicle_category: [
+          "vehicle_category",
+          "vehicle category",
+          "category",
+          "vechile_category",
+          "vechile category",
+        ],
         fuel_type: ["fuel_type", "fuel type", "fuel"],
-        seat_capacity: ["seat_capacity", "seat capacity", "seats", "seating", "seating_capacity"],
-        known_policy_expiry_date: ["known_policy_expiry_date", "policy_expiry_date", "policy expiry date", "expiry date", "expiry_date", "known policy expiry date"]
+        seat_capacity: [
+          "seat_capacity",
+          "seat capacity",
+          "seats",
+          "seating",
+          "seating_capacity",
+        ],
+        known_policy_expiry_date: [
+          "known_policy_expiry_date",
+          "policy_expiry_date",
+          "policy expiry date",
+          "expiry date",
+          "expiry_date",
+          "known policy expiry date",
+        ],
       };
 
       // Map and validate rows
       rawRows.forEach((row, index) => {
-        const isPrevStr = String(getMappingValue(row, mappings.is_previous_customer)).trim().toLowerCase();
-        const isPrev = (isPrevStr === 'yes' || isPrevStr === '1' || isPrevStr === 'true') ? 1 : 0;
+        const isPrevStr = String(
+          getMappingValue(row, mappings.is_previous_customer),
+        )
+          .trim()
+          .toLowerCase();
+        const isPrev =
+          isPrevStr === "yes" || isPrevStr === "1" || isPrevStr === "true"
+            ? 1
+            : 0;
 
         const mappedCustomer = {
           customer_name: getMappingValue(row, mappings.customer_name),
@@ -386,13 +579,18 @@ module.exports = {
           pincode: getMappingValue(row, mappings.pincode),
           is_previous_customer: isPrev,
           is_active: 1,
-          created_by: createdBy
+          created_by: createdBy,
         };
 
         const mappedVehicle = {
-          registration_number: getMappingValue(row, mappings.registration_number),
+          registration_number: getMappingValue(
+            row,
+            mappings.registration_number,
+          ),
           rto: getMappingValue(row, mappings.rto),
-          registration_date: parseDate(getMappingValue(row, mappings.registration_data)),
+          registration_date: parseDate(
+            getMappingValue(row, mappings.registration_data),
+          ),
           model: getMappingValue(row, mappings.model),
           vehicle_maker: getMappingValue(row, mappings.vehicle_maker),
           engine_number: getMappingValue(row, mappings.engine_number),
@@ -400,8 +598,12 @@ module.exports = {
           vehicle_class: getMappingValue(row, mappings.vehicle_class),
           vehicle_category: getMappingValue(row, mappings.vehicle_category),
           fuel_type: getMappingValue(row, mappings.fuel_type),
-          seat_capacity: parseIntOrNull(getMappingValue(row, mappings.seat_capacity)),
-          known_policy_expiry_date: parseDate(getMappingValue(row, mappings.known_policy_expiry_date))
+          seat_capacity: parseIntOrNull(
+            getMappingValue(row, mappings.seat_capacity),
+          ),
+          known_policy_expiry_date: parseDate(
+            getMappingValue(row, mappings.known_policy_expiry_date),
+          ),
         };
 
         // Validation
@@ -417,7 +619,10 @@ module.exports = {
         } else if (!/^\d+$/.test(mappedCustomer.mobile_number_1)) {
           errors.push("Mobile Number 1 must be numeric.");
         }
-        if (mappedCustomer.mobile_number_2 && !/^\d+$/.test(mappedCustomer.mobile_number_2)) {
+        if (
+          mappedCustomer.mobile_number_2 &&
+          !/^\d+$/.test(mappedCustomer.mobile_number_2)
+        ) {
           errors.push("Mobile Number 2 must be numeric.");
         }
 
@@ -434,14 +639,14 @@ module.exports = {
           failedRows.push({
             row: rowNumber,
             data: row,
-            errors: errors
+            errors: errors,
           });
         } else {
           validCombinedRows.push({
             customer: mappedCustomer,
             vehicle: mappedVehicle,
             originalRow: rowNumber,
-            originalData: row
+            originalData: row,
           });
         }
       });
@@ -454,14 +659,17 @@ module.exports = {
       // Insert valid rows in transactional method
       if (validCombinedRows.length > 0) {
         try {
-          const result = await customerService.processRenewalUploads(validCombinedRows);
+          const result =
+            await customerService.processRenewalUploads(validCombinedRows);
 
           // Combine failed rows from service layer with validation errors
           if (result.skippedRows && result.skippedRows.length > 0) {
             failedRows.push(...result.skippedRows);
           }
 
-          const duplicateCount = result.duplicateRows ? result.duplicateRows.length : 0;
+          const duplicateCount = result.duplicateRows
+            ? result.duplicateRows.length
+            : 0;
           let msg = `Successfully processed file. Inserted ${result.insertedCustomers} customer(s), updated ${result.updatedVehicles} existing vehicle(s).`;
           if (duplicateCount > 0) {
             msg += ` Skipped ${duplicateCount} duplicate entry(ies).`;
@@ -475,32 +683,34 @@ module.exports = {
               totalRows: rawRows.length,
               insertedCount: result.insertedVehicles + result.updatedVehicles,
               duplicateCount: duplicateCount,
-              failedCount: failedRows.length
+              failedCount: failedRows.length,
             },
             duplicateRows: result.duplicateRows || [],
             failedRows: failedRows,
-            insertedData: result.processedData || []
+            insertedData: result.processedData || [],
           });
         } catch (dbErr) {
           console.error("Renewal bulk process database error:", dbErr);
           return res.status(500).json({
             success: 0,
-            message: "Failed to process customer and vehicle data into database.",
-            error: dbErr.message
+            message:
+              "Failed to process customer and vehicle data into database.",
+            error: dbErr.message,
           });
         }
       } else {
         return res.status(400).json({
           success: 0,
-          message: "No valid rows found in Excel sheet. Check validation errors.",
+          message:
+            "No valid rows found in Excel sheet. Check validation errors.",
           stats: {
             totalRows: rawRows.length,
             insertedCount: 0,
             duplicateCount: 0,
-            failedCount: failedRows.length
+            failedCount: failedRows.length,
           },
           duplicateRows: [],
-          failedRows: failedRows
+          failedRows: failedRows,
         });
       }
     } catch (error) {
@@ -508,7 +718,7 @@ module.exports = {
       return res.status(500).json({
         success: 0,
         message: "An error occurred while processing the file.",
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -521,33 +731,33 @@ module.exports = {
       if (!data.customer_name || !data.customer_name.trim()) {
         return res.status(400).json({
           success: 0,
-          message: "Customer Name is required."
+          message: "Customer Name is required.",
         });
       }
 
       if (!/^[a-zA-Z\s]+$/.test(data.customer_name.trim())) {
         return res.status(400).json({
           success: 0,
-          message: "Customer Name must contain only letters and spaces."
+          message: "Customer Name must contain only letters and spaces.",
         });
       }
 
       if (!data.mobile_number_1) {
         return res.status(400).json({
           success: 0,
-          message: "Mobile Number 1 is required."
+          message: "Mobile Number 1 is required.",
         });
       } else if (!/^\d{10}$/.test(data.mobile_number_1)) {
         return res.status(400).json({
           success: 0,
-          message: "Mobile Number 1 must be exactly 10 digits."
+          message: "Mobile Number 1 must be exactly 10 digits.",
         });
       }
 
       if (data.mobile_number_2 && !/^\d{10}$/.test(data.mobile_number_2)) {
         return res.status(400).json({
           success: 0,
-          message: "Mobile Number 2 must be exactly 10 digits."
+          message: "Mobile Number 2 must be exactly 10 digits.",
         });
       }
 
@@ -609,7 +819,9 @@ module.exports = {
       const mappedCustomer = {
         customer_name: data.customer_name.trim(),
         mobile_number_1: data.mobile_number_1.trim(),
-        mobile_number_2: data.mobile_number_2 ? data.mobile_number_2.trim() : null,
+        mobile_number_2: data.mobile_number_2
+          ? data.mobile_number_2.trim()
+          : null,
         email: data.email ? data.email.trim() : null,
         address: data.address ? data.address.trim() : null,
         city: data.city ? data.city.trim() : null,
@@ -617,8 +829,16 @@ module.exports = {
         state: data.state ? data.state.trim() : null,
         pincode: data.pincode ? data.pincode.trim() : null,
         is_active: data.is_active !== undefined ? (data.is_active ? 1 : 0) : 1,
-        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer === 1 || data.is_previous_customer === true || data.is_previous_customer === "1" || data.is_previous_customer === "yes" ? 1 : 0) : 0,
-        created_by: createdBy
+        is_previous_customer:
+          data.is_previous_customer !== undefined
+            ? data.is_previous_customer === 1 ||
+              data.is_previous_customer === true ||
+              data.is_previous_customer === "1" ||
+              data.is_previous_customer === "yes"
+              ? 1
+              : 0
+            : 0,
+        created_by: createdBy,
       };
 
       customerService.createCustomer(mappedCustomer, (err, result) => {
@@ -626,21 +846,21 @@ module.exports = {
           console.error("createCustomer db error:", err);
           return res.status(500).json({
             success: 0,
-            message: "Database error occurred while creating customer."
+            message: "Database error occurred while creating customer.",
           });
         }
 
         return res.status(200).json({
           success: 1,
           message: "Customer created successfully.",
-          insertId: result.insertId
+          insertId: result.insertId,
         });
       });
     } catch (error) {
       console.error("createCustomer error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
@@ -653,21 +873,21 @@ module.exports = {
           console.error("getAllCustomers error:", err);
           return res.status(500).json({
             success: 0,
-            message: "Database error occurred while fetching customers."
+            message: "Database error occurred while fetching customers.",
           });
         }
 
         return res.status(200).json({
           success: 1,
           message: "Customers retrieved successfully.",
-          data: results
+          data: results,
         });
       });
     } catch (error) {
       console.error("getAllCustomers error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
@@ -680,7 +900,7 @@ module.exports = {
       if (!customerId) {
         return res.status(400).json({
           success: 0,
-          message: "Customer ID is required."
+          message: "Customer ID is required.",
         });
       }
 
@@ -689,27 +909,27 @@ module.exports = {
           console.error("deleteCustomer error:", err);
           return res.status(500).json({
             success: 0,
-            message: "Database error occurred while deleting customer."
+            message: "Database error occurred while deleting customer.",
           });
         }
 
         if (result.affectedRows === 0) {
           return res.status(404).json({
             success: 0,
-            message: "Customer not found."
+            message: "Customer not found.",
           });
         }
 
         return res.status(200).json({
           success: 1,
-          message: "Customer deleted successfully."
+          message: "Customer deleted successfully.",
         });
       });
     } catch (error) {
       console.error("deleteCustomer error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
@@ -722,7 +942,8 @@ module.exports = {
       if (!file) {
         return res.status(400).json({
           success: 0,
-          message: "No file uploaded or invalid file type. Please upload Excel (.xlsx, .xls) files."
+          message:
+            "No file uploaded or invalid file type. Please upload Excel (.xlsx, .xls) files.",
         });
       }
 
@@ -731,7 +952,8 @@ module.exports = {
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return res.status(400).json({
           success: 0,
-          message: "Invalid file type. Please upload an Excel file (.xlsx or .xls)."
+          message:
+            "Invalid file type. Please upload an Excel file (.xlsx or .xls).",
         });
       }
 
@@ -746,7 +968,7 @@ module.exports = {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         return res.status(400).json({
           success: 0,
-          message: "Failed to read Excel file. The file may be corrupt."
+          message: "Failed to read Excel file. The file may be corrupt.",
         });
       }
 
@@ -760,7 +982,7 @@ module.exports = {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         return res.status(400).json({
           success: 0,
-          message: "Excel sheet is empty. Please add vehicle details."
+          message: "Excel sheet is empty. Please add vehicle details.",
         });
       }
 
@@ -770,26 +992,86 @@ module.exports = {
       // Mappings and Synonyms matching the requested columns
       const mappings = {
         customer_id: ["customer_id", "customer id", "customer", "customerid"],
-        registration_number: ["registration_number", "registration number", "reg_no", "reg no", "registration_no", "registrationno"],
+        registration_number: [
+          "registration_number",
+          "registration number",
+          "reg_no",
+          "reg no",
+          "registration_no",
+          "registrationno",
+        ],
         rto: ["rto"],
-        registration_data: ["registration_data", "registration data", "registration_date", "registration date", "registrationdata", "registrationdate"],
+        registration_data: [
+          "registration_data",
+          "registration data",
+          "registration_date",
+          "registration date",
+          "registrationdata",
+          "registrationdate",
+        ],
         model: ["model"],
-        vechile_maker: ["vechile_maker", "vechile maker", "vehicle_maker", "vehicle maker", "maker"],
-        engine_number: ["engine_number", "engine number", "engine_no", "engine no"],
-        chassis_number: ["chassis_number", "chassis number", "chassis_no", "chassis no"],
-        vechile_class: ["vechile_class", "vechile class", "vehicle_class", "vehicle class", "class"],
-        vehicle_category: ["vehicle_category", "vehicle category", "category", "vechile_category", "vechile category"],
+        vechile_maker: [
+          "vechile_maker",
+          "vechile maker",
+          "vehicle_maker",
+          "vehicle maker",
+          "maker",
+        ],
+        engine_number: [
+          "engine_number",
+          "engine number",
+          "engine_no",
+          "engine no",
+        ],
+        chassis_number: [
+          "chassis_number",
+          "chassis number",
+          "chassis_no",
+          "chassis no",
+        ],
+        vechile_class: [
+          "vechile_class",
+          "vechile class",
+          "vehicle_class",
+          "vehicle class",
+          "class",
+        ],
+        vehicle_category: [
+          "vehicle_category",
+          "vehicle category",
+          "category",
+          "vechile_category",
+          "vechile category",
+        ],
         fuel_type: ["fuel_type", "fuel type", "fuel"],
-        seat_capacity: ["seat_capacity", "seat capacity", "seats", "seating", "seating_capacity"],
-        known_policy_expiry_date: ["known_policy_expiry_date", "policy_expiry_date", "policy expiry date", "expiry date", "expiry_date", "known policy expiry date"]
+        seat_capacity: [
+          "seat_capacity",
+          "seat capacity",
+          "seats",
+          "seating",
+          "seating_capacity",
+        ],
+        known_policy_expiry_date: [
+          "known_policy_expiry_date",
+          "policy_expiry_date",
+          "policy expiry date",
+          "expiry date",
+          "expiry_date",
+          "known policy expiry date",
+        ],
       };
 
       rawRows.forEach((row, index) => {
         const mappedRow = {
           customer_id: getMappingValue(row, mappings.customer_id),
-          registration_number: getMappingValue(row, mappings.registration_number),
+          registration_number: getMappingValue(
+            row,
+            mappings.registration_number,
+          ),
           rto: getMappingValue(row, mappings.rto),
-          registration_date: parseDate(getMappingValue(row, mappings.registration_data)),
+          registration_date: parseDate(
+            getMappingValue(row, mappings.registration_data),
+          ),
           model: getMappingValue(row, mappings.model),
           vehicle_maker: getMappingValue(row, mappings.vechile_maker),
           engine_number: getMappingValue(row, mappings.engine_number),
@@ -797,9 +1079,13 @@ module.exports = {
           vehicle_class: getMappingValue(row, mappings.vechile_class),
           vehicle_category: getMappingValue(row, mappings.vehicle_category),
           fuel_type: getMappingValue(row, mappings.fuel_type),
-          seat_capacity: parseIntOrNull(getMappingValue(row, mappings.seat_capacity)),
-          known_policy_expiry_date: parseDate(getMappingValue(row, mappings.known_policy_expiry_date)),
-          created_by: createdBy
+          seat_capacity: parseIntOrNull(
+            getMappingValue(row, mappings.seat_capacity),
+          ),
+          known_policy_expiry_date: parseDate(
+            getMappingValue(row, mappings.known_policy_expiry_date),
+          ),
+          created_by: createdBy,
         };
 
         const rowNumber = index + 2; // Row 1 is header
@@ -819,7 +1105,7 @@ module.exports = {
           failedRows.push({
             row: rowNumber,
             data: row,
-            errors: errors
+            errors: errors,
           });
         } else {
           validVehicles.push(mappedRow);
@@ -838,7 +1124,7 @@ module.exports = {
             return res.status(500).json({
               success: 0,
               message: "Failed to insert vehicle data into database.",
-              error: err.message
+              error: err.message,
             });
           }
 
@@ -849,22 +1135,23 @@ module.exports = {
             stats: {
               totalRows: rawRows.length,
               insertedCount: validVehicles.length,
-              failedCount: failedRows.length
+              failedCount: failedRows.length,
             },
             failedRows: failedRows,
-            insertedData: validVehicles
+            insertedData: validVehicles,
           });
         });
       } else {
         return res.status(400).json({
           success: 0,
-          message: "No valid rows found in Excel sheet. Check validation errors.",
+          message:
+            "No valid rows found in Excel sheet. Check validation errors.",
           stats: {
             totalRows: rawRows.length,
             insertedCount: 0,
-            failedCount: failedRows.length
+            failedCount: failedRows.length,
           },
-          failedRows: failedRows
+          failedRows: failedRows,
         });
       }
     } catch (error) {
@@ -872,7 +1159,7 @@ module.exports = {
       return res.status(500).json({
         success: 0,
         message: "An error occurred while processing the file.",
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -882,22 +1169,31 @@ module.exports = {
     try {
       const data = req.body;
 
-
       const mappedVehicle = {
         customer_id: parseInt(data.customer_id, 10),
         registration_number: data.registration_number.trim(),
         rto: data.rto ? data.rto.trim() : null,
-        registration_date: data.registration_date ? data.registration_date : null,
+        registration_date: data.registration_date
+          ? data.registration_date
+          : null,
         model: data.model ? data.model.trim() : null,
         vehicle_maker: data.vehicle_maker ? data.vehicle_maker.trim() : null,
         engine_number: data.engine_number ? data.engine_number.trim() : null,
         chassis_number: data.chassis_number ? data.chassis_number.trim() : null,
         vehicle_class: data.vehicle_class ? data.vehicle_class.trim() : null,
-        vehicle_category: data.vehicle_category ? data.vehicle_category.trim() : null,
+        vehicle_category: data.vehicle_category
+          ? data.vehicle_category.trim()
+          : null,
         fuel_type: data.fuel_type ? data.fuel_type.trim() : null,
-        seat_capacity: data.seat_capacity ? parseInt(data.seat_capacity, 10) : null,
-        expiry_date: data.expiry_date ? data.expiry_date : (data.known_policy_expiry_date ? data.known_policy_expiry_date : null),
-        created_by: data.created_by
+        seat_capacity: data.seat_capacity
+          ? parseInt(data.seat_capacity, 10)
+          : null,
+        expiry_date: data.expiry_date
+          ? data.expiry_date
+          : data.known_policy_expiry_date
+            ? data.known_policy_expiry_date
+            : null,
+        created_by: data.created_by,
       };
 
       customerService.createVehicle(mappedVehicle, (err, result) => {
@@ -906,26 +1202,26 @@ module.exports = {
           if (err.code === "ER_DUP_ENTRY") {
             return res.status(200).json({
               success: 0,
-              message: "Vehicle Registration Number already exists."
+              message: "Vehicle Registration Number already exists.",
             });
           }
           return res.status(500).json({
             success: 0,
-            message: "Database error occurred while creating vehicle."
+            message: "Database error occurred while creating vehicle.",
           });
         }
 
         return res.status(200).json({
           success: 1,
           message: "Vehicle created successfully.",
-          insertId: result.insertId
+          insertId: result.insertId,
         });
       });
     } catch (error) {
       console.error("createVehicle error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
@@ -938,21 +1234,21 @@ module.exports = {
           console.error("getAllVehicles error:", err);
           return res.status(500).json({
             success: 0,
-            message: "Database error occurred while fetching vehicles."
+            message: "Database error occurred while fetching vehicles.",
           });
         }
 
         return res.status(200).json({
           success: 1,
           message: "Vehicles retrieved successfully.",
-          data: results
+          data: results,
         });
       });
     } catch (error) {
       console.error("getAllVehicles error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
@@ -965,7 +1261,7 @@ module.exports = {
       if (!vehicleId) {
         return res.status(400).json({
           success: 0,
-          message: "Vehicle ID is required."
+          message: "Vehicle ID is required.",
         });
       }
 
@@ -974,27 +1270,27 @@ module.exports = {
           console.error("deleteVehicle error:", err);
           return res.status(500).json({
             success: 0,
-            message: "Database error occurred while deleting vehicle."
+            message: "Database error occurred while deleting vehicle.",
           });
         }
 
         if (result.affectedRows === 0) {
           return res.status(404).json({
             success: 0,
-            message: "Vehicle not found."
+            message: "Vehicle not found.",
           });
         }
 
         return res.status(200).json({
           success: 1,
-          message: "Vehicle deleted successfully."
+          message: "Vehicle deleted successfully.",
         });
       });
     } catch (error) {
       console.error("deleteVehicle error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
@@ -1006,7 +1302,7 @@ module.exports = {
       if (!customerId) {
         return res.status(400).json({
           success: 0,
-          message: "Customer ID is required."
+          message: "Customer ID is required.",
         });
       }
 
@@ -1015,25 +1311,25 @@ module.exports = {
           console.error("getCustomerById error:", err);
           return res.status(500).json({
             success: 0,
-            message: "Database error occurred."
+            message: "Database error occurred.",
           });
         }
         if (!result) {
           return res.status(404).json({
             success: 0,
-            message: "Customer not found."
+            message: "Customer not found.",
           });
         }
         return res.status(200).json({
           success: 1,
-          data: result
+          data: result,
         });
       });
     } catch (error) {
       console.error("getCustomerById error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
@@ -1044,7 +1340,7 @@ module.exports = {
       if (!month) {
         return res.status(400).json({
           success: 0,
-          message: "Select Months."
+          message: "Select Months.",
         });
       }
 
@@ -1053,30 +1349,28 @@ module.exports = {
           console.error("getCustomerById error:", err);
           return res.status(500).json({
             success: 0,
-            message: "Database error occurred."
+            message: "Database error occurred.",
           });
         }
         if (!result) {
           return res.status(404).json({
             success: 0,
-            message: "Customer not found."
+            message: "Customer not found.",
           });
         }
         return res.status(200).json({
           success: 1,
-          data: result
+          data: result,
         });
       });
     } catch (error) {
       console.error("getCustomerById error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
-
-
 
   // ==================== GET VEHICLE BY ID ====================
   getVehicleById: (req, res) => {
@@ -1085,7 +1379,7 @@ module.exports = {
       if (!vehicleId) {
         return res.status(400).json({
           success: 0,
-          message: "Vehicle ID is required."
+          message: "Vehicle ID is required.",
         });
       }
 
@@ -1094,25 +1388,25 @@ module.exports = {
           console.error("getVehicleById error:", err);
           return res.status(500).json({
             success: 0,
-            message: "Database error occurred."
+            message: "Database error occurred.",
           });
         }
         if (!result) {
           return res.status(404).json({
             success: 0,
-            message: "Vehicle not found."
+            message: "Vehicle not found.",
           });
         }
         return res.status(200).json({
           success: 1,
-          data: result
+          data: result,
         });
       });
     } catch (error) {
       console.error("getVehicleById error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
@@ -1126,40 +1420,40 @@ module.exports = {
       if (!customerId) {
         return res.status(400).json({
           success: 0,
-          message: "Customer ID is required."
+          message: "Customer ID is required.",
         });
       }
 
       if (!data.customer_name || !data.customer_name.trim()) {
         return res.status(400).json({
           success: 0,
-          message: "Customer Name is required."
+          message: "Customer Name is required.",
         });
       }
 
       if (!/^[a-zA-Z\s]+$/.test(data.customer_name.trim())) {
         return res.status(400).json({
           success: 0,
-          message: "Customer Name must contain only letters and spaces."
+          message: "Customer Name must contain only letters and spaces.",
         });
       }
 
       if (!data.mobile_number_1) {
         return res.status(400).json({
           success: 0,
-          message: "Mobile Number 1 is required."
+          message: "Mobile Number 1 is required.",
         });
       } else if (!/^\d{10}$/.test(data.mobile_number_1)) {
         return res.status(400).json({
           success: 0,
-          message: "Mobile Number 1 must be exactly 10 digits."
+          message: "Mobile Number 1 must be exactly 10 digits.",
         });
       }
 
       if (data.mobile_number_2 && !/^\d{10}$/.test(data.mobile_number_2)) {
         return res.status(400).json({
           success: 0,
-          message: "Mobile Number 2 must be exactly 10 digits."
+          message: "Mobile Number 2 must be exactly 10 digits.",
         });
       }
 
@@ -1221,7 +1515,9 @@ module.exports = {
       const mappedCustomer = {
         customer_name: data.customer_name.trim(),
         mobile_number_1: data.mobile_number_1.trim(),
-        mobile_number_2: data.mobile_number_2 ? data.mobile_number_2.trim() : null,
+        mobile_number_2: data.mobile_number_2
+          ? data.mobile_number_2.trim()
+          : null,
         email: data.email ? data.email.trim() : null,
         address: data.address ? data.address.trim() : null,
         city: data.city ? data.city.trim() : null,
@@ -1229,33 +1525,45 @@ module.exports = {
         state: data.state ? data.state.trim() : null,
         pincode: data.pincode ? data.pincode.trim() : null,
         is_active: data.is_active !== undefined ? (data.is_active ? 1 : 0) : 1,
-        is_previous_customer: data.is_previous_customer !== undefined ? (data.is_previous_customer === 1 || data.is_previous_customer === true || data.is_previous_customer === "1" || data.is_previous_customer === "yes" ? 1 : 0) : 0
+        is_previous_customer:
+          data.is_previous_customer !== undefined
+            ? data.is_previous_customer === 1 ||
+              data.is_previous_customer === true ||
+              data.is_previous_customer === "1" ||
+              data.is_previous_customer === "yes"
+              ? 1
+              : 0
+            : 0,
       };
 
-      customerService.updateCustomer(customerId, mappedCustomer, (err, result) => {
-        if (err) {
-          console.error("updateCustomer error:", err);
-          return res.status(500).json({
-            success: 0,
-            message: "Database error occurred while updating customer."
+      customerService.updateCustomer(
+        customerId,
+        mappedCustomer,
+        (err, result) => {
+          if (err) {
+            console.error("updateCustomer error:", err);
+            return res.status(500).json({
+              success: 0,
+              message: "Database error occurred while updating customer.",
+            });
+          }
+          if (result.affectedRows === 0) {
+            return res.status(404).json({
+              success: 0,
+              message: "Customer not found.",
+            });
+          }
+          return res.status(200).json({
+            success: 1,
+            message: "Customer updated successfully.",
           });
-        }
-        if (result.affectedRows === 0) {
-          return res.status(404).json({
-            success: 0,
-            message: "Customer not found."
-          });
-        }
-        return res.status(200).json({
-          success: 1,
-          message: "Customer updated successfully."
-        });
-      });
+        },
+      );
     } catch (error) {
       console.error("updateCustomer error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
@@ -1269,26 +1577,26 @@ module.exports = {
       if (!vehicleId) {
         return res.status(400).json({
           success: 0,
-          message: "Vehicle ID is required."
+          message: "Vehicle ID is required.",
         });
       }
 
       if (!data.customer_id) {
         return res.status(400).json({
           success: 0,
-          message: "Customer ID is required."
+          message: "Customer ID is required.",
         });
       } else if (!/^\d+$/.test(data.customer_id)) {
         return res.status(400).json({
           success: 0,
-          message: "Customer ID must be numeric."
+          message: "Customer ID must be numeric.",
         });
       }
 
       if (!data.registration_number || !data.registration_number.trim()) {
         return res.status(400).json({
           success: 0,
-          message: "Registration Number is required."
+          message: "Registration Number is required.",
         });
       }
 
@@ -1373,16 +1681,24 @@ module.exports = {
         customer_id: parseInt(data.customer_id, 10),
         registration_number: data.registration_number.trim(),
         rto: data.rto ? data.rto.trim() : null,
-        registration_date: data.registration_date ? data.registration_date : null,
+        registration_date: data.registration_date
+          ? data.registration_date
+          : null,
         model: data.model ? data.model.trim() : null,
         vehicle_maker: data.vehicle_maker ? data.vehicle_maker.trim() : null,
         engine_number: data.engine_number ? data.engine_number.trim() : null,
         chassis_number: data.chassis_number ? data.chassis_number.trim() : null,
         vehicle_class: data.vehicle_class ? data.vehicle_class.trim() : null,
-        vehicle_category: data.vehicle_category ? data.vehicle_category.trim() : null,
+        vehicle_category: data.vehicle_category
+          ? data.vehicle_category.trim()
+          : null,
         fuel_type: data.fuel_type ? data.fuel_type.trim() : null,
-        seat_capacity: data.seat_capacity ? parseInt(data.seat_capacity, 10) : null,
-        known_policy_expiry_date: data.known_policy_expiry_date ? data.known_policy_expiry_date : null
+        seat_capacity: data.seat_capacity
+          ? parseInt(data.seat_capacity, 10)
+          : null,
+        known_policy_expiry_date: data.known_policy_expiry_date
+          ? data.known_policy_expiry_date
+          : null,
       };
 
       customerService.updateVehicle(vehicleId, mappedVehicle, (err, result) => {
@@ -1390,25 +1706,25 @@ module.exports = {
           console.error("updateVehicle error:", err);
           return res.status(500).json({
             success: 0,
-            message: "Database error occurred while updating vehicle."
+            message: "Database error occurred while updating vehicle.",
           });
         }
         if (result.affectedRows === 0) {
           return res.status(404).json({
             success: 0,
-            message: "Vehicle not found."
+            message: "Vehicle not found.",
           });
         }
         return res.status(200).json({
           success: 1,
-          message: "Vehicle updated successfully."
+          message: "Vehicle updated successfully.",
         });
       });
     } catch (error) {
       console.error("updateVehicle error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
@@ -1420,7 +1736,7 @@ module.exports = {
       if (!allocations || allocations.length === 0) {
         return res.status(200).json({
           success: 0,
-          message: "No data to Allocate"
+          message: "No data to Allocate",
         });
       }
 
@@ -1437,14 +1753,13 @@ module.exports = {
         item.created_by,
       ]);
 
-
       // Step 1: Create role in role_master table
       customerService.CreateNewLead(values, (err, result) => {
         if (err) {
           console.error(err);
           return res.status(500).json({
             success: 0,
-            message: "Something went wrong while creating role"
+            message: "Something went wrong while creating role",
           });
         }
 
@@ -1457,7 +1772,7 @@ module.exports = {
       console.error("createRole error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong"
+        message: "Something went wrong",
       });
     }
   },
@@ -1469,7 +1784,7 @@ module.exports = {
       if (!empid) {
         return res.status(400).json({
           success: 0,
-          message: "Employee ID is required."
+          message: "Employee ID is required.",
         });
       }
 
@@ -1477,153 +1792,187 @@ module.exports = {
         if (err) {
           return res.status(500).json({
             success: 0,
-            message: "Database error occurred."
+            message: "Database error occurred.",
           });
         }
         if (!result) {
           return res.status(200).json({
             success: 2,
             message: "No Policy Data Found.",
-            data: []
+            data: [],
           });
         }
         return res.status(200).json({
           success: 1,
-          data: result
+          data: result,
         });
       });
     } catch (error) {
       return res.status(500).json({
         success: 0,
-        message: "Something went wrong."
+        message: "Something went wrong.",
       });
     }
   },
 
-  CreatePreviousCustomerWithLead : (req, res) => {
-
+  CreatePreviousCustomerWithLead: (req, res) => {
     try {
+      const payload = req.body;
 
-        const payload = req.body;
+      // =========================================
+      // BASIC VALIDATION
+      // =========================================
 
-
-        // =========================================
-        // BASIC VALIDATION
-        // =========================================
-
-        if (!payload) {
-            return res.status(400).json({
-                success: 0,
-                message: "Payload is required"
-            });
-        }
-
-
-        const {
-            customer,
-            vehicle,
-            sale,
-            lead
-        } = payload;
-
-
-        if (!customer) {
-            return res.status(400).json({
-                success: 0,
-                message: "Customer details are required"
-            });
-        }
-
-
-        if (!vehicle) {
-            return res.status(400).json({
-                success: 0,
-                message: "Vehicle details are required"
-            });
-        }
-
-
-        if (!sale) {
-            return res.status(400).json({
-                success: 0,
-                message: "Sale details are required"
-            });
-        }
-
-
-        if (!lead) {
-            return res.status(400).json({
-                success: 0,
-                message: "Lead details are required"
-            });
-        }
-
-
-        if (!lead.assigned_to) {
-            return res.status(400).json({
-                success: 0,
-                message: "assigned_to is required"
-            });
-        }
-
-
-        if (!lead.status_id) {
-            return res.status(400).json({
-                success: 0,
-                message: "status_id is required"
-            });
-        }
-
-
-        // =========================================
-        // CREATE EVERYTHING
-        // =========================================
-
-        customerService.createPreviousCustomerWithLead(
-            payload,
-            (error, result) => {
-
-                if (error) {
-
-                    console.error(
-                        "CreatePreviousCustomerWithLead error:",
-                        error
-                    );
-
-                    return res.status(500).json({
-                        success: 0,
-                        message: "Failed to create customer, vehicle, lead and policy",
-                        error: error.message
-                    });
-                }
-
-
-                return res.status(201).json({
-                    success: 1,
-                    message: "Customer, vehicle, lead and policy created successfully",
-                    data: result
-                });
-            }
-        );
-
-    } catch (error) {
-
-        console.error(
-            "CreatePreviousCustomerWithLead controller error:",
-            error
-        );
-
-        return res.status(500).json({
-            success: 0,
-            message: "Internal server error",
-            error: error.message
+      if (!payload) {
+        return res.status(400).json({
+          success: 0,
+          message: "Payload is required",
         });
+      }
+
+      const { customer, vehicle, sale, lead } = payload;
+
+      if (!customer) {
+        return res.status(400).json({
+          success: 0,
+          message: "Customer details are required",
+        });
+      }
+
+      if (!vehicle) {
+        return res.status(400).json({
+          success: 0,
+          message: "Vehicle details are required",
+        });
+      }
+
+      if (!sale) {
+        return res.status(400).json({
+          success: 0,
+          message: "Sale details are required",
+        });
+      }
+
+      if (!lead) {
+        return res.status(400).json({
+          success: 0,
+          message: "Lead details are required",
+        });
+      }
+
+      if (!lead.assigned_to) {
+        return res.status(400).json({
+          success: 0,
+          message: "assigned_to is required",
+        });
+      }
+
+      if (!lead.status_id) {
+        return res.status(400).json({
+          success: 0,
+          message: "status_id is required",
+        });
+      }
+
+      // =========================================
+      // CREATE EVERYTHING
+      // =========================================
+
+      customerService.createPreviousCustomerWithLead(
+        payload,
+        (error, result) => {
+          if (error) {
+            console.error("CreatePreviousCustomerWithLead error:", error);
+
+            return res.status(500).json({
+              success: 0,
+              message: "Failed to create customer, vehicle, lead and policy",
+              error: error.message,
+            });
+          }
+
+          return res.status(201).json({
+            success: 1,
+            message: "Customer, vehicle, lead and policy created successfully",
+            data: result,
+          });
+        },
+      );
+    } catch (error) {
+      console.error("CreatePreviousCustomerWithLead controller error:", error);
+
+      return res.status(500).json({
+        success: 0,
+        message: "Internal server error",
+        error: error.message,
+      });
     }
-},
+  },
 
+  UpdatePolicyDetails: (req, res) => {
+    const { policyId } = req.params;
+    const values = req.body;
 
+    console.log({
+      values,
+    });
 
+    customerService.UpdatePolicyDetails(policyId, values, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Failed to update policy",
+          error: err,
+        });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(200).json({
+          success: 0,
+          message: "Policy not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Policy updated successfully",
+      });
+    });
+  },
+
+  CreatePreviousCustomerExcel: (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: 0,
+          message: "Excel file is required",
+        });
+      }
+      createPreviousCustomerExcel(req.file.path, (error, result) => {
+        if (error) {
+          console.error("CreatePreviousCustomerExcel error:", error);
+
+          return res.status(200).json({
+            success: 0,
+            message: "Failed to process legacy sales Excel",
+            error: error.message,
+          });
+        }
+
+        return res.status(201).json({
+          success: 1,
+          message: "Legacy sales Excel processed successfully",
+          data: result,
+        });
+      });
+    } catch (error) {
+      console.error("CreatePreviousCustomerExcel controller error:", error);
+
+      return res.status(500).json({
+        success: 0,
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  },
 };
-
-
-

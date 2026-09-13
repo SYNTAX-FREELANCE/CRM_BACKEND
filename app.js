@@ -67,6 +67,7 @@ const incentiveschemamaster = require("./api/IncentiveMaster/incentiveScheme.rou
 const incentiveslab = require("./api/IncentiveSlabMaster/incentiveSlab.routes");
 const customerpaytype = require("./api/CustomerPayType/customerPayType.router");
 const paymentMethodRouter = require("./api/PaymentMethod/paymentMethod.router");
+const policyclaim = require("./api/policyClaim/policyClaim.routes");
 
 const validateToken = require("./Validate/validateToken");
 const verifyAccessToken = require("./middleware/verifyAccessToken");
@@ -272,6 +273,13 @@ app.use(
   routeTrackerMiddleware("PAYMENT_METHOD_MASTER_ROUTER"),
   socketMiddleware,
   paymentMethodRouter,
+);
+
+app.use(
+  "/api/policyclaim",
+  routeTrackerMiddleware("POLICY_CLAIM_DETAIL_ROUTER"),
+  socketMiddleware,
+  policyclaim,
 );
 
 const fileuploadRouter = express.Router();

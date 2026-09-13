@@ -12,7 +12,7 @@ router.post(
   "/upload",
   verifyAccessToken,
   uploadCustomer.single("file"),
-  customerController.uploadCustomerFile
+  customerController.uploadCustomerFile,
 );
 
 // Renewal Upload Excel file
@@ -20,7 +20,7 @@ router.post(
   "/renewal-upload",
   verifyAccessToken,
   uploadCustomer.single("file"),
-  customerController.renewalUploadFile
+  customerController.renewalUploadFile,
 );
 
 // Upload Excel vehicle file
@@ -28,7 +28,7 @@ router.post(
   "/upload-vehicles",
   verifyAccessToken,
   uploadCustomer.single("file"),
-  customerController.uploadVehicleFile
+  customerController.uploadVehicleFile,
 );
 
 // Create customer
@@ -38,44 +38,99 @@ router.post("/create", verifyAccessToken, customerController.createCustomer);
 router.get("/getall", verifyAccessToken, customerController.getAllCustomers);
 
 // Create vehicle
-router.post("/create-vehicle", verifyAccessToken, customerController.createVehicle);
+router.post(
+  "/create-vehicle",
+  verifyAccessToken,
+  customerController.createVehicle,
+);
 
 // Get all vehicles
-router.get("/getall-vehicles", verifyAccessToken, customerController.getAllVehicles);
+router.get(
+  "/getall-vehicles",
+  verifyAccessToken,
+  customerController.getAllVehicles,
+);
 
 // Delete customer
-router.delete("/delete/:customerId", verifyAccessToken, customerController.deleteCustomer);
+router.delete(
+  "/delete/:customerId",
+  verifyAccessToken,
+  customerController.deleteCustomer,
+);
 
 // Delete vehicle
-router.delete("/delete-vehicle/:vehicleId", verifyAccessToken, customerController.deleteVehicle);
+router.delete(
+  "/delete-vehicle/:vehicleId",
+  verifyAccessToken,
+  customerController.deleteVehicle,
+);
 
 // Get customer by ID
-router.get("/getbyid/:customerId", verifyAccessToken, customerController.getCustomerById);
+router.get(
+  "/getbyid/:customerId",
+  verifyAccessToken,
+  customerController.getCustomerById,
+);
 
-router.get("/new-customer/:month", verifyAccessToken, customerController.getNewCustomers);
+router.get(
+  "/new-customer/:month",
+  verifyAccessToken,
+  customerController.getNewCustomers,
+);
 
 // Get vehicle by ID
-router.get("/getbyid-vehicle/:vehicleId", verifyAccessToken, customerController.getVehicleById);
+router.get(
+  "/getbyid-vehicle/:vehicleId",
+  verifyAccessToken,
+  customerController.getVehicleById,
+);
 
 // Update customer
-router.patch("/update/:customerId", verifyAccessToken, customerController.updateCustomer);
+router.patch(
+  "/update/:customerId",
+  verifyAccessToken,
+  customerController.updateCustomer,
+);
 
 // Update vehicle
-router.patch("/update-vehicle/:vehicleId", verifyAccessToken, customerController.updateVehicle);
+router.patch(
+  "/update-vehicle/:vehicleId",
+  verifyAccessToken,
+  customerController.updateVehicle,
+);
 
-//new lead insert 
-router.post("/allocate-customer", verifyAccessToken, customerController.CreateNewLead);
+//new lead insert
+router.post(
+  "/allocate-customer",
+  verifyAccessToken,
+  customerController.CreateNewLead,
+);
 
+//employee policy detail
+router.get(
+  "/employee-policy-taken/:empid",
+  verifyAccessToken,
+  customerController.getEmployeePolicyTaken,
+);
 
-//employee policy detail 
-router.get("/employee-policy-taken/:empid", verifyAccessToken, customerController.getEmployeePolicyTaken);
+router.post(
+  "/create-previous-customer",
+  verifyAccessToken,
+  customerController.CreatePreviousCustomerWithLead,
+);
+
+router.patch(
+  "/update-policydetail/:policyId",
+  verifyAccessToken,
+  customerController.UpdatePolicyDetails,
+);
 
 
 router.post(
-    "/create-previous-customer",
+    "/create-previous-customer-excel",
     verifyAccessToken,
-    customerController.CreatePreviousCustomerWithLead
+    uploadCustomer.single("file"),
+    customerController.CreatePreviousCustomerExcel
 );
-
 
 module.exports = router;
