@@ -17,7 +17,10 @@ const {
   getPolicyDocumentsService,
   deletePolicyDocumentService,
 } = require("./employeepolicy.upload");
-const { deleteLeadDocumentService, getLeadDocumentsService } = require("./employeelead.upload");
+const {
+  deleteLeadDocumentService,
+  getLeadDocumentsService,
+} = require("./employeelead.upload");
 
 module.exports = {
   // ==================== CREATE USER WITH FILES ====================
@@ -40,6 +43,7 @@ module.exports = {
         dob,
         email,
         address,
+        employee_level_id,
       } = req.body;
 
       // Validation
@@ -68,6 +72,7 @@ module.exports = {
         dob: dob || null,
         email: email ? email.trim() : null,
         address: address ? address.trim() : null,
+        employee_level_id: employee_level_id ? employee_level_id : null,
       };
 
       // Step 1: Create user in users_master + users table (creates auth account)
@@ -250,6 +255,7 @@ module.exports = {
         dob,
         email,
         address,
+        employee_level_id
       } = req.body;
 
       // Validation
@@ -277,6 +283,7 @@ module.exports = {
         dob: dob || null,
         email: email ? email.trim() : null,
         address: address ? address.trim() : null,
+        employee_level_id: employee_level_id ? employee_level_id : null,
       };
 
       // Step 1: Update user in users_master
@@ -904,7 +911,6 @@ module.exports = {
             message: "Database Error",
           });
         });
-
     } catch (err) {
       console.log(err);
 

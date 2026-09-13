@@ -871,11 +871,6 @@ WHERE
   },
   updateLeadPolicy: (data, callback) => {
     const policy = data.policy;
-
-    console.log({
-      policy,
-    });
-
     pool.query(
       `INSERT INTO policies
     (
@@ -900,10 +895,14 @@ WHERE
       discount_amount,
       sale_date,
       source_id,
+      customer_pay_type_id,
+      payment_method_id,
+      cp_reference_no,
+      pm_reference_no,
       lead_id
     )
     VALUES
-    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.customer_id,
         data.vehicle_id,
@@ -936,6 +935,10 @@ WHERE
         policy.discount_amount,
         policy.sale_date,
         policy.source_id,
+        policy.customer_pay_type_id,
+        policy.payment_method_id,
+        policy.cp_reference_no,
+        policy.pm_reference_no,
 
         data.lead_id,
       ],
@@ -2589,6 +2592,102 @@ ORDER BY
         edited_by = ?
      WHERE vehicle_id = ?`,
       [registration_date, edited_by, vehicle_id],
+      (err, result) => {
+        if (err) return callback(err, null);
+        callback(null, result);
+      },
+    );
+  },
+  getEmployyeCaptuerCount: (empId, callback) => {
+    pool.query(
+      `SELECT COUNT(*) AS capture_count
+      FROM policies p
+      INNER JOIN leads l
+          ON l.lead_id = p.lead_id
+      WHERE l.assigned_to = ?
+        AND p.sale_date IS NOT NULL
+        AND MONTH(p.sale_date) = MONTH(CURDATE())
+        AND YEAR(p.sale_date) = YEAR(CURDATE())`,
+      [empId],
+      (err, result) => {
+        if (err) return callback(err, null);
+        callback(null, result);
+      },
+    );
+  },
+  getPolicyDetails: (customerId, policyId, callback) => {
+    pool.query(
+      `
+SELECT
+    p.*,
+
+    -- Customer
+    c.customer_name,
+    c.mobile_number_1,
+    c.mobile_number_2,
+    c.email,
+    c.address,
+    c.city,
+    c.district,
+    c.state,
+    c.pincode,
+
+    -- Vehicle
+    v.registration_number,
+    v.model,
+    v.engine_number,
+    v.chassis_number,
+    v.rto,
+    v.registration_date,
+    v.vehicle_maker,
+    v.vehicle_class,
+    v.vehicle_category,
+    v.fuel_type,
+    v.seat_capacity,
+
+    -- Insurance Company
+    ic.company_name,
+
+    -- Customer Pay Type
+    cpt.pay_type_name,
+
+    -- Payment Method
+    pmm.payment_method_name,
+    pmm.payment_type,
+
+    -- Lead
+    l.assigned_to,
+    l.status_id,
+
+    -- Source
+    s.source_name
+
+FROM policies p
+
+INNER JOIN customers c
+    ON c.customer_id = p.customer_id
+
+INNER JOIN vehicles v
+    ON v.vehicle_id = p.vehicle_id
+
+LEFT JOIN insurance_companies ic
+    ON ic.insurance_company_id = p.insurance_company_id
+
+LEFT JOIN customer_pay_type_master cpt
+    ON cpt.customer_pay_type_id = p.customer_pay_type_id
+
+LEFT JOIN payment_method_master pmm
+    ON pmm.payment_method_id = p.payment_method_id
+
+LEFT JOIN leads l
+    ON l.lead_id = p.lead_id
+
+LEFT JOIN policy_source_master s
+    ON s.source_id = p.source_id
+
+WHERE p.policy_id = ?
+AND p.customer_id = ?`,
+      [policyId, customerId],
       (err, result) => {
         if (err) return callback(err, null);
         callback(null, result);

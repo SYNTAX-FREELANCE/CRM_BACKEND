@@ -62,6 +62,13 @@ const leadCallRoutes = require("./api/LeadCallDetail/leadCall.router");
 const notificationRoutes = require("./api/Notification/notification.router");
 const socketMiddleware = require("./middleware/socke.middlewar");
 const policySourceRoutes = require("./api/PolicySource/policySource.routes");
+const employeelevlerouter = require("./api/EmployeeLevelMaster/employeeLevel.router");
+const incentiveschemamaster = require("./api/IncentiveMaster/incentiveScheme.routes");
+const incentiveslab = require("./api/IncentiveSlabMaster/incentiveSlab.routes");
+const customerpaytype = require("./api/CustomerPayType/customerPayType.router");
+const paymentMethodRouter = require("./api/PaymentMethod/paymentMethod.router");
+const policyclaim = require("./api/policyClaim/policyClaim.routes");
+
 const validateToken = require("./Validate/validateToken");
 const verifyAccessToken = require("./middleware/verifyAccessToken");
 
@@ -231,6 +238,48 @@ app.use(
   routeTrackerMiddleware("POLICY_SOURCE_ROUTER"),
   socketMiddleware,
   policySourceRoutes,
+);
+
+app.use(
+  "/api/employeelevel",
+  routeTrackerMiddleware("EMPLOYEE_LEVEL_ROUTER"),
+  socketMiddleware,
+  employeelevlerouter,
+);
+
+app.use(
+  "/api/incentivescheme",
+  routeTrackerMiddleware("INCENTIVE_MASTER_ROUTER"),
+  socketMiddleware,
+  incentiveschemamaster,
+);
+
+app.use(
+  "/api/incentiveslab",
+  routeTrackerMiddleware("INCENTIVESLAB_MASTER_ROUTER"),
+  socketMiddleware,
+  incentiveslab,
+);
+
+app.use(
+  "/api/customerpaytype",
+  routeTrackerMiddleware("CUSTOMER_PAYTYPE_MASTER_ROUTER"),
+  socketMiddleware,
+  customerpaytype,
+);
+
+app.use(
+  "/api/paymentmethod",
+  routeTrackerMiddleware("PAYMENT_METHOD_MASTER_ROUTER"),
+  socketMiddleware,
+  paymentMethodRouter,
+);
+
+app.use(
+  "/api/policyclaim",
+  routeTrackerMiddleware("POLICY_CLAIM_DETAIL_ROUTER"),
+  socketMiddleware,
+  policyclaim,
 );
 
 const fileuploadRouter = express.Router();

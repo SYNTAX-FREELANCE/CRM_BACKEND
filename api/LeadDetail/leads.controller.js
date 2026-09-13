@@ -100,7 +100,7 @@ module.exports = {
             leadservie.updateLeadFollowupDetail(data, (err) => {
               if (err) {
                 console.log({
-                  err
+                  err,
                 });
 
                 return res.status(500).json({
@@ -177,7 +177,6 @@ module.exports = {
       });
     }
   },
-
 
   getLeadHistory: (req, res) => {
     try {
@@ -381,7 +380,6 @@ module.exports = {
         success: 1,
         data: result,
       });
-
     });
   },
 
@@ -430,13 +428,12 @@ module.exports = {
     });
   },
   releaseBatchLock: (req, res) => {
-
     const { employee_id, batch_no, unlocked_by } = req.body;
 
     if (!employee_id || !batch_no || !unlocked_by) {
       return res.status(400).json({
         success: 0,
-        message: "Required data is missing"
+        message: "Required data is missing",
       });
     }
 
@@ -444,30 +441,28 @@ module.exports = {
       {
         employee_id,
         batch_no,
-        unlocked_by
+        unlocked_by,
       },
       (err, result) => {
-
         if (err) {
           return res.status(500).json({
             success: 0,
-            message: err.sqlMessage || err.message
+            message: err.sqlMessage || err.message,
           });
         }
 
         return res.status(200).json({
           success: 1,
-          message: "Batch unlocked successfully"
+          message: "Batch unlocked successfully",
         });
-
-      }
+      },
     );
   },
   getTopEmployees: (req, res) => {
     leadservie.getTopEmployees((err, result) => {
       if (err) {
         console.log({
-          err
+          err,
         });
 
         return res.status(500).json({
@@ -491,18 +486,23 @@ module.exports = {
       });
     }
 
-    leadservie.updateExpiryDetailsService(vehicle_id, edited_by, known_policy_expiry_date, (err, result) => {
-      if (err) {
-        return res.status(500).json({
-          success: 0,
-          message: "Database Error",
+    leadservie.updateExpiryDetailsService(
+      vehicle_id,
+      edited_by,
+      known_policy_expiry_date,
+      (err, result) => {
+        if (err) {
+          return res.status(500).json({
+            success: 0,
+            message: "Database Error",
+          });
+        }
+        return res.status(200).json({
+          success: 1,
+          message: "Update SuccessFully",
         });
-      }
-      return res.status(200).json({
-        success: 1,
-        message: "Update SuccessFully",
-      });
-    });
+      },
+    );
   },
 
   UpdateFetchStatus: (req, res) => {
@@ -529,8 +529,6 @@ module.exports = {
     });
   },
 
-
-
   getSingleEmployeeRecentActivity: (req, res) => {
     const { empId } = req.params;
     leadservie.getEmployeeActivity(empId, (err, result) => {
@@ -547,7 +545,6 @@ module.exports = {
     });
   },
 
-
   getCustomerPolicyDetails: (req, res) => {
     const { customerid } = req.params;
     leadservie.getCustomerPolicyDetail(customerid, (err, result) => {
@@ -562,15 +559,14 @@ module.exports = {
         return res.status(200).json({
           success: 1,
           data: [],
-          message: 'No Policy Found Under This.'
-        })
+          message: "No Policy Found Under This.",
+        });
       }
 
       return res.status(200).json({
         success: 1,
         data: result,
       });
-
     });
   },
 
@@ -616,19 +612,85 @@ module.exports = {
       });
     }
 
-    leadservie.updateRegistrationDate(vehicle_id, edited_by, registration_date, (err, result) => {
+    leadservie.updateRegistrationDate(
+      vehicle_id,
+      edited_by,
+      registration_date,
+      (err, result) => {
+        if (err) {
+          return res.status(500).json({
+            success: 0,
+            message: "Database Error",
+          });
+        }
+        return res.status(200).json({
+          success: 1,
+          message: "Update SuccessFully",
+        });
+      },
+    );
+  },
+
+  getEmployyeCaptuerCount: (req, res) => {
+    const { empId } = req.params;
+
+    if (!empId) {
+      return res.status(200).json({
+        success: 0,
+        message: "Required Id's are Missing!",
+      });
+    }
+
+    leadservie.getEmployyeCaptuerCount(empId, (err, result) => {
       if (err) {
         return res.status(500).json({
           success: 0,
           message: "Database Error",
         });
       }
+      if (result && result.length === 0) {
+        return res.status(200).json({
+          success: 1,
+          message: "No Capture for the Current month",
+          data: 0,
+        });
+      }
       return res.status(200).json({
         success: 1,
-        message: "Update SuccessFully",
+        message: "Capture Count Fetched SuccessFully",
+        data: result[0]?.capture_count || 0,
       });
     });
   },
+  getPolicyDetails: (req, res) => {
+    const { customerId, policyId } = req.params;
 
+    if (!customerId || !policyId) {
+      return res.status(200).json({
+        success: 0,
+        message: "Required Id's are Missing!",
+      });
+    }
+
+    leadservie.getPolicyDetails(customerId, policyId, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Database Error",
+        });
+      }
+      if (result && result.length === 0) {
+        return res.status(200).json({
+          success: 1,
+          message: "No Capture for the Current month",
+          data: 0,
+        });
+      }
+      return res.status(200).json({
+        success: 1,
+        message: "Capture Count Fetched SuccessFully",
+        data: result,
+      });
+    });
+  },
 };
-

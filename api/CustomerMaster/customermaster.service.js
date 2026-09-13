@@ -27,8 +27,6 @@ module.exports = {
     ]);
 
     pool.query(query, [values], (err, result) => {
-      console.log("error", err);
-
       if (err) {
         return callback(err, null);
       }
@@ -1122,9 +1120,6 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
                 if (vehicleError) {
                   return connection.rollback(() => {
                     connection.release();
-
-                    console.error("Vehicle insert error:", vehicleError);
-
                     callback(vehicleError, null);
                   });
                 }
@@ -1202,9 +1197,14 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
                                             reminder_days,
                                             renewal_year,
                                             remarks,
+                                            customer_pay_type_id,
+                                            payment_method_id,
+                                            cp_reference_no,
+                                            pm_reference_no,
+                                            created_by,
                                             lead_id
                                         )
-                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?)
                                     `;
 
                     const policyValues = [
@@ -1224,6 +1224,11 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
                       sale.reminder_days || 0,
                       sale.renewal_year || null,
                       sale.remarks || null,
+                      sale.customer_pay_type_id || null,
+                      sale.payment_method_id || null,
+                      sale.cp_reference_no || null,
+                      sale.pm_reference_no || null,
+                      lead.assigned_to || null,
                       leadId,
                     ];
 
@@ -1312,5 +1317,58 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
         );
       });
     });
+  },
+
+  UpdatePolicyDetails: (policyId, values, callback) => {
+    pool.query(
+      `UPDATE policies SET
+            insurance_company_id = ?,
+            policy_number = ?,
+            renewal_cycle = ?,
+            sale_date = ?,
+            start_date = ?,
+            expiry_date = ?,
+            source_id = ?,
+            premium_amount = ?,
+            insured_declared_value = ?,
+            paid_amount = ?,
+            discount_amount = ?,
+            reminder_days = ?,
+            customer_pay_type_id = ?,
+            cp_reference_no = ?,
+            payment_method_id = ?,
+            pm_reference_no = ?,
+            renewal_year = ?,
+            remarks = ?
+        WHERE policy_id = ?`,
+      [
+        values.insurance_company_id,
+        values.policy_number,
+        values.renewal_cycle,
+        values.sale_date,
+        values.start_date,
+        values.expiry_date,
+        values.source_id,
+        values.premium_amount,
+        values.insured_declared_value,
+        values.paid_amount,
+        values.discount_amount,
+        values.reminder_days,
+        values.customer_pay_type_id,
+        values.cp_reference_no,
+        values.payment_method_id,
+        values.pm_reference_no,
+        values.renewal_year,
+        values.remarks,
+        policyId,
+      ],
+      (err, result) => {
+        if (err) {
+          return callback(err, null);
+        }
+
+        callback(null, result);
+      },
+    );
   },
 };
