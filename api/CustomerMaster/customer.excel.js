@@ -286,4 +286,238 @@ module.exports = {
       return callback(error, null);
     }
   },
+  createPolicyForExistingVehicleExcel: (filePath, callback) => {
+    try {
+      // =========================================================
+      // 1. READ EXCEL
+      // =========================================================
+
+      const workbook = xlsx.readFile(filePath, {
+        cellDates: true,
+      });
+
+      if (
+        !workbook ||
+        !workbook.SheetNames ||
+        workbook.SheetNames.length === 0
+      ) {
+        return callback(new Error("Excel file contains no sheets"), null);
+      }
+
+      const sheetName = workbook.SheetNames[0];
+
+      const worksheet = workbook.Sheets[sheetName];
+
+      if (!worksheet) {
+        return callback(
+          new Error(`Excel worksheet "${sheetName}" could not be read`),
+          null,
+        );
+      }
+
+      const rows = xlsx.utils.sheet_to_json(worksheet, {
+        defval: "",
+        raw: true,
+      });
+
+      if (!rows.length) {
+        return callback(
+          new Error(
+            `Excel sheet "${sheetName}" contains no data. Range: ${
+              worksheet["!ref"] || "empty"
+            }`,
+          ),
+          null,
+        );
+      }
+
+      // =========================================================
+      // 2. REQUIRED EXCEL COLUMNS
+      // =========================================================
+
+      const requiredColumns = [
+        "registration_number",
+        "sale_date",
+        "insurance_company",
+        "policy_number",
+        "renewal_cycle",
+        "start_date",
+        "expiry_date",
+        "premium_amount",
+        "assigned_to",
+      ];
+
+      const excelColumns = Object.keys(rows[0]);
+
+      const missingColumns = requiredColumns.filter(
+        (column) => !excelColumns.includes(column),
+      );
+
+      if (missingColumns.length > 0) {
+        return callback(
+          new Error(`Missing Excel columns: ${missingColumns.join(", ")}`),
+          null,
+        );
+      }
+
+      // =========================================================
+      // 3. PROCESS ROWS
+      // =========================================================
+
+      const successRows = [];
+      const failedRows = [];
+
+      const processRow = (index) => {
+        if (index >= rows.length) {
+          return callback(null, {
+            total_rows: rows.length,
+            success_count: successRows.length,
+            failed_count: failedRows.length,
+            success_rows: successRows,
+            failed_rows: failedRows,
+          });
+        }
+
+        const row = rows[index];
+
+        // =====================================================
+        // BASIC VALIDATION
+        // =====================================================
+
+        if (!row.registration_number) {
+          failedRows.push({
+            row: index + 2,
+
+            registration_number: row.registration_number || null,
+
+            reason: "registration_number is required",
+          });
+
+          return processRow(index + 1);
+        }
+
+        if (!row.assigned_to) {
+          failedRows.push({
+            row: index + 2,
+
+            registration_number: row.registration_number || null,
+
+            reason: "assigned_to is required",
+          });
+
+          return processRow(index + 1);
+        }
+
+        // =====================================================
+        // PAYLOAD
+        // =====================================================
+
+        const payload = {
+          registration_number: row.registration_number,
+
+          sale: {
+            sale_date: row.sale_date || null,
+
+            paid_amount: Number(row.paid_amount) || 0,
+
+            discount_amount: Number(row.discount_amount) || 0,
+
+            source_id: Number(row.source) || null,
+
+            insurance_company_id: Number(row.insurance_company) || null,
+
+            policy_number: row.policy_number || null,
+
+            renewal_cycle: row.renewal_cycle || null,
+
+            start_date: row.start_date || null,
+
+            expiry_date: row.expiry_date || null,
+
+            premium_amount: Number(row.premium_amount) || 0,
+
+            insured_declared_value: Number(row.insured_declared_value) || 0,
+
+            reminder_days: Number(row.reminder_days) || 0,
+
+            renewal_year: row.renewal_year || null,
+
+            remarks: row.remarks || null,
+
+            customer_pay_type_id: Number(row.customer_pay_type_id) || null,
+
+            payment_method_id: Number(row.payment_method_id) || null,
+
+            cp_reference_no: row.cp_reference_no || null,
+
+            pm_reference_no: row.pm_reference_no || null,
+
+            created_by: Number(row.assigned_to),
+
+            policy_status: "EXPIRED",
+          },
+
+          lead: {
+            assigned_to: Number(row.assigned_to),
+
+            status_id: 5,
+
+            work_status: "COMPLETED",
+
+            is_locked: 1,
+          },
+        };
+
+        // =====================================================
+        // CREATE POLICY FOR EXISTING VEHICLE
+        // =====================================================
+
+        customerService.createPolicyForExistingVehicle(
+          payload,
+          (error, result) => {
+            if (error) {
+              failedRows.push({
+                row: index + 2,
+
+                registration_number: row.registration_number,
+
+                reason: error.message,
+              });
+
+              return processRow(index + 1);
+            }
+
+            successRows.push({
+              row: index + 2,
+
+              customer_name: result.customer_name,
+
+              registration_number: result.registration_number,
+
+              assigned_to: Number(row.assigned_to),
+
+              customer_id: result.customer_id,
+
+              vehicle_id: result.vehicle_id,
+
+              lead_id: result.lead_id,
+
+              policy_id: result.policy_id,
+            });
+
+            return processRow(index + 1);
+          },
+        );
+      };
+
+      processRow(0);
+    } catch (error) {
+      console.error(
+        "createPolicyForExistingVehicleExcel service error:",
+        error,
+      );
+
+      return callback(error, null);
+    }
+  },
 };

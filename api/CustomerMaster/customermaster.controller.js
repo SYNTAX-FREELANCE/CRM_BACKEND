@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const xlsx = require("xlsx");
 const customerService = require("./customermaster.service");
-const { createPreviousCustomerExcel } = require("./customer.excel");
+const { createPreviousCustomerExcel, createPolicyForExistingVehicleExcel } = require("./customer.excel");
 
 // Helper function to standardise keys for case-insensitive and synonym matching
 const getMappingValue = (row, keySynonyms) => {
@@ -1913,9 +1913,7 @@ module.exports = {
     const { policyId } = req.params;
     const values = req.body;
 
-    console.log({
-      values,
-    });
+
 
     customerService.UpdatePolicyDetails(policyId, values, (err, result) => {
       if (err) {
@@ -1949,6 +1947,42 @@ module.exports = {
         });
       }
       createPreviousCustomerExcel(req.file.path, (error, result) => {
+        if (error) {
+          console.error("CreatePreviousCustomerExcel error:", error);
+
+          return res.status(200).json({
+            success: 0,
+            message: "Failed to process legacy sales Excel",
+            error: error.message,
+          });
+        }
+
+        return res.status(201).json({
+          success: 1,
+          message: "Legacy sales Excel processed successfully",
+          data: result,
+        });
+      });
+    } catch (error) {
+      console.error("CreatePreviousCustomerExcel controller error:", error);
+
+      return res.status(500).json({
+        success: 0,
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  },
+
+  CreatePeviousePolicyExcel: (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: 0,
+          message: "Excel file is required",
+        });
+      }
+      createPolicyForExistingVehicleExcel(req.file.path, (error, result) => {
         if (error) {
           console.error("CreatePreviousCustomerExcel error:", error);
 

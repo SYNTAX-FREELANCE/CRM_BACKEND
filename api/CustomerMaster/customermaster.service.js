@@ -1371,4 +1371,277 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
       },
     );
   },
+
+  createPolicyForExistingVehicle: (payload, callback) => {
+    const { registration_number, sale, lead } = payload;
+
+    if (!registration_number) {
+      return callback(new Error("registration_number is required"), null);
+    }
+
+    pool.getConnection((connectionError, connection) => {
+      if (connectionError) {
+        console.error("Database connection error:", connectionError);
+        return callback(connectionError, null);
+      }
+
+      connection.beginTransaction((transactionError) => {
+        if (transactionError) {
+          connection.release();
+          console.error("Transaction begin error:", transactionError);
+          return callback(transactionError, null);
+        }
+
+        // =========================================================
+        // 1. GET EXISTING VEHICLE + CUSTOMER
+        // =========================================================
+
+        const vehicleSql = `
+                SELECT
+                    v.vehicle_id,
+                    v.registration_number,
+                    v.customer_id,
+                    c.customer_name
+                FROM vehicles v
+                INNER JOIN customers c
+                    ON c.customer_id = v.customer_id
+                WHERE v.registration_number = ?
+                LIMIT 1
+            `;
+
+        connection.query(
+          vehicleSql,
+          [registration_number],
+          (vehicleError, vehicleRows) => {
+            if (vehicleError) {
+              return connection.rollback(() => {
+                connection.release();
+
+                console.error("Vehicle search error:", vehicleError);
+
+                callback(vehicleError, null);
+              });
+            }
+
+            if (!vehicleRows.length) {
+              return connection.rollback(() => {
+                connection.release();
+
+                callback(
+                  new Error(
+                    `Vehicle not found for registration number: ${registration_number}`,
+                  ),
+                  null,
+                );
+              });
+            }
+
+            const vehicle = vehicleRows[0];
+
+            const customerId = vehicle.customer_id;
+            const vehicleId = vehicle.vehicle_id;
+
+            // =====================================================
+            // 2. INSERT POLICY
+            // =====================================================
+
+            const policySql = `
+                        INSERT INTO policies (
+                            customer_id,
+                            vehicle_id,
+                            sale_date,
+                            paid_amount,
+                            discount_amount,
+                            source_id,
+                            insurance_company_id,
+                            policy_number,
+                            renewal_cycle,
+                            start_date,
+                            expiry_date,
+                            premium_amount,
+                            insured_declared_value,
+                            reminder_days,
+                            renewal_year,
+                            remarks,
+                            customer_pay_type_id,
+                            payment_method_id,
+                            cp_reference_no,
+                            pm_reference_no,
+                            created_by,
+                            policy_status
+                        )
+                        VALUES (
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                        )
+                    `;
+
+            const policyValues = [
+              customerId,
+              vehicleId,
+
+              sale.sale_date || null,
+              sale.paid_amount || 0,
+              sale.discount_amount || 0,
+              sale.source_id || null,
+              sale.insurance_company_id || null,
+              sale.policy_number || null,
+              sale.renewal_cycle || null,
+              sale.start_date || null,
+              sale.expiry_date || null,
+              sale.premium_amount || 0,
+              sale.insured_declared_value || 0,
+              sale.reminder_days || 0,
+              sale.renewal_year || null,
+              sale.remarks || null,
+              sale.customer_pay_type_id || null,
+              sale.payment_method_id || null,
+              sale.cp_reference_no || null,
+              sale.pm_reference_no || null,
+
+              sale.created_by || 1,
+              
+              sale.policy_status
+            ];
+
+            connection.query(
+              policySql,
+              policyValues,
+              (policyError, policyResult) => {
+                if (policyError) {
+                  return connection.rollback(() => {
+                    connection.release();
+
+                    console.error("Policy insert error:", policyError);
+
+                    callback(policyError, null);
+                  });
+                }
+
+                const policyId = policyResult.insertId;
+
+                // =================================================
+                // 3. CREATE LEAD FOR THIS POLICY
+                // =================================================
+
+                const leadSql = `
+                                INSERT INTO leads (
+                                    customer_id,
+                                    vehicle_id,
+                                    policy_id,
+                                    status_id,
+                                    assigned_to,
+                                    assigned_date,
+                                    is_assigned,
+                                    remarks,
+                                    created_by,
+                                    work_status,
+                                    is_locked,
+                                    status_changed_at
+                                )
+                                VALUES (
+                                    ?, ?, ?, ?, ?, NOW(), 1, ?, ?, ?, ?, NOW()
+                                )
+                            `;
+
+                const leadValues = [
+                  customerId,
+                  vehicleId,
+                  policyId,
+                  lead?.status_id || 5,
+                  lead?.assigned_to || null,
+                  sale.remarks || null,
+                  sale.created_by || 1,
+                  lead?.work_status || "COMPLETED",
+                  lead?.is_locked ?? 1,
+                ];
+
+                connection.query(
+                  leadSql,
+                  leadValues,
+                  (leadError, leadResult) => {
+                    if (leadError) {
+                      return connection.rollback(() => {
+                        connection.release();
+
+                        console.error("Lead insert error:", leadError);
+
+                        callback(leadError, null);
+                      });
+                    }
+
+                    const leadId = leadResult.insertId;
+
+                    // =================================================
+                    // 4. UPDATE POLICY WITH LEAD ID
+                    // =================================================
+
+                    const updatePolicySql = `
+                                        UPDATE policies
+                                        SET lead_id = ?
+                                        WHERE policy_id = ?
+                                    `;
+
+                    connection.query(
+                      updatePolicySql,
+                      [leadId, policyId],
+                      (updateError) => {
+                        if (updateError) {
+                          return connection.rollback(() => {
+                            connection.release();
+
+                            console.error(
+                              "Policy lead update error:",
+                              updateError,
+                            );
+
+                            callback(updateError, null);
+                          });
+                        }
+
+                        // =============================================
+                        // 5. COMMIT
+                        // =============================================
+
+                        connection.commit((commitError) => {
+                          if (commitError) {
+                            return connection.rollback(() => {
+                              connection.release();
+
+                              console.error(
+                                "Transaction commit error:",
+                                commitError,
+                              );
+
+                              callback(commitError, null);
+                            });
+                          }
+
+                          connection.release();
+
+                          return callback(null, {
+                            customer_id: customerId,
+
+                            customer_name: vehicle.customer_name,
+
+                            vehicle_id: vehicleId,
+
+                            registration_number: vehicle.registration_number,
+
+                            policy_id: policyId,
+
+                            lead_id: leadId,
+                          });
+                        });
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      });
+    });
+  },
 };
