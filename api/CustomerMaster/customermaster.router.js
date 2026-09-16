@@ -133,4 +133,12 @@ router.post(
     customerController.CreatePreviousCustomerExcel
 );
 
+router.post(
+    "/create-policy-existing-vehicle-excel",
+    verifyAccessToken,
+    uploadCustomer.single("file"),
+    customerController.CreatePeviousePolicyExcel
+);
+
+
 module.exports = router;

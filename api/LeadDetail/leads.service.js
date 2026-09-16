@@ -448,75 +448,258 @@ LIMIT 10;
   },
 
   getActiveBatch: (empid, statusId, callback) => {
-    const workStatus = Number(statusId) === 1 ? "IN_PROGRESS" : "COMPLETED";
+    // const workStatus = Number(statusId) === 1 ? "IN_PROGRESS" : "COMPLETED";
 
+    // pool.query(
+    //   `
+    // SELECT
+    //     l.lead_id,
+    //     l.status_id,
+    //     ls.status_name,
+    //     ls.requires_followup,
+    //     ls.is_call_required,
+    //     ls.is_policy_required,
+    //     ls.is_followup_date_required,
+    //     l.work_status,
+
+    //     c.customer_id,
+    //     c.customer_name,
+    //     c.mobile_number_1,
+    //     c.mobile_number_2,
+    //     c.email,
+    //     c.address,
+    //     c.city,
+    //     c.district,
+    //     c.state,
+    //     c.is_previous_customer,
+
+    //     v.vehicle_id,
+    //     v.registration_number,
+    //     v.model,
+    //     v.vehicle_maker,
+    //     v.engine_number,
+    //     v.chassis_number,
+    //     v.known_policy_expiry_date,
+
+    //     p.policy_id,
+    //     p.policy_number,
+    //     p.policy_type,
+    //     p.start_date,
+    //     p.expiry_date,
+    //     p.premium_amount
+
+    // FROM leads l
+
+    // INNER JOIN customers c
+    //     ON c.customer_id = l.customer_id
+
+    // INNER JOIN vehicles v
+    //     ON v.vehicle_id = l.vehicle_id
+
+    // LEFT JOIN policies p
+    //     ON p.policy_id = l.policy_id
+
+    // INNER JOIN lead_status_master ls
+    //     ON ls.status_id = l.status_id
+
+    // WHERE
+    //     l.assigned_to = ?
+    //     AND l.status_id = ?
+    //     AND l.work_status = ?
+    //     AND (
+    //           l.is_locked = 1
+    //           OR ? <> 1
+    //         )
+
+    // ORDER BY l.assigned_date DESC, l.created_at DESC
+    // `,
+    //   [empid, statusId, workStatus, Number(statusId)],
+    //   (err, results) => {
+    //     if (err) return callback(err);
+    //     callback(null, results);
+    //   },
+    // );
     pool.query(
       `
-    SELECT
-        l.lead_id,
-        l.status_id,
-        ls.status_name,
-        ls.requires_followup,
-        ls.is_call_required,
-        ls.is_policy_required,
-        ls.is_followup_date_required,
-        l.work_status,
-
-        c.customer_id,
-        c.customer_name,
-        c.mobile_number_1,
-        c.mobile_number_2,
-        c.email,
-        c.address,
-        c.city,
-        c.district,
-        c.state,
-        c.is_previous_customer,
-
-        v.vehicle_id,
-        v.registration_number,
-        v.model,
-        v.vehicle_maker,
-        v.engine_number,
-        v.chassis_number,
-        v.known_policy_expiry_date,
-
-        p.policy_id,
-        p.policy_number,
-        p.policy_type,
-        p.start_date,
-        p.expiry_date,
-        p.premium_amount
-
-    FROM leads l
-
-    INNER JOIN customers c
-        ON c.customer_id = l.customer_id
-
-    INNER JOIN vehicles v
-        ON v.vehicle_id = l.vehicle_id
-
-    LEFT JOIN policies p
-        ON p.policy_id = l.policy_id
-
-    INNER JOIN lead_status_master ls
-        ON ls.status_id = l.status_id
-
-    WHERE
-        l.assigned_to = ?
-        AND l.status_id = ?
-        AND l.work_status = ?
-        AND (
-              l.is_locked = 1
-              OR ? <> 1
-            )
-
-    ORDER BY l.assigned_date DESC, l.created_at DESC
+      SELECT
+        user_id,
+        employee_id,
+        name,
+        mobile_number_1,
+        mobile_number_2,
+        email,
+        role_id,
+        company_id,
+        is_admin,
+        user_status,
+        is_active
+      FROM users_master
+      WHERE user_id = ?
+      LIMIT 1
     `,
-      [empid, statusId, workStatus, Number(statusId)],
-      (err, results) => {
+      [empid],
+      (err, userResults) => {
         if (err) return callback(err);
-        callback(null, results);
+
+        if (!userResults.length) {
+          return callback(null, []);
+        }
+
+        const user = userResults[0];
+
+        // =====================================================
+        // ADMIN
+        // Show all employees
+        // =====================================================
+        let employeeCondition = "";
+        let params = [];
+
+        if (Number(user.is_admin) === 1) {
+          employeeCondition = `
+          u.is_active = 1
+          AND u.is_admin = 0 AND l.status_id = ?
+        `;
+          params.push(statusId);
+        } else {
+          // =====================================================
+          // NORMAL EMPLOYEE
+          // Show only his own records
+          // =====================================================
+          employeeCondition = `
+          u.user_id = ?
+          AND u.is_active = 1 AND l.status_id = ?
+        `;
+
+          params.push(empid, statusId);
+        }
+
+        const sql = `
+        SELECT
+
+          /* =================================================
+             EMPLOYEE DETAILS
+             ================================================= */
+          u.user_id AS employee_user_id,
+          u.employee_id AS employee_code,
+          u.name AS employee_name,
+          u.mobile_number_1 AS employee_mobile,
+          u.email AS employee_email,
+          u.role_id,
+          u.company_id,
+
+          /* =================================================
+             LEAD
+             ================================================= */
+          l.lead_id,
+          l.status_id,
+          ls.status_name,
+          ls.requires_followup,
+          ls.is_call_required,
+          ls.is_policy_required,
+          ls.is_followup_date_required,
+          l.work_status,
+
+          /* =================================================
+             CUSTOMER
+             ================================================= */
+          c.customer_id,
+          c.customer_name,
+          c.mobile_number_1,
+          c.mobile_number_2,
+          c.email,
+          c.address,
+          c.city,
+          c.district,
+          c.state,
+          c.is_previous_customer,
+
+          /* =================================================
+             VEHICLE
+             ================================================= */
+          v.vehicle_id,
+          v.registration_number,
+          v.model,
+          v.vehicle_maker,
+          v.engine_number,
+          v.chassis_number,
+          v.known_policy_expiry_date,
+          v.registration_date,
+
+          /* =================================================
+             POLICY
+             ================================================= */
+          p.policy_id,
+          p.policy_number,
+          p.policy_type,
+          p.start_date,
+          p.expiry_date AS policy_expiry_date,
+          p.policy_status,
+          p.premium_amount,
+          p.renewal_cycle,
+          p.sale_date,
+          p.paid_amount,
+          p.discount_amount,
+          p.insured_declared_value,
+
+          /* =================================================
+             LATEST FOLLOWUP
+             ================================================= */
+          lf.followup_id,
+          lf.call_outcome,
+          lf.remarks AS followup_remarks,
+          lf.next_followup_date,
+          lf.created_at AS followup_created_at
+
+        FROM users_master u
+
+        INNER JOIN leads l
+          ON l.assigned_to = u.user_id
+          AND l.is_locked = 1
+
+        INNER JOIN customers c
+          ON c.customer_id = l.customer_id
+
+        INNER JOIN vehicles v
+          ON v.vehicle_id = l.vehicle_id
+
+        INNER JOIN lead_status_master ls
+          ON ls.status_id = l.status_id
+
+        LEFT JOIN policies p
+          ON p.vehicle_id = l.vehicle_id
+          AND p.policy_status = 'ACTIVE'
+          AND p.is_active = 1
+
+        LEFT JOIN (
+          SELECT lf1.*
+          FROM lead_followups lf1
+
+          INNER JOIN (
+            SELECT
+              lead_id,
+              MAX(followup_id) AS latest_followup_id
+            FROM lead_followups
+            GROUP BY lead_id
+          ) latest
+            ON latest.latest_followup_id = lf1.followup_id
+
+        ) lf
+          ON lf.lead_id = l.lead_id
+
+        WHERE
+          ${employeeCondition}
+
+        ORDER BY
+          u.name ASC,
+          l.assigned_date DESC,
+          l.created_at DESC
+      `;
+
+        pool.query(sql, params, (err, results) => {
+          if (err) return callback(err);
+
+          callback(null, results);
+        });
       },
     );
   },
@@ -658,6 +841,10 @@ LIMIT 10;
           employeeCondition = `
           u.is_active = 1
           AND u.is_admin = 0
+          AND (
+      l.status_id != 6
+      OR l.status_changed_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+    )
         `;
         } else {
           // =====================================================
@@ -667,6 +854,10 @@ LIMIT 10;
           employeeCondition = `
           u.user_id = ?
           AND u.is_active = 1
+          AND (
+      l.status_id != 6
+      OR l.status_changed_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+    )
         `;
 
           params.push(empid);
@@ -738,6 +929,7 @@ LIMIT 10;
           p.sale_date,
           p.paid_amount,
           p.discount_amount,
+          p.insured_declared_value,
 
           /* =================================================
              LATEST FOLLOWUP
