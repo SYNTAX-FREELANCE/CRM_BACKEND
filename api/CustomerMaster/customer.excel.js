@@ -164,7 +164,7 @@ module.exports = {
             state: row.state || null,
             pincode: row.pincode || null,
             is_active: 1,
-            is_previous_customer: 1,
+            is_previous_customer: row.is_previous_customer,
             created_by: 1,
           },
 

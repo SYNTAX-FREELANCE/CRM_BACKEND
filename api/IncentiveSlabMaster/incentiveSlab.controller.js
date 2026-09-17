@@ -9,6 +9,7 @@ module.exports = {
         incentive_scheme_id,
         minimum_capture,
         incentive_amount,
+        rate_per_capture,
         created_by,
       } = req.body;
 
@@ -84,6 +85,8 @@ module.exports = {
         minimum_capture: Number(minimum_capture),
 
         incentive_amount: Number(incentive_amount),
+
+        rate_per_capture: Number(rate_per_capture),
         created_by: created_by,
       };
 
@@ -242,6 +245,7 @@ module.exports = {
         incentive_scheme_id,
         minimum_capture,
         incentive_amount,
+        rate_per_capture,
         created_by,
       } = req.body;
 
@@ -317,6 +321,8 @@ module.exports = {
         minimum_capture: Number(minimum_capture),
 
         incentive_amount: Number(incentive_amount),
+
+        rate_per_capture: Number(rate_per_capture),
         updated_by: created_by,
       };
 
