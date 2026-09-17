@@ -132,6 +132,7 @@ module.exports = {
 
       leadservie.getActiveBatch(empid, statusId, (err, results) => {
         if (err) {
+    
           return res.status(500).json({
             success: 0,
             message: "Database Error",
