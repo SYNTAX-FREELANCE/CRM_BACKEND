@@ -577,7 +577,6 @@ LIMIT 10;
           lf.call_outcome,
           lf.remarks AS followup_remarks,
           lf.next_followup_date,
-          lf.created_at AS followup_created_at,
 
              -- Insurance Company
           ic.insurance_company_id,
@@ -611,6 +610,9 @@ LIMIT 10;
           pcu.mobile_number_1 AS employee_mobile,
           pcu.email AS employee_email
 
+          lf.created_at AS followup_created_at
+
+
         FROM users_master u
 
         INNER JOIN leads l
@@ -630,7 +632,7 @@ LIMIT 10;
           ON p.vehicle_id = l.vehicle_id
           AND p.policy_status = 'ACTIVE'
           AND p.is_active = 1
-        
+
         INNER JOIN insurance_companies ic
             ON ic.insurance_company_id = p.insurance_company_id
 
