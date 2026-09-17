@@ -577,6 +577,7 @@ LIMIT 10;
           lf.call_outcome,
           lf.remarks AS followup_remarks,
           lf.next_followup_date,
+          lf.created_at AS followup_created_at,
 
              -- Insurance Company
           ic.insurance_company_id,
@@ -609,9 +610,6 @@ LIMIT 10;
           pcu.employee_id,
           pcu.mobile_number_1 AS employee_mobile,
           pcu.email AS employee_email
-
-          lf.created_at AS followup_created_at
-
 
         FROM users_master u
 
