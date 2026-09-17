@@ -448,77 +448,6 @@ LIMIT 10;
   },
 
   getActiveBatch: (empid, statusId, callback) => {
-    // const workStatus = Number(statusId) === 1 ? "IN_PROGRESS" : "COMPLETED";
-
-    // pool.query(
-    //   `
-    // SELECT
-    //     l.lead_id,
-    //     l.status_id,
-    //     ls.status_name,
-    //     ls.requires_followup,
-    //     ls.is_call_required,
-    //     ls.is_policy_required,
-    //     ls.is_followup_date_required,
-    //     l.work_status,
-
-    //     c.customer_id,
-    //     c.customer_name,
-    //     c.mobile_number_1,
-    //     c.mobile_number_2,
-    //     c.email,
-    //     c.address,
-    //     c.city,
-    //     c.district,
-    //     c.state,
-    //     c.is_previous_customer,
-
-    //     v.vehicle_id,
-    //     v.registration_number,
-    //     v.model,
-    //     v.vehicle_maker,
-    //     v.engine_number,
-    //     v.chassis_number,
-    //     v.known_policy_expiry_date,
-
-    //     p.policy_id,
-    //     p.policy_number,
-    //     p.policy_type,
-    //     p.start_date,
-    //     p.expiry_date,
-    //     p.premium_amount
-
-    // FROM leads l
-
-    // INNER JOIN customers c
-    //     ON c.customer_id = l.customer_id
-
-    // INNER JOIN vehicles v
-    //     ON v.vehicle_id = l.vehicle_id
-
-    // LEFT JOIN policies p
-    //     ON p.policy_id = l.policy_id
-
-    // INNER JOIN lead_status_master ls
-    //     ON ls.status_id = l.status_id
-
-    // WHERE
-    //     l.assigned_to = ?
-    //     AND l.status_id = ?
-    //     AND l.work_status = ?
-    //     AND (
-    //           l.is_locked = 1
-    //           OR ? <> 1
-    //         )
-
-    // ORDER BY l.assigned_date DESC, l.created_at DESC
-    // `,
-    //   [empid, statusId, workStatus, Number(statusId)],
-    //   (err, results) => {
-    //     if (err) return callback(err);
-    //     callback(null, results);
-    //   },
-    // );
     pool.query(
       `
       SELECT
@@ -648,7 +577,41 @@ LIMIT 10;
           lf.call_outcome,
           lf.remarks AS followup_remarks,
           lf.next_followup_date,
+
+             -- Insurance Company
+          ic.insurance_company_id,
+          ic.company_name AS insurance_company_name,
+          ic.contact_number AS insurance_company_contact,
+          ic.email AS insurance_company_email,
+
+          -- Policy Source
+          psm.source_id,
+          psm.source_name,
+
+          -- Customer Pay Type
+          cpt.customer_pay_type_id,
+          cpt.pay_type_name,
+          cpt.description AS pay_type_description,
+
+          -- Payment Method
+          pmm.payment_method_id,
+          pmm.payment_method_name,
+          pmm.payment_type,
+          pmm.description AS payment_method_description,
+
+          -- Payment References
+          p.cp_reference_no,
+          p.pm_reference_no,
+
+          -- Created By Employee
+          pcu.user_id AS created_by_user_id,
+          pcu.name AS created_by_name,
+          pcu.employee_id,
+          pcu.mobile_number_1 AS employee_mobile,
+          pcu.email AS employee_email
+
           lf.created_at AS followup_created_at
+
 
         FROM users_master u
 
@@ -669,6 +632,21 @@ LIMIT 10;
           ON p.vehicle_id = l.vehicle_id
           AND p.policy_status = 'ACTIVE'
           AND p.is_active = 1
+
+        INNER JOIN insurance_companies ic
+            ON ic.insurance_company_id = p.insurance_company_id
+
+        LEFT JOIN policy_source_master psm
+            ON psm.source_id = p.source_id
+
+        LEFT JOIN customer_pay_type_master cpt
+            ON cpt.customer_pay_type_id = p.customer_pay_type_id
+
+        LEFT JOIN payment_method_master pmm
+            ON pmm.payment_method_id = p.payment_method_id
+
+        LEFT JOIN users_master pcu
+            ON pcu.user_id = p.created_by
 
         LEFT JOIN (
           SELECT lf1.*
@@ -2797,6 +2775,7 @@ ORDER BY
       INNER JOIN leads l
           ON l.lead_id = p.lead_id
       WHERE l.assigned_to = ?
+        AND p.policy_status = "ACTIVE"
         AND p.sale_date IS NOT NULL
         AND MONTH(p.sale_date) = MONTH(CURDATE())
         AND YEAR(p.sale_date) = YEAR(CURDATE())`,

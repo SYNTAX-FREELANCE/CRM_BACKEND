@@ -10,6 +10,7 @@ module.exports = {
                 incentive_scheme_id,
                 minimum_capture,
                 incentive_amount,
+                rate_per_capture,
                 created_by,
                 created_at
             )
@@ -21,6 +22,8 @@ module.exports = {
         incentiveSlabData.minimum_capture,
 
         incentiveSlabData.incentive_amount,
+
+        incentiveSlabData.rate_per_capture,
 
         incentiveSlabData.created_by,
       ],
@@ -101,6 +104,7 @@ module.exports = {
                 incentive_scheme_id = ?,
                 minimum_capture = ?,
                 incentive_amount = ?,
+                rate_per_capture = ?,
                 updated_by = ? ,
                 updated_at = CURRENT_TIMESTAMP
              WHERE
@@ -112,6 +116,8 @@ module.exports = {
         incentiveSlabData.minimum_capture,
 
         incentiveSlabData.incentive_amount,
+
+        incentiveSlabData.rate_per_capture,
 
         incentiveSlabData.updated_by,
 
@@ -217,50 +223,54 @@ module.exports = {
 
       const employeeLevelId = employee.employee_level_id;
 
+      // Make sure capture count is a number
+      const totalCaptures = Number(captureCount) || 0;
+
       // --------------------------------------------------
       // STEP 2
       // Find applicable incentive slab
       // --------------------------------------------------
 
       const slabQuery = `
-                SELECT
-                    iss.incentive_slab_id,
-                    iss.incentive_scheme_id,
-                    iss.minimum_capture,
-                    iss.incentive_amount,
+            SELECT
+                iss.incentive_slab_id,
+                iss.incentive_scheme_id,
+                iss.minimum_capture,
+                iss.incentive_amount,
+                iss.rate_per_capture,
 
-                    ism.scheme_name,
-                    ism.employee_level_id,
+                ism.scheme_name,
+                ism.employee_level_id,
 
-                    elm.level_name
+                elm.level_name
 
-                FROM incentive_scheme_slab iss
+            FROM incentive_scheme_slab iss
 
-                INNER JOIN incentive_scheme_master ism
-                    ON iss.incentive_scheme_id =
-                       ism.incentive_scheme_id
+            INNER JOIN incentive_scheme_master ism
+                ON iss.incentive_scheme_id =
+                   ism.incentive_scheme_id
 
-                INNER JOIN employee_level_master elm
-                    ON ism.employee_level_id =
-                       elm.employee_level_id
+            INNER JOIN employee_level_master elm
+                ON ism.employee_level_id =
+                   elm.employee_level_id
 
-                WHERE ism.employee_level_id = ?
+            WHERE ism.employee_level_id = ?
 
-                  AND ism.is_active = 1
+              AND ism.is_active = 1
 
-                  AND elm.is_active = 1
+              AND elm.is_active = 1
 
-                  AND iss.minimum_capture <= ?
+              AND iss.minimum_capture <= ?
 
-                ORDER BY
-                    iss.minimum_capture DESC
+            ORDER BY
+                iss.minimum_capture DESC
 
-                LIMIT 1
-            `;
+            LIMIT 1
+        `;
 
       pool.query(
         slabQuery,
-        [employeeLevelId, captureCount],
+        [employeeLevelId, totalCaptures],
         (slabError, slabResult) => {
           if (slabError) {
             return callback(slabError);
@@ -273,14 +283,14 @@ module.exports = {
 
           if (!slabResult.length) {
             const schemeQuery = `
-                            SELECT
-                                incentive_scheme_id,
-                                scheme_name
-                            FROM incentive_scheme_master
-                            WHERE employee_level_id = ?
-                              AND is_active = 1
-                            LIMIT 1
-                        `;
+                    SELECT
+                        incentive_scheme_id,
+                        scheme_name
+                    FROM incentive_scheme_master
+                    WHERE employee_level_id = ?
+                      AND is_active = 1
+                    LIMIT 1
+                `;
 
             pool.query(
               schemeQuery,
@@ -302,8 +312,8 @@ module.exports = {
                   });
                 }
 
-                // Scheme exists but minimum
-                // capture not reached
+                // Scheme exists but minimum capture
+                // has not been reached
                 return callback(null, {
                   employee_found: true,
                   scheme_found: true,
@@ -316,6 +326,10 @@ module.exports = {
                   incentive_scheme_id: schemeResult[0].incentive_scheme_id,
 
                   scheme_name: schemeResult[0].scheme_name,
+
+                  capture_count: totalCaptures,
+
+                  current_incentive: 0,
                 });
               },
             );
@@ -334,20 +348,13 @@ module.exports = {
 
           const incentiveAmount = Number(slab.incentive_amount);
 
-          let ratePerCapture;
-          let currentIncentive;
-
-          // --------------------------------------------------
-          // Calculate rate
-          // --------------------------------------------------
-
-          ratePerCapture = incentiveAmount / minimumCapture;
+          const ratePerCapture = Number(slab.rate_per_capture);
 
           // --------------------------------------------------
           // Calculate extra captures
           // --------------------------------------------------
 
-          const extraCaptures = captureCount - minimumCapture;
+          const extraCaptures = totalCaptures - minimumCapture;
 
           // --------------------------------------------------
           // Calculate current incentive
@@ -355,19 +362,40 @@ module.exports = {
           //
           // Example:
           //
+          // Slab:
+          // minimum_capture = 5
+          // incentive_amount = 500
+          // rate_per_capture = 100
+          //
           // 5 captures
-          // = ₹500
+          // = 500
           //
           // 6 captures
-          // = ₹500 + (1 × ₹100)
-          // = ₹600
+          // = 500 + (1 × 100)
+          // = 600
           //
           // 7 captures
-          // = ₹500 + (2 × ₹100)
-          // = ₹700
+          // = 500 + (2 × 100)
+          // = 700
+          //
+          // 8 captures
+          // = 500 + (3 × 100)
+          // = 800
+          //
+          // When capture reaches 10:
+          // The 10-capture slab becomes applicable.
+          //
+          // 10 captures
+          // = 10,000
           // --------------------------------------------------
 
-          currentIncentive = incentiveAmount + extraCaptures * ratePerCapture;
+          const currentIncentive =
+            incentiveAmount + extraCaptures * ratePerCapture;
+
+          // --------------------------------------------------
+          // STEP 5
+          // Return result
+          // --------------------------------------------------
 
           return callback(null, {
             employee_found: true,
@@ -391,6 +419,10 @@ module.exports = {
             incentive_amount: incentiveAmount,
 
             rate_per_capture: Number(ratePerCapture.toFixed(2)),
+
+            capture_count: totalCaptures,
+
+            extra_captures: extraCaptures,
 
             current_incentive: Number(currentIncentive.toFixed(2)),
           });
