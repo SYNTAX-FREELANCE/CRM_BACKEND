@@ -2770,9 +2770,7 @@ ORDER BY
     pool.query(
       `SELECT COUNT(*) AS capture_count
       FROM policies p
-      INNER JOIN leads l
-          ON l.lead_id = p.lead_id
-      WHERE l.assigned_to = ?
+      WHERE p.created_by = ?
         AND p.policy_status = "ACTIVE"
         AND p.sale_date IS NOT NULL
         AND MONTH(p.sale_date) = MONTH(CURDATE())
