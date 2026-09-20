@@ -195,7 +195,7 @@ module.exports = {
 
     const employeeQuery = `
         SELECT
-            um.user_id,
+            um.user_id, 
             um.employee_level_id,
             elm.level_name
         FROM users_master um

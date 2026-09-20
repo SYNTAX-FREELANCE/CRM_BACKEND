@@ -160,4 +160,12 @@ router.get(
   leacontroller.getPolicyDetails,
 );
 
+
+router.post(
+    "/transfer-status",
+    verifyAccessToken,
+    leacontroller.updateTransferDetails
+);
+
+
 module.exports = router;
