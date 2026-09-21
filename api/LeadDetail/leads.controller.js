@@ -132,7 +132,6 @@ module.exports = {
 
       leadservie.getActiveBatch(empid, statusId, (err, results) => {
         if (err) {
-    
           return res.status(500).json({
             success: 0,
             message: "Database Error",
@@ -690,6 +689,55 @@ module.exports = {
       return res.status(200).json({
         success: 1,
         message: "Capture Count Fetched SuccessFully",
+        data: result,
+      });
+    });
+  },
+
+  updateTransferDetails: (req, res) => {
+    const data = req.body;
+
+    if (!data.lead_id) {
+      return res.status(400).json({
+        success: 0,
+        message: "Lead ID is required",
+      });
+    }
+
+    if (!data.new_status_id) {
+      return res.status(400).json({
+        success: 0,
+        message: "New status is required",
+      });
+    }
+
+    if (!data.created_by) {
+      return res.status(400).json({
+        success: 0,
+        message: "Created by is required",
+      });
+    }
+
+    if (!data.new_user_id) {
+      return res.status(400).json({
+        success: 0,
+        message: "New employee is required",
+      });
+    }
+
+    leadservie.updateTransferDetails(data, (error, result) => {
+      if (error) {
+        console.error("updateLeadStatus Controller Error:", error);
+
+        return res.status(500).json({
+          success: 0,
+          message: error.message || "Failed to update lead",
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Lead updated successfully",
         data: result,
       });
     });

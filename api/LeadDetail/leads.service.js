@@ -92,71 +92,71 @@ module.exports = {
                     // STEP 3: FETCH NEXT 10 LEADS
                     const fetchQuery = `
                         SELECT
-    l.lead_id,
-    l.status_id,
-    ls.status_name,
-    l.work_status,
+                      l.lead_id,
+                      l.status_id,
+                      ls.status_name,
+                      l.work_status,
 
-    c.customer_id,
-    c.customer_name,
-    c.mobile_number_1,
-    c.mobile_number_2,
-    c.email,
-    c.address,
-    c.city,
-    c.district,
-    c.state,
+                      c.customer_id,
+                      c.customer_name,
+                      c.mobile_number_1,
+                      c.mobile_number_2,
+                      c.email,
+                      c.address,
+                      c.city,
+                      c.district,
+                      c.state,
 
-    v.vehicle_id,
-    v.registration_number,
-    v.model,
-    v.vehicle_maker,
-    v.engine_number,
-    v.chassis_number,
-    v.known_policy_expiry_date,
+                      v.vehicle_id,
+                      v.registration_number,
+                      v.model,
+                      v.vehicle_maker,
+                      v.engine_number,
+                      v.chassis_number,
+                      v.known_policy_expiry_date,
 
-    p.policy_id,
-    p.policy_number,
-    p.policy_type,
-    p.start_date,
-    p.expiry_date,
-    p.premium_amount
+                      p.policy_id,
+                      p.policy_number,
+                      p.policy_type,
+                      p.start_date,
+                      p.expiry_date,
+                      p.premium_amount
 
-FROM leads l
-INNER JOIN customers c
-    ON c.customer_id = l.customer_id
-INNER JOIN vehicles v
-    ON v.vehicle_id = l.vehicle_id
-LEFT JOIN policies p
-    ON p.policy_id = l.policy_id
-INNER JOIN lead_status_master ls
-    ON ls.status_id = l.status_id
+                  FROM leads l
+                  INNER JOIN customers c
+                      ON c.customer_id = l.customer_id
+                  INNER JOIN vehicles v
+                      ON v.vehicle_id = l.vehicle_id
+                  LEFT JOIN policies p
+                      ON p.policy_id = l.policy_id
+                  INNER JOIN lead_status_master ls
+                      ON ls.status_id = l.status_id
 
-WHERE l.assigned_to = ?
-  AND l.status_id = 1
-  AND l.work_status = 'PENDING'
-  AND l.is_locked = 0
+                  WHERE l.assigned_to = ?
+                    AND l.status_id = 1
+                    AND l.work_status = 'PENDING'
+                    AND l.is_locked = 0
 
-  AND NOT EXISTS (
-      SELECT 1
-      FROM employee_active_batches eab
-      WHERE eab.lead_id = l.lead_id
-        AND eab.empid = l.assigned_to
-        AND eab.is_active = 1
-        AND eab.status = 'ACTIVE'
-        AND eab.batch_source = 'FRESH_CALL'
-  )
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM employee_active_batches eab
+                        WHERE eab.lead_id = l.lead_id
+                          AND eab.empid = l.assigned_to
+                          AND eab.is_active = 1
+                          AND eab.status = 'ACTIVE'
+                          AND eab.batch_source = 'FRESH_CALL'
+                    )
 
-ORDER BY
-    CASE
-        WHEN v.known_policy_expiry_date IS NULL THEN 1
-        ELSE 0
-    END,
-    v.known_policy_expiry_date ASC,
-    l.created_at ASC
+                  ORDER BY
+                      CASE
+                          WHEN v.known_policy_expiry_date IS NULL THEN 1
+                          ELSE 0
+                      END,
+                      v.known_policy_expiry_date ASC,
+                      l.created_at ASC
 
-LIMIT 10;
-    `;
+                  LIMIT 50;
+                      `;
 
                     connection.query(fetchQuery, [empid], (err, leads) => {
                       if (err) {
@@ -317,7 +317,7 @@ LIMIT 10;
                                             callback(null, {
                                               success: 1,
                                               message:
-                                                "Next 10 leads assigned successfully",
+                                                "Next 50 leads assigned successfully",
                                               data: leads,
                                             });
                                           });
@@ -2770,9 +2770,7 @@ ORDER BY
     pool.query(
       `SELECT COUNT(*) AS capture_count
       FROM policies p
-      INNER JOIN leads l
-          ON l.lead_id = p.lead_id
-      WHERE l.assigned_to = ?
+      WHERE p.created_by = ?
         AND p.policy_status = "ACTIVE"
         AND p.sale_date IS NOT NULL
         AND MONTH(p.sale_date) = MONTH(CURDATE())
@@ -2862,5 +2860,352 @@ AND p.customer_id = ?`,
         callback(null, result);
       },
     );
+  },
+  updateTransferDetails: (data, callback) => {
+    pool.getConnection((connectionError, connection) => {
+      if (connectionError) {
+        return callback(connectionError);
+      }
+
+      connection.beginTransaction((transactionError) => {
+        if (transactionError) {
+          connection.release();
+          return callback(transactionError);
+        }
+
+        const {
+          lead_id,
+          customer_id,
+          vehicle_id,
+          new_status_id,
+          new_user_id,
+          requires_followup,
+          call_outcome,
+          remarks,
+          next_followup_date,
+          status_change_reason,
+          created_by,
+          policyrequierd,
+          policy,
+        } = data;
+
+        // --------------------------------------------------
+        // STEP 1
+        // Get current lead details
+        // --------------------------------------------------
+        const leadQuery = `
+                SELECT
+                    lead_id,
+                    customer_id,
+                    vehicle_id,
+                    status_id,
+                    assigned_to
+                FROM leads
+                WHERE lead_id = ?
+                FOR UPDATE
+            `;
+
+        connection.query(leadQuery, [lead_id], (leadError, leadRows) => {
+          if (leadError) {
+            return connection.rollback(() => {
+              connection.release();
+              callback(leadError);
+            });
+          }
+
+          if (!leadRows.length) {
+            return connection.rollback(() => {
+              connection.release();
+              callback(new Error("Lead not found"));
+            });
+          }
+
+          const lead = leadRows[0];
+
+          const old_status_id = lead.status_id;
+
+          // Use database values instead of trusting
+          // customer_id / vehicle_id from frontend
+          const final_customer_id = lead.customer_id || customer_id;
+
+          const final_vehicle_id = lead.vehicle_id || vehicle_id;
+
+          // --------------------------------------------------
+          // STEP 2
+          // Update lead status + assignment
+          // --------------------------------------------------
+          const updateLeadQuery = `
+                        UPDATE leads
+                        SET
+                            customer_id = ?,
+                            vehicle_id = ?,
+                            status_id = ?,
+                            assigned_to = ?,
+                            remarks = ?,
+                            is_locked = 1,
+                            work_status = 'COMPLETED',
+                            edited_by = ?,
+                            status_changed_at = NOW()
+                        WHERE lead_id = ?
+                    `;
+
+          connection.query(
+            updateLeadQuery,
+            [
+              final_customer_id,
+              final_vehicle_id,
+              new_status_id,
+              new_user_id,
+              remarks || null,
+              created_by,
+              lead_id,
+            ],
+            (updateLeadError) => {
+              if (updateLeadError) {
+                return connection.rollback(() => {
+                  connection.release();
+                  callback(updateLeadError);
+                });
+              }
+
+              // --------------------------------------------------
+              // STEP 3
+              // Insert follow-up if required
+              // --------------------------------------------------
+              const insertFollowUp = () => {
+                if (Number(requires_followup) !== 1) {
+                  return insertPolicy();
+                }
+
+                const followUpQuery = `
+                                    INSERT INTO lead_followups (
+                                        lead_id,
+                                        status_id,
+                                        call_outcome,
+                                        remarks,
+                                        next_followup_date,
+                                        created_by
+                                    )
+                                    VALUES (?, ?, ?, ?, ?, ?)
+                                `;
+
+                connection.query(
+                  followUpQuery,
+                  [
+                    lead_id,
+                    new_status_id,
+                    call_outcome || null,
+                    remarks || null,
+                    next_followup_date || null,
+                    created_by,
+                  ],
+                  (followUpError) => {
+                    if (followUpError) {
+                      return connection.rollback(() => {
+                        connection.release();
+                        callback(followUpError);
+                      });
+                    }
+
+                    insertPolicy();
+                  },
+                );
+              };
+
+              // --------------------------------------------------
+              // STEP 4
+              // Insert policy if required
+              // --------------------------------------------------
+              const insertPolicy = () => {
+                if (Number(policyrequierd) !== 1) {
+                  return insertHistory();
+                }
+
+                if (!policy) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    callback(new Error("Policy details are required"));
+                  });
+                }
+
+                const policyQuery = `
+                                    INSERT INTO policies (
+                                        customer_id,
+                                        vehicle_id,
+                                        insurance_company_id,
+                                        policy_number,
+                                        policy_type,
+                                        renewal_year,
+                                        renewal_cycle,
+                                        previous_policy_id,
+                                        start_date,
+                                        expiry_date,
+                                        premium_amount,
+                                        insured_declared_value,
+                                        reminder_days,
+                                        policy_status,
+                                        remarks,
+                                        is_active,
+                                        created_by,
+                                        paid_amount,
+                                        discount_amount,
+                                        sale_date,
+                                        source_id,
+                                        customer_pay_type_id,
+                                        payment_method_id,
+                                        cp_reference_no,
+                                        pm_reference_no,
+                                        lead_id
+                                    )
+                                    VALUES (
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        'ACTIVE',
+                                        ?,
+                                        1,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?
+                                    )
+                                `;
+
+                connection.query(
+                  policyQuery,
+                  [
+                    final_customer_id,
+                    final_vehicle_id,
+                    policy.insurance_company_id || null,
+                    policy.policy_number || null,
+
+                    // Keep this null if you don't
+                    // currently send policy_type
+                    policy.policy_type || null,
+
+                    policy.renewal_year || null,
+                    policy.renewal_cycle || null,
+
+                    // Previous policy
+                    policy.previous_policy_id || null,
+
+                    policy.start_date || null,
+                    policy.expiry_date || null,
+                    policy.premium_amount || null,
+                    policy.insured_declared_value || null,
+                    policy.reminder_days || null,
+
+                    policy.remarks || null,
+                    policy.created_by || created_by,
+
+                    policy.paid_amount || null,
+                    policy.discount_amount || null,
+                    policy.sale_date || null,
+                    policy.source_id || null,
+
+                    policy.customer_pay_type_id || null,
+                    policy.payment_method_id || null,
+                    policy.cp_reference_no || null,
+                    policy.pm_reference_no || null,
+
+                    lead_id,
+                  ],
+                  (policyError, policyResult) => {
+                    if (policyError) {
+                      return connection.rollback(() => {
+                        connection.release();
+                        callback(policyError);
+                      });
+                    }
+
+                    insertHistory(policyResult.insertId);
+                  },
+                );
+              };
+
+              // --------------------------------------------------
+              // STEP 5
+              // Insert status history
+              // --------------------------------------------------
+              const insertHistory = (policy_id = null) => {
+                const historyQuery = `
+                                    INSERT INTO lead_status_history (
+                                        lead_id,
+                                        old_status_id,
+                                        new_status_id,
+                                        remarks,
+                                        status_change_reason,
+                                        changed_by
+                                    )
+                                    VALUES (?, ?, ?, ?, ?, ?)
+                                `;
+
+                connection.query(
+                  historyQuery,
+                  [
+                    lead_id,
+                    old_status_id,
+                    new_status_id,
+                    remarks || null,
+                    status_change_reason || "Status Updated",
+                    created_by,
+                  ],
+                  (historyError) => {
+                    if (historyError) {
+                      return connection.rollback(() => {
+                        connection.release();
+                        callback(historyError);
+                      });
+                    }
+
+                    // --------------------------------------------------
+                    // STEP 6
+                    // Commit everything
+                    // --------------------------------------------------
+                    connection.commit((commitError) => {
+                      if (commitError) {
+                        return connection.rollback(() => {
+                          connection.release();
+                          callback(commitError);
+                        });
+                      }
+
+                      connection.release();
+
+                      callback(null, {
+                        lead_id,
+                        old_status_id,
+                        new_status_id,
+                        assigned_to: new_user_id,
+                        policy_id,
+                      });
+                    });
+                  },
+                );
+              };
+
+              // Start follow-up -> policy -> history
+              insertFollowUp();
+            },
+          );
+        });
+      });
+    });
   },
 };
