@@ -42,9 +42,9 @@ const MotorVehicleCategoryService = {
         mvc.category_name,
         mvc.description,
         mvc.is_active,
-        mvc.created_at,
-        mvc.updated_at
+        vt.vehicle_type_name
       FROM motor_vehicle_categories mvc
+      LEFT JOIN vehicle_types vt ON vt.vehicle_type_id = mvc.vehicle_type_id
       ORDER BY mvc.vehicle_category_id DESC
     `;
 
