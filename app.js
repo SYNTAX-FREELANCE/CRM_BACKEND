@@ -69,6 +69,55 @@ const customerpaytype = require("./api/CustomerPayType/customerPayType.router");
 const paymentMethodRouter = require("./api/PaymentMethod/paymentMethod.router");
 const policyclaim = require("./api/policyClaim/policyClaim.routes");
 
+// Motor calculator
+
+const motorVehicleCategoryRoutes = require("./api/MotorCalculator/MotorVehicleCategoryMaster/motorvehiclecategory.router");
+const motorVehicleClassRoutes = require("./api/MotorCalculator/MotorVehicleClass/motorVehicleClass.routes");
+const motorFuelTypeRoutes = require("./api/MotorCalculator/MotorFuelType/motorFuelType.routes");
+
+const motorVehicleUsageRoutes = require("./api/MotorCalculator/MotorVehicleUsage/motorVehicleUsage.routes");
+const motorEngineCCSlabRoutes = require("./api/MotorCalculator/MotorEngineCcSlab/motorEngineCcSlab.routes");
+const motorGVWSlabRoutes = require("./api/MotorCalculator/MotorGvwSlab/motorGvwSlab.routes");
+
+const motorProductRoutes = require("./api/MotorCalculator/MotorProductMaster/motorProduct.routes");
+const motorPolicyTypeRoutes = require("./api/MotorCalculator/MotorPlicyType/motorPolicyType.routes");
+const motorBusinessTypeRoutes = require("./api/MotorCalculator/MotorBusinessType/motorBusinessType.routes");
+const motorPolicyTermRoutes = require("./api/MotorCalculator/MotorPolicyTerm/motorPolicyTerm.routes");
+
+const motorODRateRoutes = require("./api/MotorCalculator/MotorOdRate/motorOdRate.routes");
+const motorODAgeSlabRoutes = require("./api/MotorCalculator/MotorOdAgeSlab/motorOdAgeSlab.routes");
+const motorODDepreciationRoutes = require("./api/MotorCalculator/MotorOdDepreciation/motorOdDepreciation.routes");
+
+const motorTPRateRoutes = require("./api/MotorCalculator/MotorTpRateMaster/motorTpRate.routes");
+const motorTPRateSlabRoutes = require("./api/MotorCalculator/MotorTpRateSlab/motorTpRateSlab.routes");
+
+const motorNCBRuleRoutes = require("./api/MotorCalculator/MotorNcbRuleMaster/motorNcbRule.routes");
+const motorNCBClaimRuleRoutes = require("./api/MotorCalculator/MotorNcbClaimRules/motorNcbClaimRule.routes");
+
+const motorDiscountRuleRoutes = require("./api/MotorCalculator/MotorDiscountRule/motorDiscountRule.routes");
+const motorDiscountConditionRoutes = require("./api/MotorCalculator/MotorDiscountCondition/motorDiscountCondition.routes");
+
+const motorZDRateRoutes = require("./api/MotorCalculator/MotorZdRate/motorZdRate.routes");
+
+const motorAddonRoutes = require("./api/MotorCalculator/MotorAddOnMaster/motorAddon.routes");
+const motorAddonRuleRoutes = require("./api/MotorCalculator/MotorAddOnRules/motorAddonRule.routes");
+const motorAddonConditionRoutes = require("./api/MotorCalculator/MotorAddOnCondition/motorAddonCondition.routes");
+
+const motorCoverRoutes = require("./api/MotorCalculator/MotorCoverMaster/motorCover.routes");
+const motorCoverRateRoutes = require("./api/MotorCalculator/MotorCoverRate/motorCoverRate.routes");
+const motorCoverUnitRateRoutes = require("./api/MotorCalculator/MotorCoverUnitRate/motorCoverUnitRate.routes");
+
+const motorCommissionRuleRoutes = require("./api/MotorCalculator/MotorCommissionRule/motorCommissionRule.routes");
+const motorCashbackRuleRoutes = require("./api/MotorCalculator/MotorCashBackRule/motorCashbackRule.routes");
+const motorTaxRoutes = require("./api/MotorCalculator/MotorTax/motorTax.routes");
+
+const motorQuotationRoutes = require("./api/MotorCalculator/MotorQuotation/motorQuotation.routes");
+const motorQuotationInputRoutes = require("./api/MotorCalculator/MotorQuotationInput/motorQuotationInput.routes");
+const motorQuotationOptionRoutes = require("./api/MotorCalculator/MotorQuotatinOption/motorQuotationOption.routes");
+const motorQuotationOptionAddonRoutes = require("./api/MotorCalculator/MotorQuotationOptionAddon/motor_quotation_option_addon.routes");
+const motorQuotationOptionCoverRoutes = require("./api/MotorCalculator/MotorQuotationOptionCover/motor_quotation_option_cover.routes");
+
+
 const validateToken = require("./Validate/validateToken");
 const verifyAccessToken = require("./middleware/verifyAccessToken");
 
@@ -281,6 +330,249 @@ app.use(
   socketMiddleware,
   policyclaim,
 );
+
+
+
+// MOTOR CALCULATOR
+
+app.use(
+  "/api/motor/vehicle-category",
+  routeTrackerMiddleware("MOTOR_VEHICLE_CATEGORY_ROUTER"),
+  socketMiddleware,
+  motorVehicleCategoryRoutes,
+);
+
+app.use(
+  "/api/motor/vehicle-class",
+  routeTrackerMiddleware("MOTOR_VEHICLE_CLASS_ROUTER"),
+  socketMiddleware,
+  motorVehicleClassRoutes,
+);
+
+app.use(
+  "/api/motor/fuel-type",
+  routeTrackerMiddleware("MOTOR_FUEL_TYPE_ROUTER"),
+  socketMiddleware,
+  motorFuelTypeRoutes,
+);
+
+app.use(
+  "/api/motor/vehicle-usage",
+  routeTrackerMiddleware("MOTOR_VEHICLE_USAGE_ROUTER"),
+  socketMiddleware,
+  motorVehicleUsageRoutes,
+);
+
+app.use(
+  "/api/motor/engine-cc-slab",
+  routeTrackerMiddleware("MOTOR_ENGINE_CC_SLAB_ROUTER"),
+  socketMiddleware,
+  motorEngineCCSlabRoutes,
+);
+
+app.use(
+  "/api/motor/gvw-slab",
+  routeTrackerMiddleware("MOTOR_GVW_SLAB_ROUTER"),
+  socketMiddleware,
+  motorGVWSlabRoutes,
+);
+
+app.use(
+  "/api/motor/product",
+  routeTrackerMiddleware("MOTOR_PRODUCT_ROUTER"),
+  socketMiddleware,
+  motorProductRoutes,
+);
+
+app.use(
+  "/api/motor/policy-type",
+  routeTrackerMiddleware("MOTOR_POLICY_TYPE_ROUTER"),
+  socketMiddleware,
+  motorPolicyTypeRoutes,
+);
+
+app.use(
+  "/api/motor/business-type",
+  routeTrackerMiddleware("MOTOR_BUSINESS_TYPE_ROUTER"),
+  socketMiddleware,
+  motorBusinessTypeRoutes,
+);
+
+app.use(
+  "/api/motor/policy-term",
+  routeTrackerMiddleware("MOTOR_POLICY_TERM_ROUTER"),
+  socketMiddleware,
+  motorPolicyTermRoutes,
+);
+
+app.use(
+  "/api/motor/od-rate",
+  routeTrackerMiddleware("MOTOR_OD_RATE_ROUTER"),
+  socketMiddleware,
+  motorODRateRoutes,
+);
+
+app.use(
+  "/api/motor/od-age-slab",
+  routeTrackerMiddleware("MOTOR_OD_AGE_SLAB_ROUTER"),
+  socketMiddleware,
+  motorODAgeSlabRoutes,
+);
+
+app.use(
+  "/api/motor/od-depreciation",
+  routeTrackerMiddleware("MOTOR_OD_DEPRECIATION_ROUTER"),
+  socketMiddleware,
+  motorODDepreciationRoutes,
+);
+
+app.use(
+  "/api/motor/tp-rate",
+  routeTrackerMiddleware("MOTOR_TP_RATE_ROUTER"),
+  socketMiddleware,
+  motorTPRateRoutes,
+);
+
+app.use(
+  "/api/motor/tp-rate-slab",
+  routeTrackerMiddleware("MOTOR_TP_RATE_SLAB_ROUTER"),
+  socketMiddleware,
+  motorTPRateSlabRoutes,
+);
+
+app.use(
+  "/api/motor/ncb-rule",
+  routeTrackerMiddleware("MOTOR_NCB_RULE_ROUTER"),
+  socketMiddleware,
+  motorNCBRuleRoutes,
+);
+
+app.use(
+  "/api/motor/ncb-claim-rule",
+  routeTrackerMiddleware("MOTOR_NCB_CLAIM_RULE_ROUTER"),
+  socketMiddleware,
+  motorNCBClaimRuleRoutes,
+);
+
+app.use(
+  "/api/motor/discount-rule",
+  routeTrackerMiddleware("MOTOR_DISCOUNT_RULE_ROUTER"),
+  socketMiddleware,
+  motorDiscountRuleRoutes,
+);
+
+app.use(
+  "/api/motor/discount-condition",
+  routeTrackerMiddleware("MOTOR_DISCOUNT_CONDITION_ROUTER"),
+  socketMiddleware,
+  motorDiscountConditionRoutes,
+);
+
+app.use(
+  "/api/motor/zd-rate",
+  routeTrackerMiddleware("MOTOR_ZD_RATE_ROUTER"),
+  socketMiddleware,
+  motorZDRateRoutes,
+);
+
+app.use(
+  "/api/motor/addon",
+  routeTrackerMiddleware("MOTOR_ADDON_ROUTER"),
+  socketMiddleware,
+  motorAddonRoutes,
+);
+
+app.use(
+  "/api/motor/addon-rule",
+  routeTrackerMiddleware("MOTOR_ADDON_RULE_ROUTER"),
+  socketMiddleware,
+  motorAddonRuleRoutes,
+);
+
+app.use(
+  "/api/motor/addon-condition",
+  routeTrackerMiddleware("MOTOR_ADDON_CONDITION_ROUTER"),
+  socketMiddleware,
+  motorAddonConditionRoutes,
+);
+
+app.use(
+  "/api/motor/cover",
+  routeTrackerMiddleware("MOTOR_COVER_ROUTER"),
+  socketMiddleware,
+  motorCoverRoutes,
+);
+
+app.use(
+  "/api/motor/cover-rate",
+  routeTrackerMiddleware("MOTOR_COVER_RATE_ROUTER"),
+  socketMiddleware,
+  motorCoverRateRoutes,
+);
+
+app.use(
+  "/api/motor/cover-unit-rate",
+  routeTrackerMiddleware("MOTOR_COVER_UNIT_RATE_ROUTER"),
+  socketMiddleware,
+  motorCoverUnitRateRoutes,
+);
+
+app.use(
+  "/api/motor/commission-rule",
+  routeTrackerMiddleware("MOTOR_COMMISSION_RULE_ROUTER"),
+  socketMiddleware,
+  motorCommissionRuleRoutes,
+);
+
+app.use(
+  "/api/motor/cashback-rule",
+  routeTrackerMiddleware("MOTOR_CASHBACK_RULE_ROUTER"),
+  socketMiddleware,
+  motorCashbackRuleRoutes,
+);
+
+app.use(
+  "/api/motor/tax",
+  routeTrackerMiddleware("MOTOR_TAX_ROUTER"),
+  socketMiddleware,
+  motorTaxRoutes,
+);
+
+app.use(
+  "/api/motor/quotation",
+  routeTrackerMiddleware("MOTOR_QUOTATION_ROUTER"),
+  socketMiddleware,
+  motorQuotationRoutes,
+);
+
+app.use(
+  "/api/motor/quotation-input",
+  routeTrackerMiddleware("MOTOR_QUOTATION_INPUT_ROUTER"),
+  socketMiddleware,
+  motorQuotationInputRoutes,
+);
+
+app.use(
+  "/api/motor/quotation-option",
+  routeTrackerMiddleware("MOTOR_QUOTATION_OPTION_ROUTER"),
+  socketMiddleware,
+  motorQuotationOptionRoutes,
+);
+
+app.use(
+  "/api/motor/quotation-option-addon",
+  routeTrackerMiddleware("MOTOR_QUOTATION_OPTION_ADDON_ROUTER"),
+  socketMiddleware,
+  motorQuotationOptionAddonRoutes,
+);
+
+app.use(
+  "/api/motor/quotation-option-cover",
+  routeTrackerMiddleware("MOTOR_QUOTATION_OPTION_COVER_ROUTER"),
+  socketMiddleware,
+  motorQuotationOptionCoverRoutes,
+);
+
 
 const fileuploadRouter = express.Router();
 
