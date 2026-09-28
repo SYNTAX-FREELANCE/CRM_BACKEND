@@ -92,71 +92,71 @@ module.exports = {
                     // STEP 3: FETCH NEXT 10 LEADS
                     const fetchQuery = `
                         SELECT
-    l.lead_id,
-    l.status_id,
-    ls.status_name,
-    l.work_status,
+                      l.lead_id,
+                      l.status_id,
+                      ls.status_name,
+                      l.work_status,
 
-    c.customer_id,
-    c.customer_name,
-    c.mobile_number_1,
-    c.mobile_number_2,
-    c.email,
-    c.address,
-    c.city,
-    c.district,
-    c.state,
+                      c.customer_id,
+                      c.customer_name,
+                      c.mobile_number_1,
+                      c.mobile_number_2,
+                      c.email,
+                      c.address,
+                      c.city,
+                      c.district,
+                      c.state,
 
-    v.vehicle_id,
-    v.registration_number,
-    v.model,
-    v.vehicle_maker,
-    v.engine_number,
-    v.chassis_number,
-    v.known_policy_expiry_date,
+                      v.vehicle_id,
+                      v.registration_number,
+                      v.model,
+                      v.vehicle_maker,
+                      v.engine_number,
+                      v.chassis_number,
+                      v.known_policy_expiry_date,
 
-    p.policy_id,
-    p.policy_number,
-    p.policy_type,
-    p.start_date,
-    p.expiry_date,
-    p.premium_amount
+                      p.policy_id,
+                      p.policy_number,
+                      p.policy_type,
+                      p.start_date,
+                      p.expiry_date,
+                      p.premium_amount
 
-FROM leads l
-INNER JOIN customers c
-    ON c.customer_id = l.customer_id
-INNER JOIN vehicles v
-    ON v.vehicle_id = l.vehicle_id
-LEFT JOIN policies p
-    ON p.policy_id = l.policy_id
-INNER JOIN lead_status_master ls
-    ON ls.status_id = l.status_id
+                  FROM leads l
+                  INNER JOIN customers c
+                      ON c.customer_id = l.customer_id
+                  INNER JOIN vehicles v
+                      ON v.vehicle_id = l.vehicle_id
+                  LEFT JOIN policies p
+                      ON p.policy_id = l.policy_id
+                  INNER JOIN lead_status_master ls
+                      ON ls.status_id = l.status_id
 
-WHERE l.assigned_to = ?
-  AND l.status_id = 1
-  AND l.work_status = 'PENDING'
-  AND l.is_locked = 0
+                  WHERE l.assigned_to = ?
+                    AND l.status_id = 1
+                    AND l.work_status = 'PENDING'
+                    AND l.is_locked = 0
 
-  AND NOT EXISTS (
-      SELECT 1
-      FROM employee_active_batches eab
-      WHERE eab.lead_id = l.lead_id
-        AND eab.empid = l.assigned_to
-        AND eab.is_active = 1
-        AND eab.status = 'ACTIVE'
-        AND eab.batch_source = 'FRESH_CALL'
-  )
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM employee_active_batches eab
+                        WHERE eab.lead_id = l.lead_id
+                          AND eab.empid = l.assigned_to
+                          AND eab.is_active = 1
+                          AND eab.status = 'ACTIVE'
+                          AND eab.batch_source = 'FRESH_CALL'
+                    )
 
-ORDER BY
-    CASE
-        WHEN v.known_policy_expiry_date IS NULL THEN 1
-        ELSE 0
-    END,
-    v.known_policy_expiry_date ASC,
-    l.created_at ASC
+                  ORDER BY
+                      CASE
+                          WHEN v.known_policy_expiry_date IS NULL THEN 1
+                          ELSE 0
+                      END,
+                      v.known_policy_expiry_date ASC,
+                      l.created_at ASC
 
-LIMIT 10;
-    `;
+                  LIMIT 50;
+                      `;
 
                     connection.query(fetchQuery, [empid], (err, leads) => {
                       if (err) {
@@ -230,12 +230,14 @@ LIMIT 10;
                                   }
 
                                   const existingLeadIds = new Set(
-                                    existingRows?.map((row) => row?.lead_id)
+                                    existingRows?.map((row) => row?.lead_id),
                                   );
 
                                   // Only insert leads that are NOT already in an ACTIVE REALLOCATION batch
                                   const values = leadIds
-                                    .filter((leadId) => !existingLeadIds.has(leadId))
+                                    .filter(
+                                      (leadId) => !existingLeadIds.has(leadId),
+                                    )
                                     ?.map((leadId) => [
                                       empid,
                                       leadId,
@@ -267,11 +269,12 @@ LIMIT 10;
 
                                           callback(null, {
                                             success: 1,
-                                            message: "Existing reallocated batch returned.",
+                                            message:
+                                              "Existing reallocated batch returned.",
                                             data: leads,
                                           });
                                         });
-                                      }
+                                      },
                                     );
 
                                     return;
@@ -313,17 +316,18 @@ LIMIT 10;
 
                                             callback(null, {
                                               success: 1,
-                                              message: "Next 10 leads assigned successfully",
+                                              message:
+                                                "Next 50 leads assigned successfully",
                                               data: leads,
                                             });
                                           });
-                                        }
+                                        },
                                       );
-                                    }
+                                    },
                                   );
-                                }
+                                },
                               );
-                            }
+                            },
                           );
                         },
                       );
@@ -355,7 +359,12 @@ LIMIT 10;
     );
   },
 
-  updateExpiryDetailsService: (vehicle_id, edited_by, known_policy_expiry_date, callback) => {
+  updateExpiryDetailsService: (
+    vehicle_id,
+    edited_by,
+    known_policy_expiry_date,
+    callback,
+  ) => {
     pool.query(
       `UPDATE vehicles
      SET
@@ -383,9 +392,6 @@ LIMIT 10;
       },
     );
   },
-
-
-
 
   updateLeadFollowupDetail: (data, callback) => {
     pool.query(
@@ -442,178 +448,527 @@ LIMIT 10;
   },
 
   getActiveBatch: (empid, statusId, callback) => {
-    const workStatus = Number(statusId) === 1 ? "IN_PROGRESS" : "COMPLETED";
-
     pool.query(
       `
-    SELECT
-        l.lead_id,
-        l.status_id,
-        ls.status_name,
-        ls.requires_followup,
-        ls.is_call_required,
-        ls.is_policy_required,
-        ls.is_followup_date_required,
-        l.work_status,
-
-        c.customer_id,
-        c.customer_name,
-        c.mobile_number_1,
-        c.mobile_number_2,
-        c.email,
-        c.address,
-        c.city,
-        c.district,
-        c.state,
-        c.is_previous_customer,
-
-        v.vehicle_id,
-        v.registration_number,
-        v.model,
-        v.vehicle_maker,
-        v.engine_number,
-        v.chassis_number,
-        v.known_policy_expiry_date,
-
-        p.policy_id,
-        p.policy_number,
-        p.policy_type,
-        p.start_date,
-        p.expiry_date,
-        p.premium_amount
-
-    FROM leads l
-
-    INNER JOIN customers c
-        ON c.customer_id = l.customer_id
-
-    INNER JOIN vehicles v
-        ON v.vehicle_id = l.vehicle_id
-
-    LEFT JOIN policies p
-        ON p.policy_id = l.policy_id
-
-    INNER JOIN lead_status_master ls
-        ON ls.status_id = l.status_id
-
-    WHERE
-        l.assigned_to = ?
-        AND l.status_id = ?
-        AND l.work_status = ?
-        AND (
-              l.is_locked = 1
-              OR ? <> 1
-            )
-
-    ORDER BY l.assigned_date DESC, l.created_at DESC
-    `,
-      [empid, statusId, workStatus, Number(statusId)],
-      (err, results) => {
-        if (err) return callback(err);
-        callback(null, results);
-      },
-    );
-  },
-
-
-  getEmployeeActiveBatchService: (empid, callback) => {
-    pool.query(
-      `
-        SELECT
-        l.lead_id,
-        l.status_id,
-        ls.status_name,
-        ls.requires_followup,
-        ls.is_call_required,
-        ls.is_policy_required,
-        ls.is_followup_date_required,
-        l.work_status,
-
-        c.customer_id,
-        c.customer_name,
-        c.mobile_number_1,
-        c.mobile_number_2,
-        c.email,
-        c.address,
-        c.city,
-        c.district,
-        c.state,
-        c.is_previous_customer,
-
-        v.vehicle_id,
-        v.registration_number,
-        v.model,
-        v.vehicle_maker,
-        v.engine_number,
-        v.chassis_number,
-        v.known_policy_expiry_date,
-        v.registration_date,
-      
-        
-      p.policy_id,
-        p.policy_number,
-        p.policy_type,
-        p.start_date,
-        p.expiry_date as policy_expiry_date,
-        p.policy_status,
-        p.premium_amount,
-        p.renewal_cycle,
-        
-        lf.followup_id,
-        lf.call_outcome,
-        lf.remarks AS followup_remarks,
-        lf.next_followup_date,
-        lf.created_at AS followup_created_at
-        
-      
-    FROM leads l
-
-    INNER JOIN customers c
-        ON c.customer_id = l.customer_id
-
-    INNER JOIN vehicles v
-        ON v.vehicle_id = l.vehicle_id
-
-    INNER JOIN lead_status_master ls
-        ON ls.status_id = l.status_id
-
-    LEFT JOIN policies p
-        ON p.vehicle_id = l.vehicle_id
-        AND p.policy_status = 'ACTIVE'
-        AND p.is_active = 1
-
-    LEFT JOIN (
-        SELECT lf1.*
-        FROM lead_followups lf1
-        INNER JOIN (
-            SELECT
-                lead_id,
-                MAX(followup_id) AS latest_followup_id
-            FROM lead_followups
-            GROUP BY lead_id
-        ) latest
-            ON latest.latest_followup_id = lf1.followup_id
-    ) lf
-        ON lf.lead_id = l.lead_id
-
-    WHERE
-        l.assigned_to = ?
-        AND l.is_locked = 1
-
-    ORDER BY
-        l.assigned_date DESC,
-        l.created_at DESC
+      SELECT
+        user_id,
+        employee_id,
+        name,
+        mobile_number_1,
+        mobile_number_2,
+        email,
+        role_id,
+        company_id,
+        is_admin,
+        user_status,
+        is_active
+      FROM users_master
+      WHERE user_id = ?
+      LIMIT 1
     `,
       [empid],
-      (err, results) => {
+      (err, userResults) => {
         if (err) return callback(err);
-        callback(null, results);
+
+        if (!userResults.length) {
+          return callback(null, []);
+        }
+
+        const user = userResults[0];
+
+        // =====================================================
+        // ADMIN
+        // Show all employees
+        // =====================================================
+        let employeeCondition = "";
+        let params = [];
+
+        if (Number(user.is_admin) === 1) {
+          employeeCondition = `
+          u.is_active = 1
+          AND u.is_admin = 0 AND l.status_id = ?
+        `;
+          params.push(statusId);
+        } else {
+          // =====================================================
+          // NORMAL EMPLOYEE
+          // Show only his own records
+          // =====================================================
+          employeeCondition = `
+          u.user_id = ?
+          AND u.is_active = 1 AND l.status_id = ?
+        `;
+
+          params.push(empid, statusId);
+        }
+
+        const sql = `
+        SELECT
+
+          /* =================================================
+             EMPLOYEE DETAILS
+             ================================================= */
+          u.user_id AS employee_user_id,
+          u.employee_id AS employee_code,
+          u.name AS employee_name,
+          u.mobile_number_1 AS employee_mobile,
+          u.email AS employee_email,
+          u.role_id,
+          u.company_id,
+
+          /* =================================================
+             LEAD
+             ================================================= */
+          l.lead_id,
+          l.status_id,
+          ls.status_name,
+          ls.requires_followup,
+          ls.is_call_required,
+          ls.is_policy_required,
+          ls.is_followup_date_required,
+          l.work_status,
+
+          /* =================================================
+             CUSTOMER
+             ================================================= */
+          c.customer_id,
+          c.customer_name,
+          c.mobile_number_1,
+          c.mobile_number_2,
+          c.email,
+          c.address,
+          c.city,
+          c.district,
+          c.state,
+          c.is_previous_customer,
+
+          /* =================================================
+             VEHICLE
+             ================================================= */
+          v.vehicle_id,
+          v.registration_number,
+          v.model,
+          v.vehicle_maker,
+          v.engine_number,
+          v.chassis_number,
+          v.known_policy_expiry_date,
+          v.registration_date,
+
+          /* =================================================
+             POLICY
+             ================================================= */
+          p.policy_id,
+          p.policy_number,
+          p.policy_type,
+          p.start_date,
+          p.expiry_date AS policy_expiry_date,
+          p.policy_status,
+          p.premium_amount,
+          p.renewal_cycle,
+          p.sale_date,
+          p.paid_amount,
+          p.discount_amount,
+          p.insured_declared_value,
+
+          /* =================================================
+             LATEST FOLLOWUP
+             ================================================= */
+          lf.followup_id,
+          lf.call_outcome,
+          lf.remarks AS followup_remarks,
+          lf.next_followup_date,
+          lf.created_at AS followup_created_at,
+
+             -- Insurance Company
+          ic.insurance_company_id,
+          ic.company_name AS insurance_company_name,
+          ic.contact_number AS insurance_company_contact,
+          ic.email AS insurance_company_email,
+
+          -- Policy Source
+          psm.source_id,
+          psm.source_name,
+
+          -- Customer Pay Type
+          cpt.customer_pay_type_id,
+          cpt.pay_type_name,
+          cpt.description AS pay_type_description,
+
+          -- Payment Method
+          pmm.payment_method_id,
+          pmm.payment_method_name,
+          pmm.payment_type,
+          pmm.description AS payment_method_description,
+
+          -- Payment References
+          p.cp_reference_no,
+          p.pm_reference_no,
+
+          -- Created By Employee
+          pcu.user_id AS created_by_user_id,
+          pcu.name AS created_by_name,
+          pcu.employee_id,
+          pcu.mobile_number_1 AS employee_mobile,
+          pcu.email AS employee_email
+
+        FROM users_master u
+
+        INNER JOIN leads l
+          ON l.assigned_to = u.user_id
+          AND l.is_locked = 1
+
+        INNER JOIN customers c
+          ON c.customer_id = l.customer_id
+
+        INNER JOIN vehicles v
+          ON v.vehicle_id = l.vehicle_id
+
+        INNER JOIN lead_status_master ls
+          ON ls.status_id = l.status_id
+
+        LEFT JOIN policies p
+          ON p.vehicle_id = l.vehicle_id
+          AND p.policy_status = 'ACTIVE'
+          AND p.is_active = 1
+
+        INNER JOIN insurance_companies ic
+            ON ic.insurance_company_id = p.insurance_company_id
+
+        LEFT JOIN policy_source_master psm
+            ON psm.source_id = p.source_id
+
+        LEFT JOIN customer_pay_type_master cpt
+            ON cpt.customer_pay_type_id = p.customer_pay_type_id
+
+        LEFT JOIN payment_method_master pmm
+            ON pmm.payment_method_id = p.payment_method_id
+
+        LEFT JOIN users_master pcu
+            ON pcu.user_id = p.created_by
+
+        LEFT JOIN (
+          SELECT lf1.*
+          FROM lead_followups lf1
+
+          INNER JOIN (
+            SELECT
+              lead_id,
+              MAX(followup_id) AS latest_followup_id
+            FROM lead_followups
+            GROUP BY lead_id
+          ) latest
+            ON latest.latest_followup_id = lf1.followup_id
+
+        ) lf
+          ON lf.lead_id = l.lead_id
+
+        WHERE
+          ${employeeCondition}
+
+        ORDER BY
+          u.name ASC,
+          l.assigned_date DESC,
+          l.created_at DESC
+      `;
+
+        pool.query(sql, params, (err, results) => {
+          if (err) return callback(err);
+
+          callback(null, results);
+        });
       },
     );
   },
 
+  // getEmployeeActiveBatchService: (empid, callback) => {
+  //   pool.query(
+  //     `
+  //       SELECT
+  //       l.lead_id,
+  //       l.status_id,
+  //       ls.status_name,
+  //       ls.requires_followup,
+  //       ls.is_call_required,
+  //       ls.is_policy_required,
+  //       ls.is_followup_date_required,
+  //       l.work_status,
 
+  //       c.customer_id,
+  //       c.customer_name,
+  //       c.mobile_number_1,
+  //       c.mobile_number_2,
+  //       c.email,
+  //       c.address,
+  //       c.city,
+  //       c.district,
+  //       c.state,
+  //       c.is_previous_customer,
 
+  //       v.vehicle_id,
+  //       v.registration_number,
+  //       v.model,
+  //       v.vehicle_maker,
+  //       v.engine_number,
+  //       v.chassis_number,
+  //       v.known_policy_expiry_date,
+  //       v.registration_date,
+
+  //     p.policy_id,
+  //       p.policy_number,
+  //       p.policy_type,
+  //       p.start_date,
+  //       p.expiry_date as policy_expiry_date,
+  //       p.policy_status,
+  //       p.premium_amount,
+  //       p.renewal_cycle,
+  //       p.sale_date,
+  //       p.paid_amount,
+  //       p.discount_amount,
+
+  //       lf.followup_id,
+  //       lf.call_outcome,
+  //       lf.remarks AS followup_remarks,
+  //       lf.next_followup_date,
+  //       lf.created_at AS followup_created_at
+
+  //   FROM leads l
+
+  //   INNER JOIN customers c
+  //       ON c.customer_id = l.customer_id
+
+  //   INNER JOIN vehicles v
+  //       ON v.vehicle_id = l.vehicle_id
+
+  //   INNER JOIN lead_status_master ls
+  //       ON ls.status_id = l.status_id
+
+  //   LEFT JOIN policies p
+  //       ON p.vehicle_id = l.vehicle_id
+  //       AND p.policy_status = 'ACTIVE'
+  //       AND p.is_active = 1
+
+  //   LEFT JOIN (
+  //       SELECT lf1.*
+  //       FROM lead_followups lf1
+  //       INNER JOIN (
+  //           SELECT
+  //               lead_id,
+  //               MAX(followup_id) AS latest_followup_id
+  //           FROM lead_followups
+  //           GROUP BY lead_id
+  //       ) latest
+  //           ON latest.latest_followup_id = lf1.followup_id
+  //   ) lf
+  //       ON lf.lead_id = l.lead_id
+
+  //   WHERE
+  //       l.assigned_to = ?
+  //       AND l.is_locked = 1
+
+  //   ORDER BY
+  //       l.assigned_date DESC,
+  //       l.created_at DESC
+  //   `,
+  //     [empid],
+  //     (err, results) => {
+  //       if (err) return callback(err);
+  //       callback(null, results);
+  //     },
+  //   );
+  // },
+  getEmployeeActiveBatchService: (empid, callback) => {
+    // First check whether the requested user is admin
+    pool.query(
+      `
+      SELECT
+        user_id,
+        employee_id,
+        name,
+        mobile_number_1,
+        mobile_number_2,
+        email,
+        role_id,
+        company_id,
+        is_admin,
+        user_status,
+        is_active
+      FROM users_master
+      WHERE user_id = ?
+      LIMIT 1
+    `,
+      [empid],
+      (err, userResults) => {
+        if (err) return callback(err);
+
+        if (!userResults.length) {
+          return callback(null, []);
+        }
+
+        const user = userResults[0];
+
+        // =====================================================
+        // ADMIN
+        // Show all employees
+        // =====================================================
+        let employeeCondition = "";
+        let params = [];
+
+        if (Number(user.is_admin) === 1) {
+          employeeCondition = `
+          u.is_active = 1
+          AND u.is_admin = 0
+          AND (
+      l.status_id != 6
+      OR l.status_changed_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+    )
+        `;
+        } else {
+          // =====================================================
+          // NORMAL EMPLOYEE
+          // Show only his own records
+          // =====================================================
+          employeeCondition = `
+          u.user_id = ?
+          AND u.is_active = 1
+          AND (
+      l.status_id != 6
+      OR l.status_changed_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+    )
+        `;
+
+          params.push(empid);
+        }
+
+        const sql = `
+        SELECT
+
+          /* =================================================
+             EMPLOYEE DETAILS
+             ================================================= */
+          u.user_id AS employee_user_id,
+          u.employee_id AS employee_code,
+          u.name AS employee_name,
+          u.mobile_number_1 AS employee_mobile,
+          u.email AS employee_email,
+          u.role_id,
+          u.company_id,
+
+          /* =================================================
+             LEAD
+             ================================================= */
+          l.lead_id,
+          l.status_id,
+          ls.status_name,
+          ls.requires_followup,
+          ls.is_call_required,
+          ls.is_policy_required,
+          ls.is_followup_date_required,
+          l.work_status,
+
+          /* =================================================
+             CUSTOMER
+             ================================================= */
+          c.customer_id,
+          c.customer_name,
+          c.mobile_number_1,
+          c.mobile_number_2,
+          c.email,
+          c.address,
+          c.city,
+          c.district,
+          c.state,
+          c.is_previous_customer,
+
+          /* =================================================
+             VEHICLE
+             ================================================= */
+          v.vehicle_id,
+          v.registration_number,
+          v.model,
+          v.vehicle_maker,
+          v.engine_number,
+          v.chassis_number,
+          v.known_policy_expiry_date,
+          v.registration_date,
+
+          /* =================================================
+             POLICY
+             ================================================= */
+          p.policy_id,
+          p.policy_number,
+          p.policy_type,
+          p.start_date,
+          p.expiry_date AS policy_expiry_date,
+          p.policy_status,
+          p.premium_amount,
+          p.renewal_cycle,
+          p.sale_date,
+          p.paid_amount,
+          p.discount_amount,
+          p.insured_declared_value,
+
+          /* =================================================
+             LATEST FOLLOWUP
+             ================================================= */
+          lf.followup_id,
+          lf.call_outcome,
+          lf.remarks AS followup_remarks,
+          lf.next_followup_date,
+          lf.created_at AS followup_created_at
+
+        FROM users_master u
+
+        INNER JOIN leads l
+          ON l.assigned_to = u.user_id
+          AND l.is_locked = 1
+
+        INNER JOIN customers c
+          ON c.customer_id = l.customer_id
+
+        INNER JOIN vehicles v
+          ON v.vehicle_id = l.vehicle_id
+
+        INNER JOIN lead_status_master ls
+          ON ls.status_id = l.status_id
+
+        LEFT JOIN policies p
+          ON p.vehicle_id = l.vehicle_id
+          AND p.policy_status = 'ACTIVE'
+          AND p.is_active = 1
+
+        LEFT JOIN (
+          SELECT lf1.*
+          FROM lead_followups lf1
+
+          INNER JOIN (
+            SELECT
+              lead_id,
+              MAX(followup_id) AS latest_followup_id
+            FROM lead_followups
+            GROUP BY lead_id
+          ) latest
+            ON latest.latest_followup_id = lf1.followup_id
+
+        ) lf
+          ON lf.lead_id = l.lead_id
+
+        WHERE
+          ${employeeCondition}
+
+        ORDER BY
+          u.name ASC,
+          l.assigned_date DESC,
+          l.created_at DESC
+      `;
+
+        pool.query(sql, params, (err, results) => {
+          if (err) return callback(err);
+
+          callback(null, results);
+        });
+      },
+    );
+  },
   updateEmployeeBatchStatus: (data, callback) => {
     pool.query(
       `UPDATE employee_active_batches
@@ -684,7 +1039,6 @@ WHERE
   },
   updateLeadPolicy: (data, callback) => {
     const policy = data.policy;
-
     pool.query(
       `INSERT INTO policies
     (
@@ -705,10 +1059,18 @@ WHERE
       remarks,
       is_active,
       created_by,
+      paid_amount,
+      discount_amount,
+      sale_date,
+      source_id,
+      customer_pay_type_id,
+      payment_method_id,
+      cp_reference_no,
+      pm_reference_no,
       lead_id
     )
     VALUES
-    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.customer_id,
         data.vehicle_id,
@@ -736,7 +1098,15 @@ WHERE
 
         1,
 
-        data.created_by,
+        policy.created_by,
+        policy.paid_amount,
+        policy.discount_amount,
+        policy.sale_date,
+        policy.source_id,
+        policy.customer_pay_type_id,
+        policy.payment_method_id,
+        policy.cp_reference_no,
+        policy.pm_reference_no,
 
         data.lead_id,
       ],
@@ -1258,14 +1628,10 @@ WHERE
 ORDER BY
     l.assigned_date DESC,
     l.lead_id DESC`;
-    pool.query(
-      sql,
-      [empid],
-      (err, result) => {
-        if (err) return callback(err);
-        callback(null, result);
-      }
-    );
+    pool.query(sql, [empid], (err, result) => {
+      if (err) return callback(err);
+      callback(null, result);
+    });
   },
 
   getActiveEmployees: (callback) => {
@@ -1547,16 +1913,11 @@ l.lead_id
   // },
 
   releaseBatchLock: (data, callback) => {
-    const {
-      employee_id,
-      batch_no,
-      unlocked_by
-    } = data;
+    const { employee_id, batch_no, unlocked_by } = data;
 
     pool.getConnection((err, connection) => {
       if (err) return callback(err);
       connection.beginTransaction((err) => {
-
         if (err) {
           connection.release();
           return callback(err);
@@ -1571,7 +1932,6 @@ l.lead_id
                 `,
           [employee_id],
           (err) => {
-
             if (err) {
               return connection.rollback(() => {
                 connection.release();
@@ -1589,13 +1949,8 @@ l.lead_id
                         )
                         VALUES (?,?,?)
                         `,
-              [
-                employee_id,
-                batch_no,
-                unlocked_by
-              ],
+              [employee_id, batch_no, unlocked_by],
               (err, result) => {
-
                 if (err) {
                   return connection.rollback(() => {
                     connection.release();
@@ -1604,7 +1959,6 @@ l.lead_id
                 }
 
                 connection.commit((err) => {
-
                   if (err) {
                     return connection.rollback(() => {
                       connection.release();
@@ -1615,20 +1969,130 @@ l.lead_id
                   connection.release();
                   callback(null, result);
                 });
-
-              }
+              },
             );
-
-          }
+          },
         );
-
       });
-
     });
-
   },
-  getTopEmployees: (callback) => {
+  //   getTopEmployees: (callback) => {
 
+  //     pool.query(
+  //       `
+  // SELECT
+  //     ROW_NUMBER() OVER (
+  //         ORDER BY achievement_percentage DESC
+  //     ) AS rank_no,
+
+  //     employee_id,
+  //     employee_code,
+  //     name,
+
+  //     normal_target,
+  //     renewal_target,
+  //     total_calls,
+
+  //     normal_sold,
+  //     renewal_sold,
+  //     total_sold,
+
+  //     achievement_percentage
+
+  // FROM (
+
+  //     SELECT
+  //         etm.employee_id,
+  //         u.employee_id AS employee_code,
+  //         u.name AS name,
+
+  //         etm.normal_target,
+  //         etm.renewal_target,
+
+  //         (etm.normal_target + etm.renewal_target) AS total_calls,
+
+  //         COUNT(
+  //             CASE
+  //                 WHEN l.status_id = 5
+  //                 AND c.is_previous_customer = 0
+  //                 THEN 1
+  //             END
+  //         ) AS normal_sold,
+
+  //         COUNT(
+  //             CASE
+  //                 WHEN l.status_id = 5
+  //                 AND c.is_previous_customer = 1
+  //                 THEN 1
+  //             END
+  //         ) AS renewal_sold,
+
+  //         COUNT(
+  //             CASE
+  //                 WHEN l.status_id = 5
+  //                 THEN 1
+  //             END
+  //         ) AS total_sold,
+
+  //         ROUND(
+  //             (
+  //                 COUNT(
+  //                     CASE
+  //                         WHEN l.status_id = 5 THEN 1
+  //                     END
+  //                 )
+  //                 /
+  //                 NULLIF(
+  //                     (etm.normal_target + etm.renewal_target),
+  //                     0
+  //                 )
+  //             ) * 100,
+  //             2
+  //         ) AS achievement_percentage
+
+  //     FROM employee_target_master etm
+
+  // JOIN users_master u
+  //     ON u.user_id = etm.employee_id
+  //     AND u.is_active = 1
+  //     AND u.is_admin = 0
+
+  //     LEFT JOIN leads l
+  //         ON l.assigned_to = etm.employee_id
+  //         AND YEAR(l.assigned_date) = YEAR(CURDATE())
+  //         AND MONTH(l.assigned_date) = MONTH(CURDATE())
+
+  //     LEFT JOIN customers c
+  //         ON c.customer_id = l.customer_id
+
+  //     WHERE
+  //         etm.is_active = 1
+  //         AND YEAR(etm.target_date) = YEAR(CURDATE())
+  //         AND MONTH(etm.target_date) = MONTH(CURDATE())
+
+  //     GROUP BY
+  //         etm.employee_id,
+  //         u.employee_id,
+  //         u.name,
+  //         etm.normal_target,
+  //         etm.renewal_target
+
+  // ) AS sales_performance
+
+  // ORDER BY
+  //     rank_no
+
+  // LIMIT 5
+  // `,
+  //       [],
+  //       (err, result) => {
+  //         if (err) return callback(err);
+
+  //         callback(null, result);
+  //       },
+  //     );
+  //   },
+  getTopEmployees: (callback) => {
     pool.query(
       `
 SELECT
@@ -1660,65 +2124,125 @@ FROM (
         etm.normal_target,
         etm.renewal_target,
 
-        (etm.normal_target + etm.renewal_target) AS total_calls,
+        (
+            etm.normal_target +
+            etm.renewal_target
+        ) AS total_calls,
 
+        /* =========================================
+           NORMAL CUSTOMER CAPTURED
+           ========================================= */
         COUNT(
-            CASE
-                WHEN l.status_id = 5
-                AND c.is_previous_customer = 0
-                THEN 1
+            DISTINCT CASE
+                WHEN c.is_previous_customer = 0
+                THEN p.policy_id
             END
         ) AS normal_sold,
 
+        /* =========================================
+           PREVIOUS CUSTOMER / RENEWAL CAPTURED
+           ========================================= */
         COUNT(
-            CASE
-                WHEN l.status_id = 5
-                AND c.is_previous_customer = 1
-                THEN 1
+            DISTINCT CASE
+                WHEN c.is_previous_customer = 1
+                THEN p.policy_id
             END
         ) AS renewal_sold,
 
+        /* =========================================
+           TOTAL CAPTURED
+           ========================================= */
         COUNT(
-            CASE
-                WHEN l.status_id = 5
-                THEN 1
-            END
+            DISTINCT p.policy_id
         ) AS total_sold,
 
-        ROUND(
-            (
-                COUNT(
-                    CASE
-                        WHEN l.status_id = 5 THEN 1
-                    END
-                )
-                /
-                NULLIF(
-                    (etm.normal_target + etm.renewal_target),
-                    0
-                )
-            ) * 100,
-            2
+        /* =========================================
+           ACHIEVEMENT %
+           ========================================= */
+        COALESCE(
+            ROUND(
+                (
+                    COUNT(
+                        DISTINCT p.policy_id
+                    )
+                    /
+                    NULLIF(
+                        (
+                            etm.normal_target +
+                            etm.renewal_target
+                        ),
+                        0
+                    )
+                ) * 100,
+                2
+            ),
+            0
         ) AS achievement_percentage
 
     FROM employee_target_master etm
 
-JOIN users_master u
-    ON u.user_id = etm.employee_id
-    AND u.is_active = 1
-    AND u.is_admin = 0
+    /* =========================================
+       EMPLOYEE
+       ========================================= */
+    JOIN users_master u
+        ON u.user_id = etm.employee_id
+        AND u.is_active = 1
+        AND u.is_admin = 0
 
+    /* =========================================
+       LEADS
+
+       LEFT JOIN means employee will still appear
+       even when there is no captured lead.
+       ========================================= */
     LEFT JOIN leads l
         ON l.assigned_to = etm.employee_id
-        AND YEAR(l.assigned_date) = YEAR(CURDATE())
-        AND MONTH(l.assigned_date) = MONTH(CURDATE())
+        AND l.status_id = 5
 
+    /* =========================================
+       CUSTOMER
+       ========================================= */
     LEFT JOIN customers c
         ON c.customer_id = l.customer_id
 
+    /* =========================================
+       POLICY
+
+       LEFT JOIN means employee will still appear
+       even when there is no policy.
+       ========================================= */
+    LEFT JOIN policies p
+        ON p.customer_id = c.customer_id
+        AND p.is_active = 1
+
+        /* =====================================
+           CURRENT MONTH CAPTURE
+
+           sale_date exists -> sale_date
+           sale_date NULL   -> created_at
+           ===================================== */
+        AND YEAR(
+            COALESCE(
+                p.sale_date,
+                DATE(p.created_at)
+            )
+        ) = YEAR(CURDATE())
+
+        AND MONTH(
+            COALESCE(
+                p.sale_date,
+                DATE(p.created_at)
+            )
+        ) = MONTH(CURDATE())
+
+    /* =========================================
+       CURRENT MONTH TARGET
+       ========================================= */
     WHERE
         etm.is_active = 1
+
         AND YEAR(etm.target_date) = YEAR(CURDATE())
+
         AND MONTH(etm.target_date) = MONTH(CURDATE())
 
     GROUP BY
@@ -1728,10 +2252,10 @@ JOIN users_master u
         etm.normal_target,
         etm.renewal_target
 
-) AS sales_performance
+) AS capture_performance
 
 ORDER BY
-    rank_no
+    achievement_percentage DESC
 
 LIMIT 5
 `,
@@ -1743,7 +2267,6 @@ LIMIT 5
       },
     );
   },
-
 
   getEmployeeActivity: (empId, callback) => {
     const sql = `
@@ -1841,7 +2364,7 @@ ORDER BY
           FROM employee_active_batches
           WHERE empid = ?
           `,
-            [selectedEmployee]
+            [selectedEmployee],
           );
 
           const batchNo = nextBatch[0].batchNo;
@@ -1851,7 +2374,6 @@ ORDER BY
           // ----------------------------------------------------
 
           for (const lead of leads) {
-
             // 1. Assignment History
             await connection.promise().query(
               `
@@ -1871,7 +2393,7 @@ ORDER BY
                 selectedEmployee,
                 assigned_by,
                 remarks,
-              ]
+              ],
             );
 
             // 2. Update Lead
@@ -1894,7 +2416,7 @@ ORDER BY
                 is_locked,
                 work_status,
                 lead.lead_id,
-              ]
+              ],
             );
 
             // 3. Close previous employee batch
@@ -1909,10 +2431,7 @@ ORDER BY
               AND empid = ?
               AND is_active = 1
             `,
-              [
-                lead.lead_id,
-                lead.user_id,
-              ]
+              [lead.lead_id, lead.user_id],
             );
 
             // 4. Create NEW batch entry for new employee
@@ -1932,11 +2451,7 @@ ORDER BY
               ?, ?, ?, 'ACTIVE','REALLOCATION', 1
             )
             `,
-              [
-                selectedEmployee,
-                lead.lead_id,
-                batchNo,
-              ]
+              [selectedEmployee, lead.lead_id, batchNo],
             );
           }
 
@@ -1955,7 +2470,6 @@ ORDER BY
               message: "Lead(s) reallocated successfully.",
             });
           });
-
         } catch (error) {
           connection.rollback(() => {
             connection.release();
@@ -1965,7 +2479,6 @@ ORDER BY
       });
     });
   },
-
 
   getCustomerPolicyDetail: (customerid, callback) => {
     const sql = `
@@ -2039,14 +2552,10 @@ ORDER BY
 
         ORDER BY p.expiry_date DESC
 `;
-    pool.query(
-      sql,
-      [customerid],
-      (err, result) => {
-        if (err) return callback(err);
-        callback(null, result);
-      },
-    );
+    pool.query(sql, [customerid], (err, result) => {
+      if (err) return callback(err);
+      callback(null, result);
+    });
   },
 
   getCallsLeftCount: (empid, callback) => {
@@ -2107,7 +2616,7 @@ ORDER BY
             FROM employee_active_batches
             WHERE empid = ?
             `,
-              [empId]
+              [empId],
             );
 
             batchMap[empId] = batchResult[0].batchNo;
@@ -2121,8 +2630,7 @@ ORDER BY
             const lead = leads[i];
 
             // Pick Employee (Round Robin)
-            const employeeId =
-              selectedEmployees[i % selectedEmployees.length];
+            const employeeId = selectedEmployees[i % selectedEmployees.length];
 
             const batchNo = batchMap[employeeId];
 
@@ -2145,13 +2653,7 @@ ORDER BY
                 ?,?,?,?,?
             )
             `,
-              [
-                lead.lead_id,
-                lead.user_id,
-                employeeId,
-                assigned_by,
-                remarks,
-              ]
+              [lead.lead_id, lead.user_id, employeeId, assigned_by, remarks],
             );
 
             // ------------------------------------------
@@ -2171,13 +2673,7 @@ ORDER BY
                 work_status = ?
             WHERE lead_id = ?
             `,
-              [
-                employeeId,
-                assigned_by,
-                is_locked,
-                work_status,
-                lead.lead_id,
-              ]
+              [employeeId, assigned_by, is_locked, work_status, lead.lead_id],
             );
 
             // ------------------------------------------
@@ -2195,10 +2691,7 @@ ORDER BY
                 AND empid = ?
                 AND is_active = 1
             `,
-              [
-                lead.lead_id,
-                lead.user_id,
-              ]
+              [lead.lead_id, lead.user_id],
             );
 
             // ------------------------------------------
@@ -2221,11 +2714,7 @@ ORDER BY
                 ?, ?, ?, 'ACTIVE', 'REALLOCATION', 1
             )
             `,
-              [
-                employeeId,
-                lead.lead_id,
-                batchNo,
-              ]
+              [employeeId, lead.lead_id, batchNo],
             );
           }
           // ------------------------------------------
@@ -2249,7 +2738,6 @@ ORDER BY
              among ${selectedEmployees.length} employee(s).`,
             });
           });
-
         } catch (error) {
           connection.rollback(() => {
             connection.release();
@@ -2259,7 +2747,12 @@ ORDER BY
       });
     });
   },
-  updateRegistrationDate: (vehicle_id, edited_by, registration_date, callback) => {
+  updateRegistrationDate: (
+    vehicle_id,
+    edited_by,
+    registration_date,
+    callback,
+  ) => {
     pool.query(
       `UPDATE vehicles
      SET
@@ -2273,7 +2766,446 @@ ORDER BY
       },
     );
   },
+  getEmployyeCaptuerCount: (empId, callback) => {
+    pool.query(
+      `SELECT COUNT(*) AS capture_count
+      FROM policies p
+      WHERE p.created_by = ?
+        AND p.policy_status = "ACTIVE"
+        AND p.sale_date IS NOT NULL
+        AND MONTH(p.sale_date) = MONTH(CURDATE())
+        AND YEAR(p.sale_date) = YEAR(CURDATE())`,
+      [empId],
+      (err, result) => {
+        if (err) return callback(err, null);
+        callback(null, result);
+      },
+    );
+  },
+  getPolicyDetails: (customerId, policyId, callback) => {
+    pool.query(
+      `
+SELECT
+    p.*,
+
+    -- Customer
+    c.customer_name,
+    c.mobile_number_1,
+    c.mobile_number_2,
+    c.email,
+    c.address,
+    c.city,
+    c.district,
+    c.state,
+    c.pincode,
+
+    -- Vehicle
+    v.registration_number,
+    v.model,
+    v.engine_number,
+    v.chassis_number,
+    v.rto,
+    v.registration_date,
+    v.vehicle_maker,
+    v.vehicle_class,
+    v.vehicle_category,
+    v.fuel_type,
+    v.seat_capacity,
+
+    -- Insurance Company
+    ic.company_name,
+
+    -- Customer Pay Type
+    cpt.pay_type_name,
+
+    -- Payment Method
+    pmm.payment_method_name,
+    pmm.payment_type,
+
+    -- Lead
+    l.assigned_to,
+    l.status_id,
+
+    -- Source
+    s.source_name
+
+FROM policies p
+
+INNER JOIN customers c
+    ON c.customer_id = p.customer_id
+
+INNER JOIN vehicles v
+    ON v.vehicle_id = p.vehicle_id
+
+LEFT JOIN insurance_companies ic
+    ON ic.insurance_company_id = p.insurance_company_id
+
+LEFT JOIN customer_pay_type_master cpt
+    ON cpt.customer_pay_type_id = p.customer_pay_type_id
+
+LEFT JOIN payment_method_master pmm
+    ON pmm.payment_method_id = p.payment_method_id
+
+LEFT JOIN leads l
+    ON l.lead_id = p.lead_id
+
+LEFT JOIN policy_source_master s
+    ON s.source_id = p.source_id
+
+WHERE p.policy_id = ?
+AND p.customer_id = ?`,
+      [policyId, customerId],
+      (err, result) => {
+        if (err) return callback(err, null);
+        callback(null, result);
+      },
+    );
+  },
+  updateTransferDetails: (data, callback) => {
+    pool.getConnection((connectionError, connection) => {
+      if (connectionError) {
+        return callback(connectionError);
+      }
+
+      connection.beginTransaction((transactionError) => {
+        if (transactionError) {
+          connection.release();
+          return callback(transactionError);
+        }
+
+        const {
+          lead_id,
+          customer_id,
+          vehicle_id,
+          new_status_id,
+          new_user_id,
+          requires_followup,
+          call_outcome,
+          remarks,
+          next_followup_date,
+          status_change_reason,
+          created_by,
+          policyrequierd,
+          policy,
+        } = data;
+
+        // --------------------------------------------------
+        // STEP 1
+        // Get current lead details
+        // --------------------------------------------------
+        const leadQuery = `
+                SELECT
+                    lead_id,
+                    customer_id,
+                    vehicle_id,
+                    status_id,
+                    assigned_to
+                FROM leads
+                WHERE lead_id = ?
+                FOR UPDATE
+            `;
+
+        connection.query(leadQuery, [lead_id], (leadError, leadRows) => {
+          if (leadError) {
+            return connection.rollback(() => {
+              connection.release();
+              callback(leadError);
+            });
+          }
+
+          if (!leadRows.length) {
+            return connection.rollback(() => {
+              connection.release();
+              callback(new Error("Lead not found"));
+            });
+          }
+
+          const lead = leadRows[0];
+
+          const old_status_id = lead.status_id;
+
+          // Use database values instead of trusting
+          // customer_id / vehicle_id from frontend
+          const final_customer_id = lead.customer_id || customer_id;
+
+          const final_vehicle_id = lead.vehicle_id || vehicle_id;
+
+          // --------------------------------------------------
+          // STEP 2
+          // Update lead status + assignment
+          // --------------------------------------------------
+          const updateLeadQuery = `
+                        UPDATE leads
+                        SET
+                            customer_id = ?,
+                            vehicle_id = ?,
+                            status_id = ?,
+                            assigned_to = ?,
+                            remarks = ?,
+                            is_locked = 1,
+                            work_status = 'COMPLETED',
+                            edited_by = ?,
+                            status_changed_at = NOW()
+                        WHERE lead_id = ?
+                    `;
+
+          connection.query(
+            updateLeadQuery,
+            [
+              final_customer_id,
+              final_vehicle_id,
+              new_status_id,
+              new_user_id,
+              remarks || null,
+              created_by,
+              lead_id,
+            ],
+            (updateLeadError) => {
+              if (updateLeadError) {
+                return connection.rollback(() => {
+                  connection.release();
+                  callback(updateLeadError);
+                });
+              }
+
+              // --------------------------------------------------
+              // STEP 3
+              // Insert follow-up if required
+              // --------------------------------------------------
+              const insertFollowUp = () => {
+                if (Number(requires_followup) !== 1) {
+                  return insertPolicy();
+                }
+
+                const followUpQuery = `
+                                    INSERT INTO lead_followups (
+                                        lead_id,
+                                        status_id,
+                                        call_outcome,
+                                        remarks,
+                                        next_followup_date,
+                                        created_by
+                                    )
+                                    VALUES (?, ?, ?, ?, ?, ?)
+                                `;
+
+                connection.query(
+                  followUpQuery,
+                  [
+                    lead_id,
+                    new_status_id,
+                    call_outcome || null,
+                    remarks || null,
+                    next_followup_date || null,
+                    created_by,
+                  ],
+                  (followUpError) => {
+                    if (followUpError) {
+                      return connection.rollback(() => {
+                        connection.release();
+                        callback(followUpError);
+                      });
+                    }
+
+                    insertPolicy();
+                  },
+                );
+              };
+
+              // --------------------------------------------------
+              // STEP 4
+              // Insert policy if required
+              // --------------------------------------------------
+              const insertPolicy = () => {
+                if (Number(policyrequierd) !== 1) {
+                  return insertHistory();
+                }
+
+                if (!policy) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    callback(new Error("Policy details are required"));
+                  });
+                }
+
+                const policyQuery = `
+                                    INSERT INTO policies (
+                                        customer_id,
+                                        vehicle_id,
+                                        insurance_company_id,
+                                        policy_number,
+                                        policy_type,
+                                        renewal_year,
+                                        renewal_cycle,
+                                        previous_policy_id,
+                                        start_date,
+                                        expiry_date,
+                                        premium_amount,
+                                        insured_declared_value,
+                                        reminder_days,
+                                        policy_status,
+                                        remarks,
+                                        is_active,
+                                        created_by,
+                                        paid_amount,
+                                        discount_amount,
+                                        sale_date,
+                                        source_id,
+                                        customer_pay_type_id,
+                                        payment_method_id,
+                                        cp_reference_no,
+                                        pm_reference_no,
+                                        lead_id
+                                    )
+                                    VALUES (
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        'ACTIVE',
+                                        ?,
+                                        1,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?,
+                                        ?
+                                    )
+                                `;
+
+                connection.query(
+                  policyQuery,
+                  [
+                    final_customer_id,
+                    final_vehicle_id,
+                    policy.insurance_company_id || null,
+                    policy.policy_number || null,
+
+                    // Keep this null if you don't
+                    // currently send policy_type
+                    policy.policy_type || null,
+
+                    policy.renewal_year || null,
+                    policy.renewal_cycle || null,
+
+                    // Previous policy
+                    policy.previous_policy_id || null,
+
+                    policy.start_date || null,
+                    policy.expiry_date || null,
+                    policy.premium_amount || null,
+                    policy.insured_declared_value || null,
+                    policy.reminder_days || null,
+
+                    policy.remarks || null,
+                    policy.created_by || created_by,
+
+                    policy.paid_amount || null,
+                    policy.discount_amount || null,
+                    policy.sale_date || null,
+                    policy.source_id || null,
+
+                    policy.customer_pay_type_id || null,
+                    policy.payment_method_id || null,
+                    policy.cp_reference_no || null,
+                    policy.pm_reference_no || null,
+
+                    lead_id,
+                  ],
+                  (policyError, policyResult) => {
+                    if (policyError) {
+                      return connection.rollback(() => {
+                        connection.release();
+                        callback(policyError);
+                      });
+                    }
+
+                    insertHistory(policyResult.insertId);
+                  },
+                );
+              };
+
+              // --------------------------------------------------
+              // STEP 5
+              // Insert status history
+              // --------------------------------------------------
+              const insertHistory = (policy_id = null) => {
+                const historyQuery = `
+                                    INSERT INTO lead_status_history (
+                                        lead_id,
+                                        old_status_id,
+                                        new_status_id,
+                                        remarks,
+                                        status_change_reason,
+                                        changed_by
+                                    )
+                                    VALUES (?, ?, ?, ?, ?, ?)
+                                `;
+
+                connection.query(
+                  historyQuery,
+                  [
+                    lead_id,
+                    old_status_id,
+                    new_status_id,
+                    remarks || null,
+                    status_change_reason || "Status Updated",
+                    created_by,
+                  ],
+                  (historyError) => {
+                    if (historyError) {
+                      return connection.rollback(() => {
+                        connection.release();
+                        callback(historyError);
+                      });
+                    }
+
+                    // --------------------------------------------------
+                    // STEP 6
+                    // Commit everything
+                    // --------------------------------------------------
+                    connection.commit((commitError) => {
+                      if (commitError) {
+                        return connection.rollback(() => {
+                          connection.release();
+                          callback(commitError);
+                        });
+                      }
+
+                      connection.release();
+
+                      callback(null, {
+                        lead_id,
+                        old_status_id,
+                        new_status_id,
+                        assigned_to: new_user_id,
+                        policy_id,
+                      });
+                    });
+                  },
+                );
+              };
+
+              // Start follow-up -> policy -> history
+              insertFollowUp();
+            },
+          );
+        });
+      });
+    });
+  },
 };
-
-
-

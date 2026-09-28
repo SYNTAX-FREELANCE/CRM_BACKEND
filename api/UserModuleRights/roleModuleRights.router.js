@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const roleModuleRightsController = require("./roleModuleRights.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // Get existing module rights for a role
 router.get(

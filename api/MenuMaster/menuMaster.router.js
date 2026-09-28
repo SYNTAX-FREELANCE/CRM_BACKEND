@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const menuMasterController = require("./menuMaster.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 
 // ==================== MENU MASTER ROUTES ====================

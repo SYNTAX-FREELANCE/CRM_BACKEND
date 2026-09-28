@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const vehicleTypeMasterController = require("./vehicleTypeMaster.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // ==================== VEHICLE TYPE MASTER ROUTES ====================
 

@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const insuranceCompanyController = require("./insuranceCompany.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // ==================== INSURANCE COMPANY MASTER ROUTES ====================
 

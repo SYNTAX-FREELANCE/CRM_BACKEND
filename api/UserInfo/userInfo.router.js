@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const userInfoController = require("./userInfo.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // 1. Fetch employee list (Admin and Team Lead use cases)
 router.get("/employees", verifyAccessToken, userInfoController.getEmployees);

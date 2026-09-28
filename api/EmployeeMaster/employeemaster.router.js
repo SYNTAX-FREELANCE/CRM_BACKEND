@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const userCreationController = require("../EmployeeMaster/employeemaster.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 const multer = require("multer");
 const uploadMemory = multer({ storage: multer.memoryStorage() });
 const {

@@ -2,7 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
-const createUpload = require("../../Middleware/multer");
+const createUpload = require("../../middleware/multer");
 
 // C Drive Upload Paths
 const AADHAR_UPLOAD_DIR = "C:/uploads/users/aadhar";

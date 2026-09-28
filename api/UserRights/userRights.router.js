@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const userRightsController = require("./userRights.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // 1. Get menus by module ID
 router.get("/menus/:moduleId", verifyAccessToken, userRightsController.getMenusByModule);

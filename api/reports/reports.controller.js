@@ -9,7 +9,7 @@ module.exports = {
       if (!fromDate || !toDate) {
         return res.status(200).json({
           success: 0,
-          message: "fromDate and toDate parameters are required"
+          message: "fromDate and toDate parameters are required",
         });
       }
 
@@ -18,21 +18,21 @@ module.exports = {
           console.error("getPolicyReport error:", err);
           return res.status(500).json({
             success: 0,
-            message: "Something went wrong while retrieving report data"
+            message: "Something went wrong while retrieving report data",
           });
         }
 
         return res.status(200).json({
           success: 1,
           message: "Policy report retrieved successfully",
-          data: results
+          data: results,
         });
       });
     } catch (error) {
       console.error("getPolicyReport controller error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Internal server error"
+        message: "Internal server error",
       });
     }
   },
@@ -42,37 +42,104 @@ module.exports = {
       const { fromDate, toDate } = req.query;
 
       if (!fromDate || !toDate) {
-        return res.status(400).send("fromDate and toDate parameters are required");
+        return res
+          .status(400)
+          .send("fromDate and toDate parameters are required");
       }
 
       reportsService.getPolicyReportData(fromDate, toDate, (err, results) => {
         if (err) {
           console.error("exportPolicyReportExcel error:", err);
-          return res.status(500).send("Something went wrong while generating the report");
+
+          return res
+            .status(500)
+            .send("Something went wrong while generating the report");
         }
 
-        // Map data to match the UI table columns
-        const mappedData = results.map(row => ({
-          "Customer Name": row.customer_name || "N/A",
-          "Vehicle ID": row.vehicle_id || "N/A",
-          "Status Name": row.status_name || "N/A",
-          "Assigned To": row.assigned_to || "Unassigned",
-          "Assigned Date": row.assigned_date ? new Date(row.assigned_date).toLocaleDateString() : "N/A",
-          "Remarks": row.remarks || ""
+        // -----------------------------------------
+        // MAP DATA TO EXCEL COLUMNS
+        // -----------------------------------------
+
+        const mappedData = results.map((row) => ({
+          Customer: row.customer_name || "N/A",
+
+          Vehicle: row.registration_number || "N/A",
+
+          Employee: row.employee_name || "N/A",
+
+          "Policy Number": row.policy_number || "N/A",
+
+          Premium: row.premium_amount ? Number(row.premium_amount) : 0,
+
+          "Paid Amount": row.paid_amount ? Number(row.paid_amount) : 0,
+
+          Discount: row.discount_amount ? Number(row.discount_amount) : 0,
+
+          "Sale Date": row.sale_date
+            ? new Date(row.sale_date).toLocaleDateString("en-IN")
+            : "N/A",
+
+          Remarks: row.remarks || "",
         }));
 
+        // -----------------------------------------
+        // CREATE WORKBOOK
+        // -----------------------------------------
+
         const workbook = xlsx.utils.book_new();
+
         const worksheet = xlsx.utils.json_to_sheet(mappedData);
+
+        // -----------------------------------------
+        // COLUMN WIDTHS
+        // -----------------------------------------
+
+        worksheet["!cols"] = [
+          { wch: 25 }, // Customer
+          { wch: 18 }, // Vehicle
+          { wch: 20 }, // Employee
+          { wch: 20 }, // Policy Number
+          { wch: 15 }, // Premium
+          { wch: 15 }, // Paid Amount
+          { wch: 15 }, // Discount
+          { wch: 15 }, // Sale Date
+          { wch: 45 }, // Remarks
+        ];
+
+        // -----------------------------------------
+        // ADD SHEET
+        // -----------------------------------------
+
         xlsx.utils.book_append_sheet(workbook, worksheet, "Policy Report");
 
-        const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+        // -----------------------------------------
+        // CREATE BUFFER
+        // -----------------------------------------
 
-        res.setHeader("Content-Disposition", `attachment; filename="policy_report_${fromDate}_to_${toDate}.xlsx"`);
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        const buffer = xlsx.write(workbook, {
+          type: "buffer",
+          bookType: "xlsx",
+        });
+
+        // -----------------------------------------
+        // RESPONSE HEADERS
+        // -----------------------------------------
+
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="policy_report_${fromDate}_to_${toDate}.xlsx"`,
+        );
+
+        res.setHeader(
+          "Content-Type",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        );
+
         return res.send(buffer);
       });
     } catch (error) {
       console.error("exportPolicyReportExcel controller error:", error);
+
       return res.status(500).send("Internal server error");
     }
   },
@@ -84,30 +151,36 @@ module.exports = {
       if (!employeeId) {
         return res.status(200).json({
           success: 0,
-          message: "employeeId parameter is required"
+          message: "employeeId parameter is required",
         });
       }
 
-      reportsService.getEmployeePerformanceData(employeeId, fromDate, toDate, (err, results) => {
-        if (err) {
-          console.error("getEmployeePerformance error:", err);
-          return res.status(500).json({
-            success: 0,
-            message: "Something went wrong while retrieving performance report data"
-          });
-        }
+      reportsService.getEmployeePerformanceData(
+        employeeId,
+        fromDate,
+        toDate,
+        (err, results) => {
+          if (err) {
+            console.error("getEmployeePerformance error:", err);
+            return res.status(500).json({
+              success: 0,
+              message:
+                "Something went wrong while retrieving performance report data",
+            });
+          }
 
-        return res.status(200).json({
-          success: 1,
-          message: "Employee performance report retrieved successfully",
-          data: results
-        });
-      });
+          return res.status(200).json({
+            success: 1,
+            message: "Employee performance report retrieved successfully",
+            data: results,
+          });
+        },
+      );
     } catch (error) {
       console.error("getEmployeePerformance controller error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Internal server error"
+        message: "Internal server error",
       });
     }
   },
@@ -126,14 +199,11 @@ module.exports = {
         toDate,
         (err, results) => {
           if (err) {
-            console.error(
-              "exportEmployeePerformanceExcel error:",
-              err
-            );
+            console.error("exportEmployeePerformanceExcel error:", err);
 
-            return res.status(500).send(
-              "Something went wrong while generating the report"
-            );
+            return res
+              .status(500)
+              .send("Something went wrong while generating the report");
           }
 
           /* =========================================
@@ -141,9 +211,11 @@ module.exports = {
              ========================================= */
 
           if (!results || results.length === 0) {
-            return res.status(404).send(
-              "No performance data found for the selected employee and date range"
-            );
+            return res
+              .status(404)
+              .send(
+                "No performance data found for the selected employee and date range",
+              );
           }
 
           /*
@@ -177,7 +249,7 @@ module.exports = {
             [
               fromDate && toDate
                 ? `Period: ${fromDate} to ${toDate}`
-                : "Period: All Time"
+                : "Period: All Time",
             ],
 
             [],
@@ -203,11 +275,11 @@ module.exports = {
             [
               "Total Status Outcomes",
               capturedCount +
-              appointmentCount +
-              quoteCount +
-              callbackCount +
-              lostCount
-            ]
+                appointmentCount +
+                quoteCount +
+                callbackCount +
+                lostCount,
+            ],
           ];
 
           /* =========================================
@@ -218,15 +290,12 @@ module.exports = {
 
           const worksheet = xlsx.utils.aoa_to_sheet(summaryRows);
 
-          worksheet["!cols"] = [
-            { wch: 30 },
-            { wch: 20 }
-          ];
+          worksheet["!cols"] = [{ wch: 30 }, { wch: 20 }];
 
           xlsx.utils.book_append_sheet(
             workbook,
             worksheet,
-            "Employee Performance"
+            "Employee Performance",
           );
 
           /* =========================================
@@ -235,27 +304,24 @@ module.exports = {
 
           const buffer = xlsx.write(workbook, {
             type: "buffer",
-            bookType: "xlsx"
+            bookType: "xlsx",
           });
 
           res.setHeader(
             "Content-Disposition",
-            `attachment; filename="employee_performance_${employeeCode}.xlsx"`
+            `attachment; filename="employee_performance_${employeeCode}.xlsx"`,
           );
 
           res.setHeader(
             "Content-Type",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           );
 
           return res.send(buffer);
-        }
+        },
       );
     } catch (error) {
-      console.error(
-        "exportEmployeePerformanceExcel controller error:",
-        error
-      );
+      console.error("exportEmployeePerformanceExcel controller error:", error);
 
       return res.status(500).send("Internal server error");
     }
@@ -265,26 +331,31 @@ module.exports = {
     try {
       const { fromDate, toDate } = req.query;
 
-      reportsService.getAllEmployeePerformanceData(fromDate, toDate, (err, results) => {
-        if (err) {
-          console.error("getAllEmployeePerformance error:", err);
-          return res.status(500).json({
-            success: 0,
-            message: "Something went wrong while retrieving performance report data"
-          });
-        }
+      reportsService.getAllEmployeePerformanceData(
+        fromDate,
+        toDate,
+        (err, results) => {
+          if (err) {
+            console.error("getAllEmployeePerformance error:", err);
+            return res.status(500).json({
+              success: 0,
+              message:
+                "Something went wrong while retrieving performance report data",
+            });
+          }
 
-        return res.status(200).json({
-          success: 1,
-          message: "Performance report retrieved successfully",
-          data: results
-        });
-      });
+          return res.status(200).json({
+            success: 1,
+            message: "Performance report retrieved successfully",
+            data: results,
+          });
+        },
+      );
     } catch (error) {
       console.error("getAllEmployeePerformance controller error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Internal server error"
+        message: "Internal server error",
       });
     }
   },
@@ -298,14 +369,11 @@ module.exports = {
         toDate,
         (err, results) => {
           if (err) {
-            console.error(
-              "exportAllEmployeePerformanceExcel error:",
-              err
-            );
+            console.error("exportAllEmployeePerformanceExcel error:", err);
 
-            return res.status(500).send(
-              "Something went wrong while generating the report"
-            );
+            return res
+              .status(500)
+              .send("Something went wrong while generating the report");
           }
 
           /* =========================================
@@ -342,7 +410,7 @@ module.exports = {
             Number(row.appointment_count || 0),
             Number(row.quote_count || 0),
             Number(row.callback_count || 0),
-            Number(row.lost_count || 0)
+            Number(row.lost_count || 0),
           ]);
 
           /* =========================================
@@ -355,7 +423,7 @@ module.exports = {
             [
               fromDate && toDate
                 ? `Period: ${fromDate} to ${toDate}`
-                : "Period: All Time"
+                : "Period: All Time",
             ],
 
             [],
@@ -369,7 +437,7 @@ module.exports = {
               "Appointment",
               "Quote",
               "Callback",
-              "Lost"
+              "Lost",
             ],
 
             ...empSummaryRows,
@@ -381,18 +449,15 @@ module.exports = {
               grandAppointment,
               grandQuote,
               grandCallback,
-              grandLost
+              grandLost,
             ],
 
-            []
+            [],
           ];
-
 
           const workbook = xlsx.utils.book_new();
 
-          const worksheet = xlsx.utils.aoa_to_sheet([
-            ...summaryRows,
-          ]);
+          const worksheet = xlsx.utils.aoa_to_sheet([...summaryRows]);
 
           /* =========================================
              COLUMN WIDTHS
@@ -405,13 +470,13 @@ module.exports = {
             { wch: 18 },
             { wch: 18 },
             { wch: 18 },
-            { wch: 18 }
+            { wch: 18 },
           ];
 
           xlsx.utils.book_append_sheet(
             workbook,
             worksheet,
-            "Employee Performance"
+            "Employee Performance",
           );
 
           /* =========================================
@@ -420,26 +485,26 @@ module.exports = {
 
           const buffer = xlsx.write(workbook, {
             type: "buffer",
-            bookType: "xlsx"
+            bookType: "xlsx",
           });
 
           res.setHeader(
             "Content-Disposition",
-            `attachment; filename="all_employee_performance.xlsx"`
+            `attachment; filename="all_employee_performance.xlsx"`,
           );
 
           res.setHeader(
             "Content-Type",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           );
 
           return res.send(buffer);
-        }
+        },
       );
     } catch (error) {
       console.error(
         "exportAllEmployeePerformanceExcel controller error:",
-        error
+        error,
       );
 
       return res.status(500).send("Internal server error");
@@ -453,30 +518,36 @@ module.exports = {
       if (!employeeId || !fromDate || !toDate) {
         return res.status(200).json({
           success: 0,
-          message: "employeeId, fromDate and toDate parameters are required"
+          message: "employeeId, fromDate and toDate parameters are required",
         });
       }
 
-      reportsService.getEmployeeAttendanceData(employeeId, fromDate, toDate, (err, results) => {
-        if (err) {
-          console.error("getEmployeeAttendance error:", err);
-          return res.status(500).json({
-            success: 0,
-            message: "Something went wrong while retrieving attendance report data"
-          });
-        }
+      reportsService.getEmployeeAttendanceData(
+        employeeId,
+        fromDate,
+        toDate,
+        (err, results) => {
+          if (err) {
+            console.error("getEmployeeAttendance error:", err);
+            return res.status(500).json({
+              success: 0,
+              message:
+                "Something went wrong while retrieving attendance report data",
+            });
+          }
 
-        return res.status(200).json({
-          success: 1,
-          message: "Employee attendance report retrieved successfully",
-          data: results
-        });
-      });
+          return res.status(200).json({
+            success: 1,
+            message: "Employee attendance report retrieved successfully",
+            data: results,
+          });
+        },
+      );
     } catch (error) {
       console.error("getEmployeeAttendance controller error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Internal server error"
+        message: "Internal server error",
       });
     }
   },
@@ -486,57 +557,81 @@ module.exports = {
       const { employeeId, fromDate, toDate } = req.query;
 
       if (!employeeId || !fromDate || !toDate) {
-        return res.status(400).send("employeeId, fromDate and toDate parameters are required");
+        return res
+          .status(400)
+          .send("employeeId, fromDate and toDate parameters are required");
       }
 
-      reportsService.getEmployeeAttendanceData(employeeId, fromDate, toDate, (err, results) => {
-        if (err) {
-          console.error("exportEmployeeAttendanceExcel error:", err);
-          return res.status(500).send("Something went wrong while generating the report");
-        }
+      reportsService.getEmployeeAttendanceData(
+        employeeId,
+        fromDate,
+        toDate,
+        (err, results) => {
+          if (err) {
+            console.error("exportEmployeeAttendanceExcel error:", err);
+            return res
+              .status(500)
+              .send("Something went wrong while generating the report");
+          }
 
-        const formatDateTime = (dateStr) => {
-          if (!dateStr) return "N/A";
-          const date = new Date(dateStr);
-          if (isNaN(date.getTime())) return "N/A";
-          return date.toLocaleString("en-US", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true
+          const formatDateTime = (dateStr) => {
+            if (!dateStr) return "N/A";
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "N/A";
+            return date.toLocaleString("en-US", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+            });
+          };
+
+          const formatProductivityHours = (val) => {
+            if (!val || isNaN(val)) return "0 hrs 0 mins";
+            const totalMinutes = Math.round(parseFloat(val) * 60);
+            const hrs = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            return `${hrs} hrs ${mins} mins`;
+          };
+
+          const mappedData = results.map((row) => ({
+            "Employee ID": row.username,
+            "Employee Name": row.employee_name || "N/A",
+            "Login Time": formatDateTime(row.login_time),
+            "Logout Time": formatDateTime(row.logout_time),
+            "Productivity Hours": formatProductivityHours(
+              row.productivity_hours,
+            ),
+            "System IP": row.system_ip || "",
+          }));
+
+          const workbook = xlsx.utils.book_new();
+          const worksheet = xlsx.utils.json_to_sheet(mappedData);
+          xlsx.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "Attendance Report",
+          );
+
+          const buffer = xlsx.write(workbook, {
+            type: "buffer",
+            bookType: "xlsx",
           });
-        };
 
-        const formatProductivityHours = (val) => {
-          if (!val || isNaN(val)) return "0 hrs 0 mins";
-          const totalMinutes = Math.round(parseFloat(val) * 60);
-          const hrs = Math.floor(totalMinutes / 60);
-          const mins = totalMinutes % 60;
-          return `${hrs} hrs ${mins} mins`;
-        };
-
-        const mappedData = results.map(row => ({
-          "Employee ID": row.username,
-          "Employee Name": row.employee_name || "N/A",
-          "Login Time": formatDateTime(row.login_time),
-          "Logout Time": formatDateTime(row.logout_time),
-          "Productivity Hours": formatProductivityHours(row.productivity_hours),
-          "System IP": row.system_ip || ""
-        }));
-
-        const workbook = xlsx.utils.book_new();
-        const worksheet = xlsx.utils.json_to_sheet(mappedData);
-        xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
-
-        const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
-
-        res.setHeader("Content-Disposition", `attachment; filename="attendance_report_${employeeId}_${fromDate}_to_${toDate}.xlsx"`);
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        return res.send(buffer);
-      });
+          res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="attendance_report_${employeeId}_${fromDate}_to_${toDate}.xlsx"`,
+          );
+          res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          );
+          return res.send(buffer);
+        },
+      );
     } catch (error) {
       console.error("exportEmployeeAttendanceExcel controller error:", error);
       return res.status(500).send("Internal server error");
@@ -550,30 +645,37 @@ module.exports = {
       if (!employeeId || !fromDate || !toDate) {
         return res.status(200).json({
           success: 0,
-          message: "employeeId, fromDate and toDate parameters are required"
+          message: "employeeId, fromDate and toDate parameters are required",
         });
       }
 
-      reportsService.getDetailedEmployeeAttendanceData(employeeId, fromDate, toDate, (err, results) => {
-        if (err) {
-          console.error("getDetailedEmployeeAttendance error:", err);
-          return res.status(500).json({
-            success: 0,
-            message: "Something went wrong while retrieving detailed attendance report data"
-          });
-        }
+      reportsService.getDetailedEmployeeAttendanceData(
+        employeeId,
+        fromDate,
+        toDate,
+        (err, results) => {
+          if (err) {
+            console.error("getDetailedEmployeeAttendance error:", err);
+            return res.status(500).json({
+              success: 0,
+              message:
+                "Something went wrong while retrieving detailed attendance report data",
+            });
+          }
 
-        return res.status(200).json({
-          success: 1,
-          message: "Detailed employee attendance report retrieved successfully",
-          data: results
-        });
-      });
+          return res.status(200).json({
+            success: 1,
+            message:
+              "Detailed employee attendance report retrieved successfully",
+            data: results,
+          });
+        },
+      );
     } catch (error) {
       console.error("getDetailedEmployeeAttendance controller error:", error);
       return res.status(500).json({
         success: 0,
-        message: "Internal server error"
+        message: "Internal server error",
       });
     }
   },
@@ -583,60 +685,87 @@ module.exports = {
       const { employeeId, fromDate, toDate } = req.query;
 
       if (!employeeId || !fromDate || !toDate) {
-        return res.status(400).send("employeeId, fromDate and toDate parameters are required");
+        return res
+          .status(400)
+          .send("employeeId, fromDate and toDate parameters are required");
       }
 
-      reportsService.getDetailedEmployeeAttendanceData(employeeId, fromDate, toDate, (err, results) => {
-        if (err) {
-          console.error("exportDetailedEmployeeAttendanceExcel error:", err);
-          return res.status(500).send("Something went wrong while generating the report");
-        }
+      reportsService.getDetailedEmployeeAttendanceData(
+        employeeId,
+        fromDate,
+        toDate,
+        (err, results) => {
+          if (err) {
+            console.error("exportDetailedEmployeeAttendanceExcel error:", err);
+            return res
+              .status(500)
+              .send("Something went wrong while generating the report");
+          }
 
-        const formatDateTime = (dateStr) => {
-          if (!dateStr) return "N/A";
-          const date = new Date(dateStr);
-          if (isNaN(date.getTime())) return "N/A";
-          return date.toLocaleString("en-US", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true
+          const formatDateTime = (dateStr) => {
+            if (!dateStr) return "N/A";
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "N/A";
+            return date.toLocaleString("en-US", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+            });
+          };
+
+          const formatProductivityHours = (val) => {
+            if (!val || isNaN(val)) return "0 hrs 0 mins";
+            const totalMinutes = Math.round(parseFloat(val) * 60);
+            const hrs = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            return `${hrs} hrs ${mins} mins`;
+          };
+
+          const mappedData = results.map((row) => ({
+            "Employee ID": row.username,
+            "Employee Name": row.employee_name || "N/A",
+            "Login Time": formatDateTime(row.login_time),
+            "Logout Time": formatDateTime(row.logout_time),
+            "Productivity Hours": formatProductivityHours(
+              row.productivity_hours,
+            ),
+            "System IP": row.system_ip || "",
+          }));
+
+          const workbook = xlsx.utils.book_new();
+          const worksheet = xlsx.utils.json_to_sheet(mappedData);
+          xlsx.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "Detailed Attendance Report",
+          );
+
+          const buffer = xlsx.write(workbook, {
+            type: "buffer",
+            bookType: "xlsx",
           });
-        };
 
-        const formatProductivityHours = (val) => {
-          if (!val || isNaN(val)) return "0 hrs 0 mins";
-          const totalMinutes = Math.round(parseFloat(val) * 60);
-          const hrs = Math.floor(totalMinutes / 60);
-          const mins = totalMinutes % 60;
-          return `${hrs} hrs ${mins} mins`;
-        };
-
-        const mappedData = results.map(row => ({
-          "Employee ID": row.username,
-          "Employee Name": row.employee_name || "N/A",
-          "Login Time": formatDateTime(row.login_time),
-          "Logout Time": formatDateTime(row.logout_time),
-          "Productivity Hours": formatProductivityHours(row.productivity_hours),
-          "System IP": row.system_ip || ""
-        }));
-
-        const workbook = xlsx.utils.book_new();
-        const worksheet = xlsx.utils.json_to_sheet(mappedData);
-        xlsx.utils.book_append_sheet(workbook, worksheet, "Detailed Attendance Report");
-
-        const buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
-
-        res.setHeader("Content-Disposition", `attachment; filename="detailed_attendance_report_${employeeId}_${fromDate}_to_${toDate}.xlsx"`);
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        return res.send(buffer);
-      });
+          res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="detailed_attendance_report_${employeeId}_${fromDate}_to_${toDate}.xlsx"`,
+          );
+          res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          );
+          return res.send(buffer);
+        },
+      );
     } catch (error) {
-      console.error("exportDetailedEmployeeAttendanceExcel controller error:", error);
+      console.error(
+        "exportDetailedEmployeeAttendanceExcel controller error:",
+        error,
+      );
       return res.status(500).send("Internal server error");
     }
-  }
+  },
 };

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const reportsController = require("./reports.controller");
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 // ==================== POLICY REPORT ROUTES ====================
 

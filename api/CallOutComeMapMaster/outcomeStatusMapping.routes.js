@@ -4,7 +4,7 @@ const router = express.Router();
 
 const outcomeStatusMappingController = require("./outcomeStatusMapping.controller");
 
-const verifyAccessToken = require("../../Middleware/verifyAccessToken");
+const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 
 // ==================== OUTCOME STATUS MAPPING MASTER ROUTES ====================
