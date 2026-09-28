@@ -51,7 +51,7 @@ const MotorOdRateService = {
                 odr.od_rate_id,
 
                 odr.insurance_company_id,
-                ic.insurance_company_name,
+                ic.company_name as insurance_company_name,
 
                 odr.product_id,
                 p.product_name,
@@ -123,7 +123,8 @@ const MotorOdRateService = {
                 odr.od_rate_id,
 
                 odr.insurance_company_id,
-                ic.insurance_company_name,
+                 ic.company_name as insurance_company_name,
+
 
                 odr.product_id,
                 p.product_name,

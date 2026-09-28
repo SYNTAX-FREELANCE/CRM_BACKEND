@@ -35,17 +35,17 @@ const MotorVehicleClassService = {
   // GET ALL
   getAllVehicleClasses: (callback) => {
     const query = `
-      SELECT
+SELECT
         vehicle_class_id,
-        vehicle_category_id,
+        mv.vehicle_category_id,
+        mvc.category_name,
         class_code,
         class_name,
-        description,
-        is_active,
-        created_at,
-        updated_at
-      FROM motor_vehicle_classes
-      ORDER BY vehicle_class_id DESC
+        mv.description,
+        mv.is_active
+      FROM motor_vehicle_classes mv
+      LEFT JOIN motor_vehicle_categories mvc ON mvc.vehicle_category_id = mv.vehicle_category_id
+      ORDER BY vehicle_class_id DESC;
     `;
 
     pool.query(query, (err, result) => {
