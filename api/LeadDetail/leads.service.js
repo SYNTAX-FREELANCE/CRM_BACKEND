@@ -1103,8 +1103,8 @@ WHERE
         policy.discount_amount,
         policy.sale_date,
         policy.source_id,
-        policy.customer_pay_type_id,
-        policy.payment_method_id,
+        policy.customer_pay_type_id || null,
+        policy.payment_method_id || null,
         policy.cp_reference_no,
         policy.pm_reference_no,
 

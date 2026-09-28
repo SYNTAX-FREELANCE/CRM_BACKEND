@@ -55,7 +55,7 @@ const MotorTpRateService = {
                 tr.tp_rate_id,
 
                 tr.insurance_company_id,
-                ic.insurance_company_name,
+                ic.company_name as insurance_company_name,
 
                 tr.product_id,
                 p.product_name,
@@ -133,7 +133,7 @@ const MotorTpRateService = {
                 tr.tp_rate_id,
 
                 tr.insurance_company_id,
-                ic.insurance_company_name,
+                 ic.company_name as insurance_company_name,
 
                 tr.product_id,
                 p.product_name,
