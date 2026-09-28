@@ -604,4 +604,408 @@ module.exports = {
       });
     }
   },
+
+
+
+  // =====================================================
+  // MOBILE LOGIN
+  // =====================================================
+
+  mobileLogin: (req, res) => {
+
+    const {
+      username,
+      password,
+    } = req.body;
+
+
+    if (!username || !password) {
+
+      return res.status(400).json({
+        success: 0,
+        message: "Please enter username and password",
+      });
+    }
+
+
+    authService.findUserByUsername(
+      username,
+      (err, user) => {
+
+        if (err) {
+
+          console.error(
+            "MOBILE LOGIN USER ERROR:",
+            err
+          );
+
+          return res.status(500).json({
+            success: 0,
+            message: "Something went wrong",
+          });
+        }
+
+        if (!user) {
+
+          return res.status(401).json({
+            success: 0,
+            message: "Invalid username or password",
+          });
+        }
+
+
+        bcrypt.compare(
+          password,
+          user.password,
+          (err, match) => {
+
+            if (err) {
+
+              console.error(
+                "PASSWORD COMPARE ERROR:",
+                err
+              );
+
+              return res.status(500).json({
+                success: 0,
+                message: "Something went wrong",
+              });
+            }
+
+
+            if (!match) {
+
+              return res.status(401).json({
+                success: 0,
+                message: "Invalid username or password",
+              });
+            }
+
+
+            // ==========================================
+            // GENERATE TOKENS
+            // ==========================================
+
+            const {
+              accessToken,
+              refreshToken,
+            } = generateTokens(user);
+
+
+            // ==========================================
+            // STORE REFRESH TOKEN
+            // ==========================================
+
+            authService.storeRefreshToken(
+              user.id,
+              refreshToken,
+              (tokenErr) => {
+
+                if (tokenErr) {
+
+                  console.error(
+                    "STORE REFRESH TOKEN ERROR:",
+                    tokenErr
+                  );
+
+                  return res.status(500).json({
+                    success: 0,
+                    message:
+                      "Unable to create login session",
+                  });
+                }
+                // ==========================================
+                // LOG ATTENDANCE
+                // ==========================================
+
+                authService.logLogin(
+                  {
+                    user_id:
+                      user.user_id,
+
+                    username:
+                      user.username,
+
+                    system_ip:
+                      (
+                        req.headers[
+                        "x-forwarded-for"
+                        ] ||
+                        req.socket.remoteAddress ||
+                        req.ip ||
+                        ""
+                      ).replace(
+                        "::ffff:",
+                        ""
+                      ),
+                  },
+
+                  (logErr, attendanceResult) => {
+
+                    if (logErr) {
+
+                      console.error(
+                        "ATTENDANCE LOGIN ERROR:",
+                        logErr
+                      );
+                    }
+
+
+                    const attendanceId =
+                      attendanceResult
+                        ?.insertId || null;
+                    // ==========================================
+                    // RESPONSE
+                    // ==========================================
+
+                    return res.status(200).json({
+
+                      success: 1,
+
+                      message:
+                        "Login successful",
+
+                      accessToken,
+
+                      refreshToken,
+
+                      attendance_id:
+                        attendanceId,
+
+                      user: {
+
+                        id:
+                          user.user_id,
+
+                        username:
+                          user.username,
+
+                        role:
+                          user.role_name,
+
+                        role_id:
+                          user.role,
+
+                        name:
+                          user.name,
+                      },
+                    });
+
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+    );
+  },
+  // =====================================================
+  // MOBILE REFRESH TOKEN
+  // =====================================================
+
+  mobileRefreshToken: (req, res) => {
+
+    const {
+      refreshToken,
+    } = req.body;
+
+
+    if (!refreshToken) {
+
+      return res.status(401).json({
+        success: 0,
+        message: "Refresh token required",
+      });
+    }
+
+
+    jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET,
+      (err, decoded) => {
+
+        if (err) {
+
+          return res.status(401).json({
+            success: 0,
+            message: "Invalid or expired refresh token",
+          });
+        }
+
+
+        const userId =
+          decoded.userId;
+
+        // ==========================================
+        // CHECK DATABASE
+        // ==========================================
+
+        authService.findRefreshToken(
+          refreshToken,
+          userId,
+          (err, tokenRecord) => {
+
+            if (err) {
+
+              console.error(
+                "REFRESH TOKEN DB ERROR:",
+                err
+              );
+
+              return res.status(500).json({
+                success: 0,
+                message:
+                  "Something went wrong",
+              });
+            }
+
+
+            if (!tokenRecord) {
+
+              return res.status(401).json({
+                success: 0,
+                message:
+                  "Session expired. Please login again.",
+              });
+            }
+
+            // ==========================================
+            // GET USER
+            // ==========================================
+
+            authService.findUserById(
+              userId,
+              (err, user) => {
+
+                if (err || !user) {
+
+                  return res.status(401).json({
+                    success: 0,
+                    message:
+                      "User not found",
+                  });
+                }
+
+
+                // ==========================================
+                // GENERATE NEW ACCESS TOKEN
+                // ==========================================
+
+                const newAccessToken =
+                  generateAccessToken(
+                    user
+                  );
+
+
+                return res.status(200).json({
+
+                  success: 1,
+
+                  message:
+                    "Token refreshed",
+
+                  accessToken:
+                    newAccessToken,
+                });
+              }
+            );
+          }
+        );
+      }
+    );
+  },
+
+
+
+  // =====================================================
+  // MOBILE LOGOUT
+  // =====================================================
+
+  mobileLogout: (req, res) => {
+
+    const userId =
+      req.user?.userId ||
+      req.user?.id;
+
+
+    const {
+      attendance_id,
+    } = req.body;
+
+
+    if (!userId) {
+
+      return res.status(401).json({
+        success: 0,
+        message: "Invalid session",
+      });
+    }
+
+    // ==========================================
+    // REVOKE REFRESH TOKEN
+    // ==========================================
+
+    authService.revokeRefreshToken(
+      userId,
+      (err) => {
+
+        if (err) {
+
+          console.error(
+            "REVOKE TOKEN ERROR:",
+            err
+          );
+
+          return res.status(500).json({
+            success: 0,
+            message:
+              "Unable to logout",
+          });
+        }
+
+        // ==========================================
+        // LOG ATTENDANCE
+        // ==========================================
+
+        if (attendance_id) {
+
+          authService.logoutSession(
+            attendance_id,
+            (logoutErr) => {
+
+              if (logoutErr) {
+
+                console.error(
+                  "ATTENDANCE LOGOUT ERROR:",
+                  logoutErr
+                );
+              }
+
+
+              return res.status(200).json({
+
+                success: 1,
+
+                message:
+                  "Logged out successfully",
+              });
+            }
+          );
+
+        } else {
+
+          return res.status(200).json({
+
+            success: 1,
+
+            message:
+              "Logged out successfully",
+          });
+        }
+      }
+    );
+  },
+
+
 };

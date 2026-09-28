@@ -18,4 +18,30 @@ router.post("/verify-otp", authController.verifyOtp);
 router.post("/reset-password", authController.resetPassword);
 
 
+router.post(
+    "/mobile/login",
+    authController.mobileLogin
+);
+router.post(
+    "/mobile/refresh-token",
+    authController.mobileRefreshToken
+);
+// ================================
+// MOBILE PROTECTED
+// ================================
+
+router.post(
+    "/mobile/logout",
+    verifyAccessToken,
+    authController.mobileLogout
+);
+
+router.post(
+    "/mobile/change-password",
+    verifyAccessToken,
+    authController.changePassword
+);
+
+
+
 module.exports = router;
