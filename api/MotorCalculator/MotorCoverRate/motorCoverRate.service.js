@@ -15,6 +15,7 @@ const MotorCoverRateService = {
       effective_from,
       effective_to,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -29,9 +30,10 @@ const MotorCoverRateService = {
         rate_value,
         effective_from,
         effective_to,
-        description
+        description,
+        is_active
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     pool.query(
@@ -48,6 +50,7 @@ const MotorCoverRateService = {
         effective_from,
         effective_to || null,
         description || null,
+        is_active
       ],
       callback
     );
@@ -202,6 +205,7 @@ const MotorCoverRateService = {
       effective_from,
       effective_to,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -217,7 +221,8 @@ const MotorCoverRateService = {
         rate_value = ?,
         effective_from = ?,
         effective_to = ?,
-        description = ?
+        description = ?,
+        is_active = ?
       WHERE cover_rate_id = ?
     `;
 
@@ -235,6 +240,7 @@ const MotorCoverRateService = {
         effective_from,
         effective_to || null,
         description || null,
+        is_active,
         cover_rate_id,
       ],
       callback

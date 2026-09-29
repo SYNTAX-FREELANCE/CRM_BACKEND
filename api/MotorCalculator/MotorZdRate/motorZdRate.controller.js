@@ -15,7 +15,7 @@ const ZdRateController = {
       rate_value,
       effective_from,
       effective_to,
-      description,
+      description
     } = req.body;
 
     if (!product_id || isNaN(product_id) || Number(product_id) <= 0) {
@@ -264,6 +264,7 @@ const ZdRateController = {
       effective_from,
       effective_to,
       description,
+      is_active
     } = req.body;
 
     if (!product_id || isNaN(product_id) || Number(product_id) <= 0) {

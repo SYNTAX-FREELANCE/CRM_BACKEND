@@ -11,9 +11,10 @@ const MotorDiscountConditionService = {
                 condition_type,
                 condition_operator,
                 condition_value,
-                description
+                description,
+                is_active
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
 
         const values = [
@@ -21,7 +22,8 @@ const MotorDiscountConditionService = {
             data.condition_type,
             data.condition_operator,
             data.condition_value,
-            data.description || null
+            data.description || null,
+            data.is_active 
         ];
 
         pool.query(query, values, (err, result) => {
@@ -42,7 +44,7 @@ const MotorDiscountConditionService = {
                 c.discount_rule_id,
 
                 d.insurance_company_id,
-                ic.insurance_company_name,
+                ic.company_name as insurance_company_name,
 
                 d.product_id,
                 p.product_name,
@@ -72,9 +74,7 @@ const MotorDiscountConditionService = {
                 c.condition_value,
 
                 c.description,
-                c.is_active,
-                c.created_at,
-                c.updated_at
+                c.is_active
 
             FROM motor_discount_condition c
 
@@ -122,7 +122,7 @@ const MotorDiscountConditionService = {
                 c.discount_rule_id,
 
                 d.insurance_company_id,
-                ic.insurance_company_name,
+                ic.company_name as insurance_company_name,
 
                 d.product_id,
                 p.product_name,
@@ -152,10 +152,7 @@ const MotorDiscountConditionService = {
                 c.condition_value,
 
                 c.description,
-                c.is_active,
-                c.created_at,
-                c.updated_at
-
+                c.is_active
             FROM motor_discount_condition c
 
             INNER JOIN motor_discount_rule_master d
@@ -200,7 +197,8 @@ const MotorDiscountConditionService = {
                 condition_type = ?,
                 condition_operator = ?,
                 condition_value = ?,
-                description = ?
+                description = ?,
+                is_active = ?
             WHERE discount_condition_id = ?
         `;
 
@@ -210,6 +208,7 @@ const MotorDiscountConditionService = {
             data.condition_operator,
             data.condition_value,
             data.description || null,
+            data.is_active,
             id
         ];
 
@@ -278,9 +277,7 @@ const MotorDiscountConditionService = {
                 c.condition_value,
 
                 c.description,
-                c.is_active,
-                c.created_at,
-                c.updated_at
+                c.is_active
 
             FROM motor_discount_condition c
 

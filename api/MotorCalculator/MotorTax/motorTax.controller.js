@@ -12,7 +12,8 @@ const MotorTaxController = {
             tax_percentage,
             effective_from,
             effective_to,
-            description
+            description,
+            is_active
         } = req.body;
 
 
@@ -122,7 +123,8 @@ const MotorTaxController = {
             tax_percentage: Number(tax_percentage),
             effective_from,
             effective_to: effective_to || null,
-            description: description ? description.trim() : null
+            description: description ? description.trim() : null,
+            is_active:is_active
         };
 
 
@@ -231,7 +233,8 @@ const MotorTaxController = {
             tax_percentage,
             effective_from,
             effective_to,
-            description
+            description,
+            is_active
         } = req.body;
 
 
@@ -341,7 +344,8 @@ const MotorTaxController = {
             tax_percentage: Number(tax_percentage),
             effective_from,
             effective_to: effective_to || null,
-            description: description ? description.trim() : null
+            description: description ? description.trim() : null,
+            is_active:is_active
         };
 
 

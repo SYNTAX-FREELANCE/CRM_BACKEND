@@ -9,6 +9,7 @@ const MotorAddonConditionService = {
       condition_operator,
       condition_value,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -17,9 +18,10 @@ const MotorAddonConditionService = {
         condition_type,
         condition_operator,
         condition_value,
-        description
+        description,
+        is_active
       )
-      VALUES (?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     pool.query(
@@ -30,6 +32,7 @@ const MotorAddonConditionService = {
         condition_operator,
         condition_value,
         description || null,
+        is_active
       ],
       callback
     );
@@ -48,7 +51,7 @@ const MotorAddonConditionService = {
         am.addon_name,
 
         ar.insurance_company_id,
-        ic.insurance_company_name,
+        ic.company_name as insurance_company_name,
 
         ar.product_id,
         p.product_name,
@@ -127,7 +130,8 @@ const MotorAddonConditionService = {
         am.addon_name,
 
         ar.insurance_company_id,
-        ic.insurance_company_name,
+        ic.company_name as insurance_company_name,
+
 
         ar.product_id,
         p.product_name,
@@ -199,6 +203,7 @@ const MotorAddonConditionService = {
       condition_operator,
       condition_value,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -208,7 +213,8 @@ const MotorAddonConditionService = {
         condition_type = ?,
         condition_operator = ?,
         condition_value = ?,
-        description = ?
+        description = ?,
+        is_active = ?
       WHERE addon_condition_id = ?
     `;
 
@@ -220,6 +226,7 @@ const MotorAddonConditionService = {
         condition_operator,
         condition_value,
         description || null,
+        is_active,
         addon_condition_id,
       ],
       callback
@@ -250,7 +257,8 @@ const MotorAddonConditionService = {
         am.addon_name,
 
         ar.insurance_company_id,
-        ic.insurance_company_name,
+        ic.company_name as insurance_company_name,
+
 
         ar.product_id,
         p.product_name,

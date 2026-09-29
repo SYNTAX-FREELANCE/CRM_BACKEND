@@ -7,6 +7,7 @@ const MotorAddonController = {
       addon_code,
       addon_name,
       description,
+      is_active
     } = req.body;
 
     if (!addon_code || !addon_code.trim()) {
@@ -49,6 +50,7 @@ const MotorAddonController = {
         addon_code: addon_code.trim(),
         addon_name: addon_name.trim(),
         description: description ? description.trim() : null,
+        is_active: is_active
       },
       (err, result) => {
         if (err) {
@@ -135,6 +137,7 @@ const MotorAddonController = {
       addon_code,
       addon_name,
       description,
+      is_active
     } = req.body;
 
     if (!addon_id || isNaN(addon_id)) {
@@ -185,6 +188,7 @@ const MotorAddonController = {
         addon_code: addon_code.trim(),
         addon_name: addon_name.trim(),
         description: description ? description.trim() : null,
+        is_active:is_active
       },
       (err, result) => {
         if (err) {

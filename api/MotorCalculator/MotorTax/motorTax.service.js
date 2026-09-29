@@ -13,9 +13,10 @@ const MotorTaxService = {
                 tax_percentage,
                 effective_from,
                 effective_to,
-                description
+                description,
+                is_active
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const values = [
@@ -25,7 +26,8 @@ const MotorTaxService = {
             data.tax_percentage,
             data.effective_from,
             data.effective_to || null,
-            data.description || null
+            data.description || null,
+            data.is_active
         ];
 
         pool.query(query, values, (error, result) => {
@@ -116,7 +118,8 @@ const MotorTaxService = {
                 tax_percentage = ?,
                 effective_from = ?,
                 effective_to = ?,
-                description = ?
+                description = ?,
+                is_active = ?
             WHERE tax_id = ?
         `;
 
@@ -128,6 +131,7 @@ const MotorTaxService = {
             data.effective_from,
             data.effective_to || null,
             data.description || null,
+            data.is_active,
             tax_id
         ];
 
