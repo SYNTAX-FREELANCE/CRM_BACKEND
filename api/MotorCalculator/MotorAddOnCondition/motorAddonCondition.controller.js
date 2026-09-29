@@ -9,6 +9,7 @@ const MotorAddonConditionController = {
       condition_operator,
       condition_value,
       description,
+      is_active
     } = req.body;
 
     if (
@@ -82,6 +83,7 @@ const MotorAddonConditionController = {
         condition_operator: condition_operator.trim(),
         condition_value: String(condition_value).trim(),
         description: description ? description.trim() : null,
+        is_active: Number(is_active)
       },
       (err, result) => {
         if (err) {
@@ -179,6 +181,7 @@ const MotorAddonConditionController = {
       condition_operator,
       condition_value,
       description,
+      is_active
     } = req.body;
 
     if (
@@ -264,6 +267,7 @@ const MotorAddonConditionController = {
         condition_operator: condition_operator.trim(),
         condition_value: String(condition_value).trim(),
         description: description ? description.trim() : null,
+        is_active:Number(is_active)
       },
       (err, result) => {
         if (err) {

@@ -16,6 +16,7 @@ const MotorZdRateService = {
       effective_from,
       effective_to,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -31,9 +32,10 @@ const MotorZdRateService = {
         rate_value,
         effective_from,
         effective_to,
-        description
+        description,
+        is_active
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     pool.query(
@@ -51,6 +53,7 @@ const MotorZdRateService = {
         effective_from,
         effective_to || null,
         description || null,
+        is_active
       ],
       callback
     );
@@ -63,7 +66,7 @@ const MotorZdRateService = {
         z.zd_rate_id,
 
         z.insurance_company_id,
-        ic.insurance_company_name,
+        ic.company_name as insurance_company_name,
 
         z.product_id,
         p.product_name,
@@ -124,7 +127,7 @@ const MotorZdRateService = {
         z.zd_rate_id,
 
         z.insurance_company_id,
-        ic.insurance_company_name,
+        ic.company_name as insurance_company_name,
 
         z.product_id,
         p.product_name,
@@ -191,6 +194,7 @@ const MotorZdRateService = {
       effective_from,
       effective_to,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -207,7 +211,8 @@ const MotorZdRateService = {
         rate_value = ?,
         effective_from = ?,
         effective_to = ?,
-        description = ?
+        description = ?,
+        is_active = ?
       WHERE zd_rate_id = ?
     `;
 
@@ -226,6 +231,7 @@ const MotorZdRateService = {
         effective_from,
         effective_to || null,
         description || null,
+        is_active,
         zd_rate_id,
       ],
       callback

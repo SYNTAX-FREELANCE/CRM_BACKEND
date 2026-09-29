@@ -20,9 +20,10 @@ const MotorDiscountRuleService = {
                 claim_free_required,
                 effective_from,
                 effective_to,
-                description
+                description,
+                is_active
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
         `;
 
         const values = [
@@ -41,7 +42,8 @@ const MotorDiscountRuleService = {
                 : 0,
             data.effective_from,
             data.effective_to || null,
-            data.description || null
+            data.description || null,
+            data.is_active
         ];
 
         pool.query(query, values, (err, result) => {
@@ -60,7 +62,7 @@ const MotorDiscountRuleService = {
                 d.discount_rule_id,
 
                 d.insurance_company_id,
-                ic.insurance_company_name,
+               ic.company_name as insurance_company_name,
 
                 d.product_id,
                 p.product_name,
@@ -134,7 +136,7 @@ const MotorDiscountRuleService = {
                 d.discount_rule_id,
 
                 d.insurance_company_id,
-                ic.insurance_company_name,
+                ic.company_name as insurance_company_name,
 
                 d.product_id,
                 p.product_name,
@@ -217,7 +219,8 @@ const MotorDiscountRuleService = {
                 claim_free_required = ?,
                 effective_from = ?,
                 effective_to = ?,
-                description = ?
+                description = ?,
+                is_active = ?
             WHERE discount_rule_id = ?
         `;
 
@@ -238,6 +241,7 @@ const MotorDiscountRuleService = {
             data.effective_from,
             data.effective_to || null,
             data.description || null,
+            data.is_active,
             id
         ];
 

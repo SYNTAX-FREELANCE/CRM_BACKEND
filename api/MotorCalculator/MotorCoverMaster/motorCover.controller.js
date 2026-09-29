@@ -8,6 +8,7 @@ const MotorCoverController = {
       cover_name,
       cover_type,
       description,
+      is_active
     } = req.body;
 
     if (!cover_code || !cover_code.trim()) {
@@ -68,6 +69,7 @@ const MotorCoverController = {
         cover_name: cover_name.trim(),
         cover_type,
         description: description ? description.trim() : null,
+        is_active: is_active
       },
       (err, result) => {
         if (err) {
@@ -158,6 +160,7 @@ const MotorCoverController = {
       cover_name,
       cover_type,
       description,
+      is_active
     } = req.body;
 
     if (!cover_id || isNaN(cover_id) || Number(cover_id) <= 0) {
@@ -226,6 +229,7 @@ const MotorCoverController = {
         cover_name: cover_name.trim(),
         cover_type,
         description: description ? description.trim() : null,
+        is_active
       },
       (err, result) => {
         if (err) {

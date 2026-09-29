@@ -15,6 +15,7 @@ const MotorCoverRateController = {
       effective_from,
       effective_to,
       description,
+      
     } = req.body;
 
     // COVER

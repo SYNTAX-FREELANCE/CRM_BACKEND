@@ -8,6 +8,7 @@ const MotorCoverService = {
       cover_name,
       cover_type,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -15,9 +16,10 @@ const MotorCoverService = {
         cover_code,
         cover_name,
         cover_type,
-        description
+        description,
+        is_active
       )
-      VALUES (?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?)
     `;
 
     pool.query(
@@ -27,6 +29,7 @@ const MotorCoverService = {
         cover_name,
         cover_type,
         description || null,
+        is_active
       ],
       callback
     );
@@ -77,6 +80,7 @@ const MotorCoverService = {
       cover_name,
       cover_type,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -85,7 +89,8 @@ const MotorCoverService = {
         cover_code = ?,
         cover_name = ?,
         cover_type = ?,
-        description = ?
+        description = ?,
+        is_active = ?
       WHERE cover_id = ?
     `;
 
@@ -96,6 +101,7 @@ const MotorCoverService = {
         cover_name,
         cover_type,
         description || null,
+        is_active,
         cover_id,
       ],
       callback

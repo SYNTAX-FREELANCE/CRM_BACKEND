@@ -19,7 +19,8 @@ const MotorDiscountRuleController = {
             claim_free_required,
             effective_from,
             effective_to,
-            description
+            description,
+            isActive
         } = req.body;
 
 
@@ -284,7 +285,8 @@ const MotorDiscountRuleController = {
 
             effective_to: effective_to || null,
 
-            description: description || null
+            description: description || null,
+            is_active:isActive
         };
 
 
@@ -398,7 +400,8 @@ const MotorDiscountRuleController = {
             claim_free_required,
             effective_from,
             effective_to,
-            description
+            description,
+            isActive
         } = req.body;
 
 
@@ -663,7 +666,9 @@ const MotorDiscountRuleController = {
 
             effective_to: effective_to || null,
 
-            description: description || null
+            description: description || null,
+
+            is_active:isActive
         };
 
 

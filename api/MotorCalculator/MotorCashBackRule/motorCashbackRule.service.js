@@ -16,6 +16,7 @@ const MotorCashbackRuleService = {
       effective_from,
       effective_to,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -31,9 +32,10 @@ const MotorCashbackRuleService = {
         max_premium,
         effective_from,
         effective_to,
-        description
+        description,
+        is_active
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     pool.query(
@@ -51,6 +53,7 @@ const MotorCashbackRuleService = {
         effective_from,
         effective_to || null,
         description || null,
+        is_active
       ],
       callback
     );
@@ -199,6 +202,7 @@ const MotorCashbackRuleService = {
       effective_from,
       effective_to,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -215,7 +219,8 @@ const MotorCashbackRuleService = {
         max_premium = ?,
         effective_from = ?,
         effective_to = ?,
-        description = ?
+        description = ?,
+        is_active = ?
       WHERE cashback_rule_id = ?
     `;
 
@@ -234,6 +239,7 @@ const MotorCashbackRuleService = {
         effective_from,
         effective_to || null,
         description || null,
+        is_active,
         cashback_rule_id,
       ],
       callback

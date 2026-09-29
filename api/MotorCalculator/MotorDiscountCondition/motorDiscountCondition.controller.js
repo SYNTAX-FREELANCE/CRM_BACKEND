@@ -10,7 +10,8 @@ const MotorDiscountConditionController = {
             condition_type,
             condition_operator,
             condition_value,
-            description
+            description,
+            is_active
         } = req.body;
 
 
@@ -109,7 +110,8 @@ const MotorDiscountConditionController = {
             condition_type: condition_type.trim(),
             condition_operator: condition_operator.trim(),
             condition_value: String(condition_value).trim(),
-            description: description || null
+            description: description || null,
+            is_active:is_active
         };
 
 
@@ -214,7 +216,8 @@ const MotorDiscountConditionController = {
             condition_type,
             condition_operator,
             condition_value,
-            description
+            description,
+            is_active
         } = req.body;
 
 
@@ -314,7 +317,8 @@ const MotorDiscountConditionController = {
             condition_type: condition_type.trim(),
             condition_operator: condition_operator.trim(),
             condition_value: String(condition_value).trim(),
-            description: description || null
+            description: description || null,
+            is_active:is_active
         };
 
 

@@ -19,6 +19,7 @@ const MotorAddonRuleService = {
       effective_from,
       effective_to,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -37,9 +38,10 @@ const MotorAddonRuleService = {
         rate_value,
         effective_from,
         effective_to,
-        description
+        description,
+        is_active
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     pool.query(
@@ -60,6 +62,7 @@ const MotorAddonRuleService = {
         effective_from,
         effective_to || null,
         description || null,
+        is_active
       ],
       callback
     );
@@ -76,7 +79,7 @@ const MotorAddonRuleService = {
         am.addon_name,
 
         ar.insurance_company_id,
-        ic.insurance_company_name,
+        ic.company_name as insurance_company_name,
 
         ar.product_id,
         p.product_name,
@@ -147,7 +150,7 @@ const MotorAddonRuleService = {
         am.addon_name,
 
         ar.insurance_company_id,
-        ic.insurance_company_name,
+       ic.company_name as insurance_company_name,
 
         ar.product_id,
         p.product_name,
@@ -223,6 +226,7 @@ const MotorAddonRuleService = {
       effective_from,
       effective_to,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -242,7 +246,8 @@ const MotorAddonRuleService = {
         rate_value = ?,
         effective_from = ?,
         effective_to = ?,
-        description = ?
+        description = ?,
+        is_active = ?
       WHERE addon_rule_id = ?
     `;
 
@@ -264,6 +269,7 @@ const MotorAddonRuleService = {
         effective_from,
         effective_to || null,
         description || null,
+        is_active,
         addon_rule_id,
       ],
       callback

@@ -7,15 +7,17 @@ const MotorAddonService = {
       addon_code,
       addon_name,
       description,
+      is_active
     } = data;
 
     const query = `
       INSERT INTO motor_addon_master (
         addon_code,
         addon_name,
-        description
+        description,
+        is_active
       )
-      VALUES (?, ?, ?)
+      VALUES (?, ?, ?,?)
     `;
 
     pool.query(
@@ -24,6 +26,7 @@ const MotorAddonService = {
         addon_code,
         addon_name,
         description || null,
+        is_active
       ],
       callback
     );
@@ -71,6 +74,7 @@ const MotorAddonService = {
       addon_code,
       addon_name,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -78,7 +82,8 @@ const MotorAddonService = {
       SET
         addon_code = ?,
         addon_name = ?,
-        description = ?
+        description = ?,
+        is_active = ?
       WHERE addon_id = ?
     `;
 
@@ -88,6 +93,7 @@ const MotorAddonService = {
         addon_code,
         addon_name,
         description || null,
+        is_active,
         addon_id,
       ],
       callback

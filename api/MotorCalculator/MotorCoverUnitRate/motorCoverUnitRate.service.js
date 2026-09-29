@@ -9,6 +9,7 @@ const MotorCoverUnitRateService = {
       max_units,
       rate_per_unit,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -17,9 +18,10 @@ const MotorCoverUnitRateService = {
         min_units,
         max_units,
         rate_per_unit,
-        description
+        description,
+        is_active
       )
-      VALUES (?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     pool.query(
@@ -30,6 +32,7 @@ const MotorCoverUnitRateService = {
         max_units ?? null,
         rate_per_unit,
         description || null,
+        is_active
       ],
       callback
     );
@@ -194,6 +197,7 @@ const MotorCoverUnitRateService = {
       max_units,
       rate_per_unit,
       description,
+      is_active
     } = data;
 
     const query = `
@@ -203,7 +207,8 @@ const MotorCoverUnitRateService = {
         min_units = ?,
         max_units = ?,
         rate_per_unit = ?,
-        description = ?
+        description = ?,
+        is_active = ?
       WHERE cover_unit_rate_id = ?
     `;
 
@@ -215,6 +220,7 @@ const MotorCoverUnitRateService = {
         max_units ?? null,
         rate_per_unit,
         description || null,
+        is_active,
         cover_unit_rate_id,
       ],
       callback

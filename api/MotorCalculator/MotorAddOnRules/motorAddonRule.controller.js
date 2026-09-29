@@ -19,6 +19,7 @@ const MotorAddonRuleController = {
       effective_from,
       effective_to,
       description,
+      is_active
     } = req.body;
 
     if (!addon_id || isNaN(addon_id) || Number(addon_id) <= 0) {
@@ -232,6 +233,7 @@ const MotorAddonRuleController = {
         effective_from,
         effective_to,
         description,
+        is_active
       },
       (err, result) => {
         if (err) {
@@ -333,6 +335,7 @@ const MotorAddonRuleController = {
       effective_from,
       effective_to,
       description,
+      is_active
     } = req.body;
 
     if (!addon_rule_id || isNaN(addon_rule_id) || Number(addon_rule_id) <= 0) {
@@ -554,6 +557,7 @@ const MotorAddonRuleController = {
         effective_from,
         effective_to,
         description,
+        is_active
       },
       (err, result) => {
         if (err) {
