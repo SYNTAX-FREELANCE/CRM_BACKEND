@@ -53,11 +53,17 @@ const MotorVehicleCategoryController = {
       });
     }
 
+    // Uploaded image path
+    const image_path = req.file
+      ? `/uploads/motor-vehicle-category/${req.file.filename}`
+      : null;
+
     const data = {
       vehicle_type_id,
       category_code: category_code.trim(),
       category_name: category_name.trim(),
       description: description?.trim() || null,
+      image_path,
       is_active: is_active ?? 1,
     };
 
@@ -153,115 +159,135 @@ const MotorVehicleCategoryController = {
   },
 
   // UPDATE
-  updateVehicleCategory: (req, res) => {
-    const { vehicleCategoryId } = req.params;
+// UPDATE
+updateVehicleCategory: (req, res) => {
+  const { vehicleCategoryId } = req.params;
 
-    const {
-      vehicle_type_id,
-      category_code,
-      category_name,
-      description,
-      is_active,
-    } = req.body;
+  const {
+    vehicle_type_id,
+    category_code,
+    category_name,
+    description,
+    is_active,
+  } = req.body;
 
-    if (!vehicleCategoryId) {
-      return res.status(200).json({
-        success: 0,
-        message: "Vehicle category ID is required",
-      });
-    }
+  if (!vehicleCategoryId) {
+    return res.status(200).json({
+      success: 0,
+      message: "Vehicle category ID is required",
+    });
+  }
 
-    if (!vehicle_type_id) {
-      return res.status(200).json({
-        success: 0,
-        message: "Vehicle type is required",
-      });
-    }
+  if (!vehicle_type_id) {
+    return res.status(200).json({
+      success: 0,
+      message: "Vehicle type is required",
+    });
+  }
 
-    if (!category_code?.trim()) {
-      return res.status(200).json({
-        success: 0,
-        message: "Category code is required",
-      });
-    }
+  if (!category_code?.trim()) {
+    return res.status(200).json({
+      success: 0,
+      message: "Category code is required",
+    });
+  }
 
-    if (!category_name?.trim()) {
-      return res.status(200).json({
-        success: 0,
-        message: "Category name is required",
-      });
-    }
+  if (!category_name?.trim()) {
+    return res.status(200).json({
+      success: 0,
+      message: "Category name is required",
+    });
+  }
 
-    if (category_code.trim().length > 50) {
-      return res.status(200).json({
-        success: 0,
-        message: "Category code cannot exceed 50 characters",
-      });
-    }
+  if (category_code.trim().length > 50) {
+    return res.status(200).json({
+      success: 0,
+      message: "Category code cannot exceed 50 characters",
+    });
+  }
 
-    if (category_name.trim().length > 150) {
-      return res.status(200).json({
-        success: 0,
-        message: "Category name cannot exceed 150 characters",
-      });
-    }
+  if (category_name.trim().length > 150) {
+    return res.status(200).json({
+      success: 0,
+      message: "Category name cannot exceed 150 characters",
+    });
+  }
 
-    if (description && description.length > 500) {
-      return res.status(200).json({
-        success: 0,
-        message: "Description cannot exceed 500 characters",
-      });
-    }
+  if (description && description.length > 500) {
+    return res.status(200).json({
+      success: 0,
+      message: "Description cannot exceed 500 characters",
+    });
+  }
 
-    const data = {
-      vehicle_type_id,
-      category_code: category_code.trim(),
-      category_name: category_name.trim(),
-      description: description?.trim() || null,
-      is_active: is_active ?? 1,
-    };
+  // -----------------------------------------
+  // IMAGE
+  // -----------------------------------------
 
-    MotorVehicleCategoryService.updateVehicleCategory(
-      vehicleCategoryId,
-      data,
-      (err, result) => {
-        if (err) {
-          if (err.code === "ER_DUP_ENTRY") {
-            return res.status(200).json({
-              success: 0,
-              message: "Category code already exists",
-            });
-          }
+  let imagePath = null;
 
-          if (err.code === "ER_NO_REFERENCED_ROW_2") {
-            return res.status(200).json({
-              success: 0,
-              message: "Invalid vehicle type",
-            });
-          }
+  if (req.file) {
+    imagePath = `/uploads/vehicle-categories/${req.file.filename}`;
+  }
 
-          return res.status(500).json({
-            success: 0,
-            message: "Failed to update vehicle category",
-            error: err,
-          });
-        }
 
-        if (result.affectedRows === 0) {
+
+  const data = {
+    vehicle_type_id,
+    category_code: category_code.trim(),
+    category_name: category_name.trim(),
+    description: description?.trim() || null,
+    image_path: imagePath,
+    is_active: is_active ?? 1,
+  };
+console.log("UPDATE DATA:", data);
+
+console.log({
+  vehicleCategoryId
+});
+
+
+  MotorVehicleCategoryService.updateVehicleCategory(
+    vehicleCategoryId,
+    data,
+    (err, result) => {
+      if (err) {
+        if (err.code === "ER_DUP_ENTRY") {
           return res.status(200).json({
             success: 0,
-            message: "Vehicle category not found",
+            message: "Category code already exists",
           });
         }
 
-        return res.status(200).json({
-          success: 1,
-          message: "Vehicle category updated successfully",
-          data: result,
+        if (err.code === "ER_NO_REFERENCED_ROW_2") {
+          return res.status(200).json({
+            success: 0,
+            message: "Invalid vehicle type",
+          });
+        }
+
+        return res.status(500).json({
+          success: 0,
+          message: "Failed to update vehicle category",
+          error: err,
         });
       }
-    );
-  },
+
+      if (result.affectedRows === 0) {
+        return res.status(200).json({
+          success: 0,
+          message: "Vehicle category not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Vehicle category updated successfully",
+        data: result,
+      });
+    }
+  );
+},
 
   // DELETE
   deleteVehicleCategory: (req, res) => {

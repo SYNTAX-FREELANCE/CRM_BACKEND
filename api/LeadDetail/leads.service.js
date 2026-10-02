@@ -1976,8 +1976,8 @@ l.lead_id
       });
     });
   },
-  //   getTopEmployees: (callback) => {
 
+  //   getTopEmployees: (callback) => {
   //     pool.query(
   //       `
   // SELECT
@@ -2009,65 +2009,125 @@ l.lead_id
   //         etm.normal_target,
   //         etm.renewal_target,
 
-  //         (etm.normal_target + etm.renewal_target) AS total_calls,
+  //         (
+  //             etm.normal_target +
+  //             etm.renewal_target
+  //         ) AS total_calls,
 
+  //         /* =========================================
+  //            NORMAL CUSTOMER CAPTURED
+  //            ========================================= */
   //         COUNT(
-  //             CASE
-  //                 WHEN l.status_id = 5
-  //                 AND c.is_previous_customer = 0
-  //                 THEN 1
+  //             DISTINCT CASE
+  //                 WHEN c.is_previous_customer = 0
+  //                 THEN p.policy_id
   //             END
   //         ) AS normal_sold,
 
+  //         /* =========================================
+  //            PREVIOUS CUSTOMER / RENEWAL CAPTURED
+  //            ========================================= */
   //         COUNT(
-  //             CASE
-  //                 WHEN l.status_id = 5
-  //                 AND c.is_previous_customer = 1
-  //                 THEN 1
+  //             DISTINCT CASE
+  //                 WHEN c.is_previous_customer = 1
+  //                 THEN p.policy_id
   //             END
   //         ) AS renewal_sold,
 
+  //         /* =========================================
+  //            TOTAL CAPTURED
+  //            ========================================= */
   //         COUNT(
-  //             CASE
-  //                 WHEN l.status_id = 5
-  //                 THEN 1
-  //             END
+  //             DISTINCT p.policy_id
   //         ) AS total_sold,
 
-  //         ROUND(
-  //             (
-  //                 COUNT(
-  //                     CASE
-  //                         WHEN l.status_id = 5 THEN 1
-  //                     END
-  //                 )
-  //                 /
-  //                 NULLIF(
-  //                     (etm.normal_target + etm.renewal_target),
-  //                     0
-  //                 )
-  //             ) * 100,
-  //             2
+  //         /* =========================================
+  //            ACHIEVEMENT %
+  //            ========================================= */
+  //         COALESCE(
+  //             ROUND(
+  //                 (
+  //                     COUNT(
+  //                         DISTINCT p.policy_id
+  //                     )
+  //                     /
+  //                     NULLIF(
+  //                         (
+  //                             etm.normal_target +
+  //                             etm.renewal_target
+  //                         ),
+  //                         0
+  //                     )
+  //                 ) * 100,
+  //                 2
+  //             ),
+  //             0
   //         ) AS achievement_percentage
 
   //     FROM employee_target_master etm
 
-  // JOIN users_master u
-  //     ON u.user_id = etm.employee_id
-  //     AND u.is_active = 1
-  //     AND u.is_admin = 0
+  //     /* =========================================
+  //        EMPLOYEE
+  //        ========================================= */
+  //     JOIN users_master u
+  //         ON u.user_id = etm.employee_id
+  //         AND u.is_active = 1
+  //         AND u.is_admin = 0
 
+  //     /* =========================================
+  //        LEADS
+
+  //        LEFT JOIN means employee will still appear
+  //        even when there is no captured lead.
+  //        ========================================= */
   //     LEFT JOIN leads l
   //         ON l.assigned_to = etm.employee_id
-  //         AND YEAR(l.assigned_date) = YEAR(CURDATE())
-  //         AND MONTH(l.assigned_date) = MONTH(CURDATE())
+  //         AND l.status_id = 5
 
+  //     /* =========================================
+  //        CUSTOMER
+  //        ========================================= */
   //     LEFT JOIN customers c
   //         ON c.customer_id = l.customer_id
 
+  //     /* =========================================
+  //        POLICY
+
+  //        LEFT JOIN means employee will still appear
+  //        even when there is no policy.
+  //        ========================================= */
+  //     LEFT JOIN policies p
+  //         ON p.customer_id = c.customer_id
+  //         AND p.is_active = 1
+
+  //         /* =====================================
+  //            CURRENT MONTH CAPTURE
+
+  //            sale_date exists -> sale_date
+  //            sale_date NULL   -> created_at
+  //            ===================================== */
+  //         AND YEAR(
+  //             COALESCE(
+  //                 p.sale_date,
+  //                 DATE(p.created_at)
+  //             )
+  //         ) = YEAR(CURDATE())
+
+  //         AND MONTH(
+  //             COALESCE(
+  //                 p.sale_date,
+  //                 DATE(p.created_at)
+  //             )
+  //         ) = MONTH(CURDATE())
+
+  //     /* =========================================
+  //        CURRENT MONTH TARGET
+  //        ========================================= */
   //     WHERE
   //         etm.is_active = 1
+
   //         AND YEAR(etm.target_date) = YEAR(CURDATE())
+
   //         AND MONTH(etm.target_date) = MONTH(CURDATE())
 
   //     GROUP BY
@@ -2077,10 +2137,10 @@ l.lead_id
   //         etm.normal_target,
   //         etm.renewal_target
 
-  // ) AS sales_performance
+  // ) AS capture_performance
 
   // ORDER BY
-  //     rank_no
+  //     achievement_percentage DESC
 
   // LIMIT 5
   // `,
@@ -2095,170 +2155,152 @@ l.lead_id
   getTopEmployees: (callback) => {
     pool.query(
       `
-SELECT
-    ROW_NUMBER() OVER (
-        ORDER BY achievement_percentage DESC
-    ) AS rank_no,
-
-    employee_id,
-    employee_code,
-    name,
-
-    normal_target,
-    renewal_target,
-    total_calls,
-
-    normal_sold,
-    renewal_sold,
-    total_sold,
-
-    achievement_percentage
-
-FROM (
-
     SELECT
-        etm.employee_id,
-        u.employee_id AS employee_code,
-        u.name AS name,
+        ROW_NUMBER() OVER (
+            ORDER BY achievement_percentage DESC
+        ) AS rank_no,
 
-        etm.normal_target,
-        etm.renewal_target,
+        employee_id,
+        employee_code,
+        name,
 
-        (
-            etm.normal_target +
+        normal_target,
+        renewal_target,
+        total_calls,
+
+        normal_sold,
+        renewal_sold,
+        total_sold,
+
+        achievement_percentage
+
+    FROM (
+
+        SELECT
+            etm.employee_id,
+
+            u.employee_id AS employee_code,
+            u.name AS name,
+
+            etm.normal_target,
+            etm.renewal_target,
+
+            (
+                etm.normal_target +
+                etm.renewal_target
+            ) AS total_calls,
+
+            /* =========================================
+               NORMAL CUSTOMER CAPTURED
+               ========================================= */
+            COUNT(
+                DISTINCT CASE
+                    WHEN p.previous_policy_id IS NULL
+                    THEN p.policy_id
+                END
+            ) AS normal_sold,
+
+            /* =========================================
+               RENEWAL / PREVIOUS CUSTOMER CAPTURED
+               ========================================= */
+            COUNT(
+                DISTINCT CASE
+                    WHEN p.previous_policy_id IS NOT NULL
+                    THEN p.policy_id
+                END
+            ) AS renewal_sold,
+
+            /* =========================================
+               TOTAL CAPTURED
+               ========================================= */
+            COUNT(
+                DISTINCT p.policy_id
+            ) AS total_sold,
+
+            /* =========================================
+               ACHIEVEMENT %
+               ========================================= */
+            COALESCE(
+                ROUND(
+                    (
+                        COUNT(
+                            DISTINCT p.policy_id
+                        )
+                        /
+                        NULLIF(
+                            (
+                                etm.normal_target +
+                                etm.renewal_target
+                            ),
+                            0
+                        )
+                    ) * 100,
+                    2
+                ),
+                0
+            ) AS achievement_percentage
+
+        FROM employee_target_master etm
+
+        /* =========================================
+           EMPLOYEE
+           ========================================= */
+        JOIN users_master u
+            ON u.user_id = etm.employee_id
+            AND u.is_active = 1
+            AND u.is_admin = 0
+
+        /* =========================================
+           POLICY
+
+           Policy capture belongs to the user who
+           created the policy.
+           ========================================= */
+        LEFT JOIN policies p
+            ON p.created_by = etm.employee_id
+            AND p.is_active = 1
+
+            /* =====================================
+               CURRENT MONTH CAPTURE
+               ===================================== */
+            AND YEAR(
+                COALESCE(
+                    p.sale_date,
+                    DATE(p.created_at)
+                )
+            ) = YEAR(CURDATE())
+
+            AND MONTH(
+                COALESCE(
+                    p.sale_date,
+                    DATE(p.created_at)
+                )
+            ) = MONTH(CURDATE())
+
+        /* =========================================
+           CURRENT MONTH TARGET
+           ========================================= */
+        WHERE
+            etm.is_active = 1
+
+            AND YEAR(etm.target_date) = YEAR(CURDATE())
+
+            AND MONTH(etm.target_date) = MONTH(CURDATE())
+
+        GROUP BY
+            etm.employee_id,
+            u.employee_id,
+            u.name,
+            etm.normal_target,
             etm.renewal_target
-        ) AS total_calls,
 
-        /* =========================================
-           NORMAL CUSTOMER CAPTURED
-           ========================================= */
-        COUNT(
-            DISTINCT CASE
-                WHEN c.is_previous_customer = 0
-                THEN p.policy_id
-            END
-        ) AS normal_sold,
+    ) AS capture_performance
 
-        /* =========================================
-           PREVIOUS CUSTOMER / RENEWAL CAPTURED
-           ========================================= */
-        COUNT(
-            DISTINCT CASE
-                WHEN c.is_previous_customer = 1
-                THEN p.policy_id
-            END
-        ) AS renewal_sold,
+    ORDER BY
+        achievement_percentage DESC
 
-        /* =========================================
-           TOTAL CAPTURED
-           ========================================= */
-        COUNT(
-            DISTINCT p.policy_id
-        ) AS total_sold,
-
-        /* =========================================
-           ACHIEVEMENT %
-           ========================================= */
-        COALESCE(
-            ROUND(
-                (
-                    COUNT(
-                        DISTINCT p.policy_id
-                    )
-                    /
-                    NULLIF(
-                        (
-                            etm.normal_target +
-                            etm.renewal_target
-                        ),
-                        0
-                    )
-                ) * 100,
-                2
-            ),
-            0
-        ) AS achievement_percentage
-
-    FROM employee_target_master etm
-
-    /* =========================================
-       EMPLOYEE
-       ========================================= */
-    JOIN users_master u
-        ON u.user_id = etm.employee_id
-        AND u.is_active = 1
-        AND u.is_admin = 0
-
-    /* =========================================
-       LEADS
-
-       LEFT JOIN means employee will still appear
-       even when there is no captured lead.
-       ========================================= */
-    LEFT JOIN leads l
-        ON l.assigned_to = etm.employee_id
-        AND l.status_id = 5
-
-    /* =========================================
-       CUSTOMER
-       ========================================= */
-    LEFT JOIN customers c
-        ON c.customer_id = l.customer_id
-
-    /* =========================================
-       POLICY
-
-       LEFT JOIN means employee will still appear
-       even when there is no policy.
-       ========================================= */
-    LEFT JOIN policies p
-        ON p.customer_id = c.customer_id
-        AND p.is_active = 1
-
-        /* =====================================
-           CURRENT MONTH CAPTURE
-
-           sale_date exists -> sale_date
-           sale_date NULL   -> created_at
-           ===================================== */
-        AND YEAR(
-            COALESCE(
-                p.sale_date,
-                DATE(p.created_at)
-            )
-        ) = YEAR(CURDATE())
-
-        AND MONTH(
-            COALESCE(
-                p.sale_date,
-                DATE(p.created_at)
-            )
-        ) = MONTH(CURDATE())
-
-    /* =========================================
-       CURRENT MONTH TARGET
-       ========================================= */
-    WHERE
-        etm.is_active = 1
-
-        AND YEAR(etm.target_date) = YEAR(CURDATE())
-
-        AND MONTH(etm.target_date) = MONTH(CURDATE())
-
-    GROUP BY
-        etm.employee_id,
-        u.employee_id,
-        u.name,
-        etm.normal_target,
-        etm.renewal_target
-
-) AS capture_performance
-
-ORDER BY
-    achievement_percentage DESC
-
-LIMIT 5
-`,
+    LIMIT 5
+    `,
       [],
       (err, result) => {
         if (err) return callback(err);
@@ -2267,7 +2309,6 @@ LIMIT 5
       },
     );
   },
-
   getEmployeeActivity: (empId, callback) => {
     const sql = `
 SELECT
