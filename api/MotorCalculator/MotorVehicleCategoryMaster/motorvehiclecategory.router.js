@@ -5,12 +5,14 @@ const router = express.Router();
 const MotorVehicleCategoryController = require("./motorvehiclecategory.controller");
 
 const verifyAccessToken = require("../../../middleware/verifyAccessToken");
+const motorVehicleCategoryUpload = require("./motorVehicleCategoryUpload");
 
 // CREATE
 router.post(
   "/create",
   verifyAccessToken,
-  MotorVehicleCategoryController.createVehicleCategory,
+  motorVehicleCategoryUpload.single("image"),
+  MotorVehicleCategoryController.createVehicleCategory
 );
 
 // GET ALL
@@ -31,7 +33,8 @@ router.get(
 router.patch(
   "/update/:vehicleCategoryId",
   verifyAccessToken,
-  MotorVehicleCategoryController.updateVehicleCategory,
+  motorVehicleCategoryUpload.single("image"),
+  MotorVehicleCategoryController.updateVehicleCategory
 );
 
 // DELETE

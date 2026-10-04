@@ -5,9 +5,33 @@ const multer = require("multer");
 const createUpload = require("../../middleware/multer");
 
 // C Drive Upload Paths
-const AADHAR_UPLOAD_DIR = "C:/uploads/users/aadhar";
-const BIODATA_UPLOAD_DIR = "C:/uploads/users/biodata";
-const BANK_UPLOAD_DIR = "C:/uploads/users/bank";
+// const AADHAR_UPLOAD_DIR = "C:/uploads/users/aadhar";
+// const BIODATA_UPLOAD_DIR = "C:/uploads/users/biodata";
+// const BANK_UPLOAD_DIR = "C:/uploads/users/bank";
+
+
+const UPLOADS_PATH = process.env.UPLOADS_PATH;
+
+
+const AADHAR_UPLOAD_DIR = path.join(
+    UPLOADS_PATH,
+    "users",
+    "aadhar"
+);
+
+const BIODATA_UPLOAD_DIR = path.join(
+    UPLOADS_PATH,
+    "users",
+    "biodata"
+);
+
+const BANK_UPLOAD_DIR = path.join(
+    UPLOADS_PATH,
+    "users",
+    "bank"
+);
+
+
 
 // Create upload instances
 const uploadAadhar = createUpload(AADHAR_UPLOAD_DIR, ["image/jpeg", "image/png", "application/pdf"], 5);

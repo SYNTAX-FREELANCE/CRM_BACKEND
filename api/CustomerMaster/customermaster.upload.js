@@ -1,17 +1,26 @@
 // api/CustomerMaster/customermaster.upload.js
+
+const path = require("path");
 const createUpload = require("../../middleware/multer");
 
-// C Drive Upload Paths for Customers
-const CUSTOMER_UPLOAD_DIR = "C:/uploads/customers";
+// Customer Upload Directory
+const CUSTOMER_UPLOAD_DIR = path.join(
+  process.env.UPLOADS_PATH,
+  "customers"
+);
 
 // Create upload instance allowing Excel and PDF
-const uploadCustomer = createUpload(CUSTOMER_UPLOAD_DIR, [
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
-  "application/vnd.ms-excel",                                         // .xls
-  "application/pdf"                                                   // .pdf
-], 1); // Allow 1 file at a time
+const uploadCustomer = createUpload(
+  CUSTOMER_UPLOAD_DIR,
+  [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+    "application/vnd.ms-excel", // .xls
+    "application/pdf", // .pdf
+  ],
+  1
+);
 
 module.exports = {
   uploadCustomer,
-  CUSTOMER_UPLOAD_DIR
+  CUSTOMER_UPLOAD_DIR,
 };
