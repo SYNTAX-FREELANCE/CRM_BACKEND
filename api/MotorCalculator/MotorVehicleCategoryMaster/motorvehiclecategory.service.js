@@ -4,22 +4,24 @@ const MotorVehicleCategoryService = {
   // CREATE
   createVehicleCategory: (data, callback) => {
     const query = `
-      INSERT INTO motor_vehicle_categories
-      (
-        vehicle_type_id,
-        category_code,
-        category_name,
-        description,
-        is_active
-      )
-      VALUES (?, ?, ?, ?, ?)
-    `;
+    INSERT INTO motor_vehicle_categories
+    (
+      vehicle_type_id,
+      category_code,
+      category_name,
+      description,
+      image_path,
+      is_active
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
 
     const values = [
       data.vehicle_type_id,
       data.category_code,
       data.category_name,
       data.description || null,
+      data.image_path || null,
       data.is_active ?? 1,
     ];
 
@@ -41,6 +43,7 @@ const MotorVehicleCategoryService = {
         mvc.category_code,
         mvc.category_name,
         mvc.description,
+        mvc.image_path,
         mvc.is_active,
         vt.vehicle_type_name
       FROM motor_vehicle_categories mvc
@@ -66,6 +69,7 @@ const MotorVehicleCategoryService = {
         category_code,
         category_name,
         description,
+        image_path,
         is_active,
         created_at,
         updated_at
@@ -85,21 +89,23 @@ const MotorVehicleCategoryService = {
   // UPDATE
   updateVehicleCategory: (vehicleCategoryId, data, callback) => {
     const query = `
-      UPDATE motor_vehicle_categories
-      SET
-        vehicle_type_id = ?,
-        category_code = ?,
-        category_name = ?,
-        description = ?,
-        is_active = ?
-      WHERE vehicle_category_id = ?
-    `;
+    UPDATE motor_vehicle_categories
+    SET
+      vehicle_type_id = ?,
+      category_code = ?,
+      category_name = ?,
+      description = ?,
+      image_path = COALESCE(?, image_path),
+      is_active = ?
+    WHERE vehicle_category_id = ?
+  `;
 
     const values = [
       data.vehicle_type_id,
       data.category_code,
       data.category_name,
       data.description || null,
+      data.image_path,
       data.is_active ?? 1,
       vehicleCategoryId,
     ];

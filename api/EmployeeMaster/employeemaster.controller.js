@@ -22,6 +22,13 @@ const {
   getLeadDocumentsService,
 } = require("./employeelead.upload");
 
+
+const EMPLOYEE_DETAILS_PATH = process.env.EMPLOYEE_DETAILS_PATH;
+const PROFILE_PHOTO_PATH = process.env.PROFILE_PHOTO_PATH;
+
+
+
+
 module.exports = {
   // ==================== CREATE USER WITH FILES ====================
   createUser: (req, res) => {
@@ -585,7 +592,7 @@ module.exports = {
     const path = require("path");
     const fs = require("fs");
 
-    const folderPath = path.join("C:/CRM/EmployeeDetails", String(id));
+    const folderPath = path.join(EMPLOYEE_DETAILS_PATH, String(id))
 
     // Scan subfolders to find where filename exists on disk
     const subfolders = ["bank", "resume", "aadhar", "others"];
@@ -658,7 +665,7 @@ module.exports = {
         });
       }
 
-      const dir = path.join("C:/CRM/ProfilePhoto", String(userId));
+      const dir = path.join(PROFILE_PHOTO_PATH, String(userId))
       if (fs.existsSync(dir)) {
         // Clear any old profile photos for this user
         const existingFiles = fs.readdirSync(dir);
@@ -694,7 +701,7 @@ module.exports = {
       const fs = require("fs");
       const path = require("path");
       const { userId } = req.params;
-      const dir = path.join("C:/CRM/ProfilePhoto", String(userId));
+      const dir = path.join(PROFILE_PHOTO_PATH, String(userId))
 
       if (!fs.existsSync(dir)) {
         return res.status(200).send("Not Found");

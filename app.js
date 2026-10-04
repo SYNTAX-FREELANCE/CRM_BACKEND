@@ -13,9 +13,33 @@ const app = express();
 const server = http.createServer(app);
 
 // Serve the C:\uploads folder at /uploads URL
-app.use("/uploads", express.static("C:/uploads"));
-app.use("/policy-documents", express.static("C:/CRM/PolicyDocuments"));
-app.use("/lead-documents", express.static("C:/CRM/LeadDocuments"));
+// app.use("/uploads", express.static("C:/uploads"));
+// app.use("/policy-documents", express.static("C:/CRM/PolicyDocuments"));
+// app.use("/lead-documents", express.static("C:/CRM/LeadDocuments"));
+
+
+const uploadsPath =
+  process.env.UPLOADS_PATH || path.join(__dirname, "uploads");
+
+const policyDocumentsPath =
+  process.env.POLICY_DOCUMENTS_PATH ||
+  path.join(__dirname, "PolicyDocuments");
+
+const leadDocumentsPath =
+  process.env.LEAD_DOCUMENTS_PATH ||
+  path.join(__dirname, "LeadDocuments");
+
+app.use("/uploads", express.static(uploadsPath));
+
+app.use(
+  "/policy-documents",
+  express.static(policyDocumentsPath)
+);
+
+app.use(
+  "/lead-documents",
+  express.static(leadDocumentsPath)
+);
 
 // middlewares
 app.use(cors(corsConfig));
