@@ -17,29 +17,19 @@ const server = http.createServer(app);
 // app.use("/policy-documents", express.static("C:/CRM/PolicyDocuments"));
 // app.use("/lead-documents", express.static("C:/CRM/LeadDocuments"));
 
-
-const uploadsPath =
-  process.env.UPLOADS_PATH || path.join(__dirname, "uploads");
+const uploadsPath = process.env.UPLOADS_PATH || path.join(__dirname, "uploads");
 
 const policyDocumentsPath =
-  process.env.POLICY_DOCUMENTS_PATH ||
-  path.join(__dirname, "PolicyDocuments");
+  process.env.POLICY_DOCUMENTS_PATH || path.join(__dirname, "PolicyDocuments");
 
 const leadDocumentsPath =
-  process.env.LEAD_DOCUMENTS_PATH ||
-  path.join(__dirname, "LeadDocuments");
+  process.env.LEAD_DOCUMENTS_PATH || path.join(__dirname, "LeadDocuments");
 
 app.use("/uploads", express.static(uploadsPath));
 
-app.use(
-  "/policy-documents",
-  express.static(policyDocumentsPath)
-);
+app.use("/policy-documents", express.static(policyDocumentsPath));
 
-app.use(
-  "/lead-documents",
-  express.static(leadDocumentsPath)
-);
+app.use("/lead-documents", express.static(leadDocumentsPath));
 
 // middlewares
 app.use(cors(corsConfig));
@@ -141,6 +131,8 @@ const motorQuotationOptionRoutes = require("./api/MotorCalculator/MotorQuotatinO
 const motorQuotationOptionAddonRoutes = require("./api/MotorCalculator/MotorQuotationOptionAddon/motor_quotation_option_addon.routes");
 const motorQuotationOptionCoverRoutes = require("./api/MotorCalculator/MotorQuotationOptionCover/motor_quotation_option_cover.routes");
 
+const motorvehicleinputfielsRoutes = require("./api/MotorCalculator/MotorVehicleInputFields/motorVehicleInputField.router");
+const calculator = require("./api/Calculator/calculator.router");
 
 const validateToken = require("./Validate/validateToken");
 const verifyAccessToken = require("./middleware/verifyAccessToken");
@@ -354,8 +346,6 @@ app.use(
   socketMiddleware,
   policyclaim,
 );
-
-
 
 // MOTOR CALCULATOR
 
@@ -597,6 +587,19 @@ app.use(
   motorQuotationOptionCoverRoutes,
 );
 
+app.use(
+  "/api/motor/vehicle-input-field",
+  routeTrackerMiddleware("MOTOR_VEHICLE_INPUT_FIELD_ROUTER"),
+  socketMiddleware,
+  motorvehicleinputfielsRoutes,
+);
+
+app.use(
+  "/api/motor/calculation",
+  routeTrackerMiddleware("MOTOR_VEHICLE_CALCULATOR"),
+  socketMiddleware,
+  calculator,
+);
 
 const fileuploadRouter = express.Router();
 
