@@ -427,9 +427,7 @@ const MotorVehicleInputFieldService = {
         vehicle_category_id,
         callback
     ) => {
-console.log({
-    vehicle_category_id
-});
+
 
         const query = `
             SELECT

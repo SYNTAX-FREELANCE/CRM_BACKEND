@@ -240,11 +240,6 @@ updateVehicleCategory: (req, res) => {
     image_path: imagePath,
     is_active: is_active ?? 1,
   };
-console.log("UPDATE DATA:", data);
-
-console.log({
-  vehicleCategoryId
-});
 
 
   MotorVehicleCategoryService.updateVehicleCategory(
