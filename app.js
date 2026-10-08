@@ -132,6 +132,7 @@ const motorQuotationOptionAddonRoutes = require("./api/MotorCalculator/MotorQuot
 const motorQuotationOptionCoverRoutes = require("./api/MotorCalculator/MotorQuotationOptionCover/motor_quotation_option_cover.routes");
 
 const motorvehicleinputfielsRoutes = require("./api/MotorCalculator/MotorVehicleInputFields/motorVehicleInputField.router");
+const motorodrateslabRoute = require("./api/MotorCalculator/MotorOdRateSlab/motorOdRateSlab.routes");
 const calculator = require("./api/Calculator/calculator.router");
 
 const validateToken = require("./Validate/validateToken");
@@ -593,6 +594,15 @@ app.use(
   socketMiddleware,
   motorvehicleinputfielsRoutes,
 );
+
+
+app.use(
+  "/api/motor/od-rate-slab",
+  routeTrackerMiddleware("MOTOR_OD_RATE_SLAB_FIELD_ROUTER"),
+  socketMiddleware,
+  motorodrateslabRoute,
+);
+
 
 app.use(
   "/api/motor/calculation",
