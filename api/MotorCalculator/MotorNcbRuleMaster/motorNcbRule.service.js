@@ -15,9 +15,10 @@ const MotorNcbRuleService = {
                 ncb_percentage,
                 effective_from,
                 effective_to,
-                description
+                description,
+                is_active
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)
         `;
 
         const values = [
@@ -31,7 +32,8 @@ const MotorNcbRuleService = {
             data.ncb_percentage,
             data.effective_from,
             data.effective_to || null,
-            data.description || null
+            data.description || null,
+            data.is_active
         ];
 
         pool.query(query, values, (err, result) => {
@@ -151,7 +153,8 @@ const MotorNcbRuleService = {
                 ncb_percentage = ?,
                 effective_from = ?,
                 effective_to = ?,
-                description = ?
+                description = ?,
+                is_active = ?
             WHERE ncb_rule_id = ?
         `;
 
@@ -167,6 +170,7 @@ const MotorNcbRuleService = {
             data.effective_from,
             data.effective_to || null,
             data.description || null,
+            data.is_active,
             id
         ];
 

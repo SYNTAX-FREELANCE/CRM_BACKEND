@@ -14,7 +14,8 @@ const MotorNcbRuleController = {
             ncb_percentage,
             effective_from,
             effective_to,
-            description
+            description,
+            is_active
         } = req.body;
 
 
@@ -192,7 +193,8 @@ const MotorNcbRuleController = {
 
             effective_from,
             effective_to: effective_to || null,
-            description: description || null
+            description: description || null,
+            is_active:is_active
         };
 
 
@@ -300,7 +302,8 @@ const MotorNcbRuleController = {
             ncb_percentage,
             effective_from,
             effective_to,
-            description
+            description,
+            is_active
         } = req.body;
 
 
@@ -479,7 +482,8 @@ const MotorNcbRuleController = {
 
             effective_from,
             effective_to: effective_to || null,
-            description: description || null
+            description: description || null,
+            is_active:is_active
         };
 
 

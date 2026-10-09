@@ -19,9 +19,10 @@ const MotorOdRateService = {
                 rate_value,
                 effective_from,
                 effective_to,
-                description
+                description,
+                is_active
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
         `;
 
         const values = [
@@ -36,7 +37,8 @@ const MotorOdRateService = {
             data.rate_value,
             data.effective_from,
             data.effective_to ?? null,
-            data.description ?? null
+            data.description ?? null,
+            data.isactive
         ];
 
         pool.query(query, values, callback);
@@ -203,7 +205,8 @@ const MotorOdRateService = {
                 rate_value = ?,
                 effective_from = ?,
                 effective_to = ?,
-                description = ?
+                description = ?,
+                is_active = ?
             WHERE od_rate_id = ?
         `;
 
@@ -220,6 +223,7 @@ const MotorOdRateService = {
             data.effective_from,
             data.effective_to ?? null,
             data.description ?? null,
+            data.isactive,
             odRateId
         ];
 

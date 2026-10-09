@@ -17,9 +17,10 @@ const MotorTpRateService = {
                 rate_type,
                 description,
                 effective_from,
-                effective_to
+                effective_to,
+                is_active
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const values = [
@@ -33,7 +34,8 @@ const MotorTpRateService = {
             data.rate_type || "FIXED",
             data.description || null,
             data.effective_from,
-            data.effective_to || null
+            data.effective_to || null,
+            data.is_active
         ];
 
         pool.query(query, values, (err, result) => {
@@ -62,15 +64,19 @@ const MotorTpRateService = {
 
                 tr.policy_type_id,
                 pt.policy_type_name,
+                pt.policy_type_code,
+                p.product_code,
 
                 tr.policy_term_id,
                 pterm.term_name,
 
                 tr.vehicle_category_id,
                 vc.category_name,
+                vc.category_code,
 
                 tr.vehicle_class_id,
                 vcl.class_name,
+                vcl.class_code,
 
                 tr.usage_id,
                 vu.usage_name,
@@ -217,7 +223,8 @@ const MotorTpRateService = {
                 rate_type = ?,
                 description = ?,
                 effective_from = ?,
-                effective_to = ?
+                effective_to = ?,
+                is_active= ?
 
             WHERE tp_rate_id = ?
         `;
@@ -234,6 +241,7 @@ const MotorTpRateService = {
             data.description || null,
             data.effective_from,
             data.effective_to || null,
+            data.is_active,
             id
         ];
 

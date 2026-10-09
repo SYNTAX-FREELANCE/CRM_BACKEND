@@ -16,7 +16,8 @@ const MotorTpRateController = {
             rate_type,
             description,
             effective_from,
-            effective_to
+            effective_to,
+            is_active
         } = req.body;
 
 
@@ -149,8 +150,8 @@ const MotorTpRateController = {
         const data = {
             insurance_company_id:
                 insurance_company_id === undefined ||
-                insurance_company_id === null ||
-                insurance_company_id === ""
+                    insurance_company_id === null ||
+                    insurance_company_id === ""
                     ? null
                     : Number(insurance_company_id),
 
@@ -160,29 +161,29 @@ const MotorTpRateController = {
 
             policy_term_id:
                 policy_term_id === undefined ||
-                policy_term_id === null ||
-                policy_term_id === ""
+                    policy_term_id === null ||
+                    policy_term_id === ""
                     ? null
                     : Number(policy_term_id),
 
             vehicle_category_id:
                 vehicle_category_id === undefined ||
-                vehicle_category_id === null ||
-                vehicle_category_id === ""
+                    vehicle_category_id === null ||
+                    vehicle_category_id === ""
                     ? null
                     : Number(vehicle_category_id),
 
             vehicle_class_id:
                 vehicle_class_id === undefined ||
-                vehicle_class_id === null ||
-                vehicle_class_id === ""
+                    vehicle_class_id === null ||
+                    vehicle_class_id === ""
                     ? null
                     : Number(vehicle_class_id),
 
             usage_id:
                 usage_id === undefined ||
-                usage_id === null ||
-                usage_id === ""
+                    usage_id === null ||
+                    usage_id === ""
                     ? null
                     : Number(usage_id),
 
@@ -192,7 +193,8 @@ const MotorTpRateController = {
 
             effective_from,
 
-            effective_to: effective_to || null
+            effective_to: effective_to || null,
+            is_active: is_active
         };
 
 
@@ -298,7 +300,8 @@ const MotorTpRateController = {
             rate_type,
             description,
             effective_from,
-            effective_to
+            effective_to,
+            is_active
         } = req.body;
 
 
@@ -431,8 +434,8 @@ const MotorTpRateController = {
         const data = {
             insurance_company_id:
                 insurance_company_id === undefined ||
-                insurance_company_id === null ||
-                insurance_company_id === ""
+                    insurance_company_id === null ||
+                    insurance_company_id === ""
                     ? null
                     : Number(insurance_company_id),
 
@@ -442,29 +445,29 @@ const MotorTpRateController = {
 
             policy_term_id:
                 policy_term_id === undefined ||
-                policy_term_id === null ||
-                policy_term_id === ""
+                    policy_term_id === null ||
+                    policy_term_id === ""
                     ? null
                     : Number(policy_term_id),
 
             vehicle_category_id:
                 vehicle_category_id === undefined ||
-                vehicle_category_id === null ||
-                vehicle_category_id === ""
+                    vehicle_category_id === null ||
+                    vehicle_category_id === ""
                     ? null
                     : Number(vehicle_category_id),
 
             vehicle_class_id:
                 vehicle_class_id === undefined ||
-                vehicle_class_id === null ||
-                vehicle_class_id === ""
+                    vehicle_class_id === null ||
+                    vehicle_class_id === ""
                     ? null
                     : Number(vehicle_class_id),
 
             usage_id:
                 usage_id === undefined ||
-                usage_id === null ||
-                usage_id === ""
+                    usage_id === null ||
+                    usage_id === ""
                     ? null
                     : Number(usage_id),
 
@@ -474,7 +477,8 @@ const MotorTpRateController = {
 
             effective_from,
 
-            effective_to: effective_to || null
+            effective_to: effective_to || null,
+            is_active: is_active
         };
 
 
