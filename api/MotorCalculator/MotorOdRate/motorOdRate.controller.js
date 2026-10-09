@@ -17,7 +17,8 @@ const MotorOdRateController = {
             rate_value,
             effective_from,
             effective_to,
-            description
+            description,
+            isactive
         } = req.body;
 
 
@@ -175,8 +176,8 @@ const MotorOdRateController = {
         const data = {
             insurance_company_id:
                 insurance_company_id === undefined ||
-                insurance_company_id === null ||
-                insurance_company_id === ""
+                    insurance_company_id === null ||
+                    insurance_company_id === ""
                     ? null
                     : Number(insurance_company_id),
 
@@ -186,29 +187,29 @@ const MotorOdRateController = {
 
             vehicle_category_id:
                 vehicle_category_id === undefined ||
-                vehicle_category_id === null ||
-                vehicle_category_id === ""
+                    vehicle_category_id === null ||
+                    vehicle_category_id === ""
                     ? null
                     : Number(vehicle_category_id),
 
             vehicle_class_id:
                 vehicle_class_id === undefined ||
-                vehicle_class_id === null ||
-                vehicle_class_id === ""
+                    vehicle_class_id === null ||
+                    vehicle_class_id === ""
                     ? null
                     : Number(vehicle_class_id),
 
             fuel_type_id:
                 fuel_type_id === undefined ||
-                fuel_type_id === null ||
-                fuel_type_id === ""
+                    fuel_type_id === null ||
+                    fuel_type_id === ""
                     ? null
                     : Number(fuel_type_id),
 
             usage_id:
                 usage_id === undefined ||
-                usage_id === null ||
-                usage_id === ""
+                    usage_id === null ||
+                    usage_id === ""
                     ? null
                     : Number(usage_id),
 
@@ -224,7 +225,8 @@ const MotorOdRateController = {
             description:
                 description && description.trim()
                     ? description.trim()
-                    : null
+                    : null,
+            isactive
         };
 
 
@@ -334,7 +336,8 @@ const MotorOdRateController = {
             rate_value,
             effective_from,
             effective_to,
-            description
+            description,
+            isactive
         } = req.body;
 
 
@@ -492,8 +495,8 @@ const MotorOdRateController = {
         const data = {
             insurance_company_id:
                 insurance_company_id === undefined ||
-                insurance_company_id === null ||
-                insurance_company_id === ""
+                    insurance_company_id === null ||
+                    insurance_company_id === ""
                     ? null
                     : Number(insurance_company_id),
 
@@ -503,29 +506,29 @@ const MotorOdRateController = {
 
             vehicle_category_id:
                 vehicle_category_id === undefined ||
-                vehicle_category_id === null ||
-                vehicle_category_id === ""
+                    vehicle_category_id === null ||
+                    vehicle_category_id === ""
                     ? null
                     : Number(vehicle_category_id),
 
             vehicle_class_id:
                 vehicle_class_id === undefined ||
-                vehicle_class_id === null ||
-                vehicle_class_id === ""
+                    vehicle_class_id === null ||
+                    vehicle_class_id === ""
                     ? null
                     : Number(vehicle_class_id),
 
             fuel_type_id:
                 fuel_type_id === undefined ||
-                fuel_type_id === null ||
-                fuel_type_id === ""
+                    fuel_type_id === null ||
+                    fuel_type_id === ""
                     ? null
                     : Number(fuel_type_id),
 
             usage_id:
                 usage_id === undefined ||
-                usage_id === null ||
-                usage_id === ""
+                    usage_id === null ||
+                    usage_id === ""
                     ? null
                     : Number(usage_id),
 
@@ -541,7 +544,8 @@ const MotorOdRateController = {
             description:
                 description && description.trim()
                     ? description.trim()
-                    : null
+                    : null,
+            isactive: isactive
         };
 
 

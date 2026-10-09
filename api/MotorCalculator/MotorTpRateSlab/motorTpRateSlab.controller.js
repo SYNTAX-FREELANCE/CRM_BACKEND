@@ -12,7 +12,8 @@ const MotorTpRateSlabController = {
             min_seating_capacity,
             max_seating_capacity,
             rate_value,
-            description
+            description,
+            is_active
         } = req.body;
 
 
@@ -109,7 +110,7 @@ const MotorTpRateSlabController = {
                 min_seating_capacity !== null &&
                 min_seating_capacity !== "" &&
                 Number(max_seating_capacity) <
-                    Number(min_seating_capacity)
+                Number(min_seating_capacity)
             ) {
                 return res.status(200).json({
                     success: 0,
@@ -154,35 +155,36 @@ const MotorTpRateSlabController = {
 
             engine_cc_slab_id:
                 engine_cc_slab_id === undefined ||
-                engine_cc_slab_id === null ||
-                engine_cc_slab_id === ""
+                    engine_cc_slab_id === null ||
+                    engine_cc_slab_id === ""
                     ? null
                     : Number(engine_cc_slab_id),
 
             gvw_slab_id:
                 gvw_slab_id === undefined ||
-                gvw_slab_id === null ||
-                gvw_slab_id === ""
+                    gvw_slab_id === null ||
+                    gvw_slab_id === ""
                     ? null
                     : Number(gvw_slab_id),
 
             min_seating_capacity:
                 min_seating_capacity === undefined ||
-                min_seating_capacity === null ||
-                min_seating_capacity === ""
+                    min_seating_capacity === null ||
+                    min_seating_capacity === ""
                     ? null
                     : Number(min_seating_capacity),
 
             max_seating_capacity:
                 max_seating_capacity === undefined ||
-                max_seating_capacity === null ||
-                max_seating_capacity === ""
+                    max_seating_capacity === null ||
+                    max_seating_capacity === ""
                     ? null
                     : Number(max_seating_capacity),
 
             rate_value: Number(rate_value),
 
-            description: description || null
+            description: description || null,
+            is_active: is_active
         };
 
 
@@ -284,7 +286,8 @@ const MotorTpRateSlabController = {
             min_seating_capacity,
             max_seating_capacity,
             rate_value,
-            description
+            description,
+            is_active
         } = req.body;
 
 
@@ -381,7 +384,7 @@ const MotorTpRateSlabController = {
                 min_seating_capacity !== null &&
                 min_seating_capacity !== "" &&
                 Number(max_seating_capacity) <
-                    Number(min_seating_capacity)
+                Number(min_seating_capacity)
             ) {
                 return res.status(200).json({
                     success: 0,
@@ -426,35 +429,36 @@ const MotorTpRateSlabController = {
 
             engine_cc_slab_id:
                 engine_cc_slab_id === undefined ||
-                engine_cc_slab_id === null ||
-                engine_cc_slab_id === ""
+                    engine_cc_slab_id === null ||
+                    engine_cc_slab_id === ""
                     ? null
                     : Number(engine_cc_slab_id),
 
             gvw_slab_id:
                 gvw_slab_id === undefined ||
-                gvw_slab_id === null ||
-                gvw_slab_id === ""
+                    gvw_slab_id === null ||
+                    gvw_slab_id === ""
                     ? null
                     : Number(gvw_slab_id),
 
             min_seating_capacity:
                 min_seating_capacity === undefined ||
-                min_seating_capacity === null ||
-                min_seating_capacity === ""
+                    min_seating_capacity === null ||
+                    min_seating_capacity === ""
                     ? null
                     : Number(min_seating_capacity),
 
             max_seating_capacity:
                 max_seating_capacity === undefined ||
-                max_seating_capacity === null ||
-                max_seating_capacity === ""
+                    max_seating_capacity === null ||
+                    max_seating_capacity === ""
                     ? null
                     : Number(max_seating_capacity),
 
             rate_value: Number(rate_value),
 
-            description: description || null
+            description: description || null,
+            is_active: is_active
         };
 
 
