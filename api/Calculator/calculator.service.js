@@ -393,18 +393,12 @@ const MotorCalculationService = {
         : null;
 
     const cc =
-      engine_cc !== "" &&
-      engine_cc !== undefined &&
-      engine_cc !== null
+      engine_cc !== "" && engine_cc !== undefined && engine_cc !== null
         ? Number(engine_cc)
         : null;
 
     const vehicleGvw =
-      gvw !== "" &&
-      gvw !== undefined &&
-      gvw !== null
-        ? Number(gvw)
-        : null;
+      gvw !== "" && gvw !== undefined && gvw !== null ? Number(gvw) : null;
 
     const seating =
       seating_capacity !== "" &&
@@ -421,25 +415,15 @@ const MotorCalculationService = {
       Number(product_id),
       Number(policy_type_id),
 
-      insurance_company_id
-        ? Number(insurance_company_id)
-        : null,
+      insurance_company_id ? Number(insurance_company_id) : null,
 
-      vehicle_category_id
-        ? Number(vehicle_category_id)
-        : null,
+      vehicle_category_id ? Number(vehicle_category_id) : null,
 
-      vehicle_class_id
-        ? Number(vehicle_class_id)
-        : null,
+      vehicle_class_id ? Number(vehicle_class_id) : null,
 
-      fuel_type_id
-        ? Number(fuel_type_id)
-        : null,
+      fuel_type_id ? Number(fuel_type_id) : null,
 
-      usage_id
-        ? Number(usage_id)
-        : null,
+      usage_id ? Number(usage_id) : null,
 
       // =====================================================
       // ENGINE CC
@@ -543,12 +527,7 @@ const MotorCalculationService = {
 
     pool.query(
       sql,
-      [
-        Number(product_id),
-        Number(policy_type_id),
-        age,
-        age,
-      ],
+      [Number(product_id), Number(policy_type_id), age, age],
       callback,
     );
   },
@@ -744,61 +723,35 @@ const MotorCalculationService = {
       Number(policy_type_id),
       Number(policy_term_id),
 
-      insurance_company_id
-        ? Number(insurance_company_id)
-        : null,
+      insurance_company_id ? Number(insurance_company_id) : null,
 
-      vehicle_category_id
-        ? Number(vehicle_category_id)
-        : null,
+      vehicle_category_id ? Number(vehicle_category_id) : null,
 
-      vehicle_class_id
-        ? Number(vehicle_class_id)
-        : null,
+      vehicle_class_id ? Number(vehicle_class_id) : null,
 
-      usage_id
-        ? Number(usage_id)
-        : null,
+      usage_id ? Number(usage_id) : null,
 
       // ENGINE CC
 
-      engine_cc !== "" &&
-      engine_cc !== undefined &&
-      engine_cc !== null
+      engine_cc !== "" && engine_cc !== undefined && engine_cc !== null
         ? Number(engine_cc)
         : null,
 
-      engine_cc !== "" &&
-      engine_cc !== undefined &&
-      engine_cc !== null
+      engine_cc !== "" && engine_cc !== undefined && engine_cc !== null
         ? Number(engine_cc)
         : null,
 
-      engine_cc !== "" &&
-      engine_cc !== undefined &&
-      engine_cc !== null
+      engine_cc !== "" && engine_cc !== undefined && engine_cc !== null
         ? Number(engine_cc)
         : null,
 
       // GVW
 
-      gvw !== "" &&
-      gvw !== undefined &&
-      gvw !== null
-        ? Number(gvw)
-        : null,
+      gvw !== "" && gvw !== undefined && gvw !== null ? Number(gvw) : null,
 
-      gvw !== "" &&
-      gvw !== undefined &&
-      gvw !== null
-        ? Number(gvw)
-        : null,
+      gvw !== "" && gvw !== undefined && gvw !== null ? Number(gvw) : null,
 
-      gvw !== "" &&
-      gvw !== undefined &&
-      gvw !== null
-        ? Number(gvw)
-        : null,
+      gvw !== "" && gvw !== undefined && gvw !== null ? Number(gvw) : null,
 
       // SEATING
 
@@ -878,10 +831,7 @@ const MotorCalculationService = {
 
     pool.query(
       sql,
-      [
-        Number(product_id),
-        Number(policy_type_id),
-      ],
+      [Number(product_id), Number(policy_type_id)],
       (err, rows) => {
         if (err) {
           return callback(err);
@@ -891,12 +841,9 @@ const MotorCalculationService = {
           return callback(null, []);
         }
 
-        const previousNCB =
-          Number(previous_ncb_percentage) || 0;
+        const previousNCB = Number(previous_ncb_percentage) || 0;
 
-        const claim = String(
-          previous_year_claim || "",
-        )
+        const claim = String(previous_year_claim || "")
           .trim()
           .toUpperCase();
 
@@ -912,14 +859,11 @@ const MotorCalculationService = {
               ncb_percentage: 0,
               calculated_ncb_percentage: 0,
 
-              previous_ncb_percentage:
-                previousNCB,
+              previous_ncb_percentage: previousNCB,
 
-              previous_year_claim:
-                claim,
+              previous_year_claim: claim,
 
-              description:
-                "NCB reset due to previous year claim.",
+              description: "NCB reset due to previous year claim.",
             },
           ]);
         }
@@ -929,15 +873,11 @@ const MotorCalculationService = {
         // =====================================================
 
         const sortedRows = [...rows].sort(
-          (a, b) =>
-            Number(a.ncb_percentage) -
-            Number(b.ncb_percentage),
+          (a, b) => Number(a.ncb_percentage) - Number(b.ncb_percentage),
         );
 
         const nextRule = sortedRows.find(
-          (rule) =>
-            Number(rule.ncb_percentage) >
-            previousNCB,
+          (rule) => Number(rule.ncb_percentage) > previousNCB,
         );
 
         let applicableRule;
@@ -945,24 +885,14 @@ const MotorCalculationService = {
         if (nextRule) {
           applicableRule = nextRule;
         } else {
-          const maximumRule =
-            sortedRows[
-              sortedRows.length - 1
-            ];
+          const maximumRule = sortedRows[sortedRows.length - 1];
 
-          if (
-            previousNCB >=
-            Number(
-              maximumRule.ncb_percentage,
-            )
-          ) {
-            applicableRule =
-              maximumRule;
+          if (previousNCB >= Number(maximumRule.ncb_percentage)) {
+            applicableRule = maximumRule;
           } else {
             applicableRule = {
               ...maximumRule,
-              ncb_percentage:
-                previousNCB,
+              ncb_percentage: previousNCB,
             };
           }
         }
@@ -971,16 +901,11 @@ const MotorCalculationService = {
           {
             ...applicableRule,
 
-            calculated_ncb_percentage:
-              Number(
-                applicableRule.ncb_percentage,
-              ),
+            calculated_ncb_percentage: Number(applicableRule.ncb_percentage),
 
-            previous_ncb_percentage:
-              previousNCB,
+            previous_ncb_percentage: previousNCB,
 
-            previous_year_claim:
-              claim,
+            previous_year_claim: claim,
           },
         ]);
       },
@@ -990,10 +915,7 @@ const MotorCalculationService = {
   // =========================================================
   // NCB CLAIM RULE
   // =========================================================
-  getNCBClaimRules: (
-    ncb_rule_id,
-    callback,
-  ) => {
+  getNCBClaimRules: (ncb_rule_id, callback) => {
     const sql = `
       SELECT
         ncb_claim_rule_id,
@@ -1011,11 +933,7 @@ const MotorCalculationService = {
         claim_count ASC
     `;
 
-    pool.query(
-      sql,
-      [Number(ncb_rule_id)],
-      callback,
-    );
+    pool.query(sql, [Number(ncb_rule_id)], callback);
   },
 
   // =========================================================
@@ -1119,55 +1037,32 @@ const MotorCalculationService = {
     const params = [
       Number(product_id),
 
-      insurance_company_id
-        ? Number(insurance_company_id)
-        : null,
+      insurance_company_id ? Number(insurance_company_id) : null,
 
-      policy_type_id
-        ? Number(policy_type_id)
-        : null,
+      policy_type_id ? Number(policy_type_id) : null,
 
-      vehicle_category_id
-        ? Number(vehicle_category_id)
-        : null,
+      vehicle_category_id ? Number(vehicle_category_id) : null,
 
-      vehicle_class_id
-        ? Number(vehicle_class_id)
-        : null,
+      vehicle_class_id ? Number(vehicle_class_id) : null,
 
-      usage_id
-        ? Number(usage_id)
-        : null,
+      usage_id ? Number(usage_id) : null,
 
       Number(vehicle_age_months),
       Number(vehicle_age_months),
     ];
 
-    pool.query(
-      sql,
-      params,
-      callback,
-    );
+    pool.query(sql, params, callback);
   },
 
   // =========================================================
   // DISCOUNT CONDITIONS
   // =========================================================
-  getDiscountConditions: (
-    discount_rule_ids,
-    callback,
-  ) => {
-    if (
-      !discount_rule_ids ||
-      !discount_rule_ids.length
-    ) {
+  getDiscountConditions: (discount_rule_ids, callback) => {
+    if (!discount_rule_ids || !discount_rule_ids.length) {
       return callback(null, []);
     }
 
-    const placeholders =
-      discount_rule_ids
-        .map(() => "?")
-        .join(",");
+    const placeholders = discount_rule_ids.map(() => "?").join(",");
 
     const sql = `
       SELECT
@@ -1187,11 +1082,7 @@ const MotorCalculationService = {
         discount_rule_id ASC
     `;
 
-    pool.query(
-      sql,
-      discount_rule_ids,
-      callback,
-    );
+    pool.query(sql, discount_rule_ids, callback);
   },
 
   // =========================================================
@@ -1273,48 +1164,27 @@ const MotorCalculationService = {
     const params = [
       Number(product_id),
 
-      insurance_company_id
-        ? Number(insurance_company_id)
-        : null,
+      insurance_company_id ? Number(insurance_company_id) : null,
 
-      policy_type_id
-        ? Number(policy_type_id)
-        : null,
+      policy_type_id ? Number(policy_type_id) : null,
 
-      vehicle_category_id
-        ? Number(vehicle_category_id)
-        : null,
+      vehicle_category_id ? Number(vehicle_category_id) : null,
 
-      vehicle_class_id
-        ? Number(vehicle_class_id)
-        : null,
+      vehicle_class_id ? Number(vehicle_class_id) : null,
     ];
 
-    pool.query(
-      sql,
-      params,
-      callback,
-    );
+    pool.query(sql, params, callback);
   },
 
   // =========================================================
   // COVER UNIT RATES
   // =========================================================
-  getCoverUnitRates: (
-    cover_rate_ids,
-    callback,
-  ) => {
-    if (
-      !cover_rate_ids ||
-      !cover_rate_ids.length
-    ) {
+  getCoverUnitRates: (cover_rate_ids, callback) => {
+    if (!cover_rate_ids || !cover_rate_ids.length) {
       return callback(null, []);
     }
 
-    const placeholders =
-      cover_rate_ids
-        .map(() => "?")
-        .join(",");
+    const placeholders = cover_rate_ids.map(() => "?").join(",");
 
     const sql = `
       SELECT
@@ -1339,11 +1209,7 @@ const MotorCalculationService = {
         min_units ASC
     `;
 
-    pool.query(
-      sql,
-      cover_rate_ids,
-      callback,
-    );
+    pool.query(sql, cover_rate_ids, callback);
   },
 
   // =========================================================
@@ -1425,28 +1291,16 @@ const MotorCalculationService = {
     const params = [
       Number(product_id),
 
-      insurance_company_id
-        ? Number(insurance_company_id)
-        : null,
+      insurance_company_id ? Number(insurance_company_id) : null,
 
-      policy_type_id
-        ? Number(policy_type_id)
-        : null,
+      policy_type_id ? Number(policy_type_id) : null,
 
-      vehicle_category_id
-        ? Number(vehicle_category_id)
-        : null,
+      vehicle_category_id ? Number(vehicle_category_id) : null,
 
-      vehicle_class_id
-        ? Number(vehicle_class_id)
-        : null,
+      vehicle_class_id ? Number(vehicle_class_id) : null,
     ];
 
-    pool.query(
-      sql,
-      params,
-      callback,
-    );
+    pool.query(sql, params, callback);
   },
 
   // =========================================================
@@ -1529,64 +1383,137 @@ const MotorCalculationService = {
     const params = [
       Number(product_id),
 
-      insurance_company_id
-        ? Number(insurance_company_id)
-        : null,
+      insurance_company_id ? Number(insurance_company_id) : null,
 
-      policy_type_id
-        ? Number(policy_type_id)
-        : null,
+      policy_type_id ? Number(policy_type_id) : null,
 
-      vehicle_category_id
-        ? Number(vehicle_category_id)
-        : null,
+      vehicle_category_id ? Number(vehicle_category_id) : null,
 
-      vehicle_class_id
-        ? Number(vehicle_class_id)
-        : null,
+      vehicle_class_id ? Number(vehicle_class_id) : null,
     ];
 
-    pool.query(
-      sql,
-      params,
-      callback,
-    );
+    pool.query(sql, params, callback);
   },
 
   // =========================================================
   // TAX
   // =========================================================
-  getTax: (callback) => {
+
+  // =========================================================
+  // TAX RULES
+  // =========================================================
+  getTaxRules: (
+    insurance_company_id,
+    product_id,
+    policy_type_id,
+    vehicle_category_id,
+    vehicle_class_id,
+    callback,
+  ) => {
     const sql = `
       SELECT
-        tax_id,
-        tax_code,
-        tax_name,
-        tax_type,
-        tax_percentage,
-        effective_from,
-        effective_to,
-        description
+        r.tax_rule_id,
+        r.tax_id,
+        r.insurance_company_id,
+        r.product_id,
+        r.policy_type_id,
+        r.vehicle_category_id,
+        r.vehicle_class_id,
+        r.premium_component,
 
-      FROM motor_tax_master
+        t.tax_code,
+        t.tax_name,
+        t.tax_type,
+        t.tax_percentage,
 
-      WHERE is_active = 1
+        r.effective_from,
+        r.effective_to,
+        r.description
 
-        AND effective_from <= CURDATE()
+      FROM motor_tax_rule r
+
+      INNER JOIN motor_tax_master t
+        ON t.tax_id = r.tax_id
+
+      WHERE r.is_active = 1
+        AND t.is_active = 1
 
         AND (
-          effective_to IS NULL
-          OR effective_to >= CURDATE()
+          r.insurance_company_id IS NULL
+          OR r.insurance_company_id = ?
+        )
+
+        AND (
+          r.product_id IS NULL
+          OR r.product_id = ?
+        )
+
+        AND (
+          r.policy_type_id IS NULL
+          OR r.policy_type_id = ?
+        )
+
+        AND (
+          r.vehicle_category_id IS NULL
+          OR r.vehicle_category_id = ?
+        )
+
+        AND (
+          r.vehicle_class_id IS NULL
+          OR r.vehicle_class_id = ?
+        )
+
+        AND r.effective_from <= CURDATE()
+        AND (
+          r.effective_to IS NULL
+          OR r.effective_to >= CURDATE()
+        )
+
+        AND t.effective_from <= CURDATE()
+        AND (
+          t.effective_to IS NULL
+          OR t.effective_to >= CURDATE()
         )
 
       ORDER BY
-        effective_from DESC
+        r.premium_component ASC,
+        (r.insurance_company_id IS NOT NULL) DESC,
+        (r.product_id IS NOT NULL) DESC,
+        (r.policy_type_id IS NOT NULL) DESC,
+        (r.vehicle_category_id IS NOT NULL) DESC,
+        (r.vehicle_class_id IS NOT NULL) DESC,
+        r.effective_from DESC,
+        r.tax_rule_id DESC
     `;
 
-    pool.query(
-      sql,
-      callback,
-    );
+    const params = [
+      insurance_company_id ? Number(insurance_company_id) : null,
+      Number(product_id),
+      Number(policy_type_id),
+      Number(vehicle_category_id),
+      Number(vehicle_class_id),
+    ];
+
+    pool.query(sql, params, (err, rows) => {
+      if (err) {
+        return callback(err);
+      }
+
+      // Keep only the highest-priority rule per component.
+      const selectedRules = [];
+      const selectedComponents = new Set();
+
+      for (const row of rows || []) {
+        if (selectedComponents.has(row.premium_component)) {
+          continue;
+        }
+
+        selectedComponents.add(row.premium_component);
+        selectedRules.push(row);
+      }
+
+      return callback(null, selectedRules);
+    });
   },
 
   // =========================================================
@@ -1597,16 +1524,9 @@ const MotorCalculationService = {
   // The selected OD slab already contains the applicable
   // rate for the vehicle age.
   // =========================================================
-  calculateODPremium: (
-    idv,
-    odRate,
-    ncbRule,
-    discountRule,
-    callback,
-  ) => {
+  calculateODPremium: (idv, odRate, ncbRule, discountRule, callback) => {
     try {
-      const originalIDV =
-        Number(idv) || 0;
+      const originalIDV = Number(idv) || 0;
 
       // =====================================================
       // INVALID IDV
@@ -1644,27 +1564,17 @@ const MotorCalculationService = {
       // OD RATE NOT FOUND
       // =====================================================
 
-      if (
-        !odRate ||
-        !odRate.length
-      ) {
-        return callback(
-          new Error(
-            "Applicable OD rate not found",
-          ),
-        );
+      if (!odRate || !odRate.length) {
+        return callback(new Error("Applicable OD rate not found"));
       }
 
-      const selectedRate =
-        odRate[0];
+      const selectedRate = odRate[0];
 
       // =====================================================
       // RATE TYPE
       // =====================================================
 
-      const rateType =
-        selectedRate.rate_type ||
-        "PERCENTAGE";
+      const rateType = selectedRate.rate_type || "PERCENTAGE";
 
       // =====================================================
       // SELECTED RATE
@@ -1673,12 +1583,9 @@ const MotorCalculationService = {
       // If slab rate is NULL, master rate is used.
       // =====================================================
 
-      const baseRate =
-        Number(
-          selectedRate.slab_rate_value ??
-            selectedRate.master_rate_value ??
-            0,
-        );
+      const baseRate = Number(
+        selectedRate.slab_rate_value ?? selectedRate.master_rate_value ?? 0,
+      );
 
       // =====================================================
       // BASIC OD PREMIUM
@@ -1686,28 +1593,13 @@ const MotorCalculationService = {
 
       let basicODPremium = 0;
 
-      if (
-        rateType ===
-        "PERCENTAGE"
-      ) {
-        basicODPremium =
-          (
-            originalIDV *
-            baseRate
-          ) / 100;
-      } else if (
-        rateType ===
-        "FIXED"
-      ) {
-        basicODPremium =
-          baseRate;
+      if (rateType === "PERCENTAGE") {
+        basicODPremium = (originalIDV * baseRate) / 100;
+      } else if (rateType === "FIXED") {
+        basicODPremium = baseRate;
       }
 
-      basicODPremium =
-        Math.max(
-          basicODPremium,
-          0,
-        );
+      basicODPremium = Math.max(basicODPremium, 0);
 
       // =====================================================
       // NCB
@@ -1715,191 +1607,94 @@ const MotorCalculationService = {
 
       let ncbPercentage = 0;
 
-      if (
-        ncbRule &&
-        ncbRule.length
-      ) {
+      if (ncbRule && ncbRule.length) {
         ncbPercentage =
           Number(
-            ncbRule[0]
-              .calculated_ncb_percentage ??
-              ncbRule[0]
-                .ncb_percentage,
+            ncbRule[0].calculated_ncb_percentage ?? ncbRule[0].ncb_percentage,
           ) || 0;
       }
 
-      ncbPercentage =
-        Math.min(
-          Math.max(
-            ncbPercentage,
-            0,
-          ),
-          100,
-        );
+      ncbPercentage = Math.min(Math.max(ncbPercentage, 0), 100);
 
-      const ncbAmount =
-        (
-          basicODPremium *
-          ncbPercentage
-        ) / 100;
+      const ncbAmount = (basicODPremium * ncbPercentage) / 100;
 
-      const premiumAfterNCB =
-        Math.max(
-          basicODPremium -
-            ncbAmount,
-          0,
-        );
+      const premiumAfterNCB = Math.max(basicODPremium - ncbAmount, 0);
 
       // =====================================================
       // DISCOUNT
       // =====================================================
 
-      let discountPercentage =
-        0;
+      let discountPercentage = 0;
 
-      let discountAmount =
-        0;
+      let discountAmount = 0;
 
-      if (
-        discountRule &&
-        discountRule.length
-      ) {
-        const discount =
-          discountRule[0];
+      if (discountRule && discountRule.length) {
+        const discount = discountRule[0];
 
-        if (
-          discount.discount_type ===
-          "PERCENTAGE"
-        ) {
-          discountPercentage =
-            Number(
-              discount.discount_value,
-            ) || 0;
+        if (discount.discount_type === "PERCENTAGE") {
+          discountPercentage = Number(discount.discount_value) || 0;
 
-          discountPercentage =
-            Math.min(
-              Math.max(
-                discountPercentage,
-                0,
-              ),
-              100,
-            );
+          discountPercentage = Math.min(Math.max(discountPercentage, 0), 100);
 
-          discountAmount =
-            (
-              premiumAfterNCB *
-              discountPercentage
-            ) / 100;
-        } else if (
-          discount.discount_type ===
-          "FIXED"
-        ) {
-          discountAmount =
-            Number(
-              discount.discount_value,
-            ) || 0;
+          discountAmount = (premiumAfterNCB * discountPercentage) / 100;
+        } else if (discount.discount_type === "FIXED") {
+          discountAmount = Number(discount.discount_value) || 0;
         }
       }
 
-      discountAmount =
-        Math.min(
-          Math.max(
-            discountAmount,
-            0,
-          ),
-          premiumAfterNCB,
-        );
+      discountAmount = Math.min(Math.max(discountAmount, 0), premiumAfterNCB);
 
       // =====================================================
       // FINAL OD PREMIUM
       // =====================================================
 
-      const finalODPremium =
-        Math.max(
-          premiumAfterNCB -
-            discountAmount,
-          0,
-        );
+      const finalODPremium = Math.max(premiumAfterNCB - discountAmount, 0);
 
       // =====================================================
       // RESULT
       // =====================================================
 
       return callback(null, {
-        idv: Number(
-          originalIDV.toFixed(2),
-        ),
+        idv: Number(originalIDV.toFixed(2)),
 
-        od_rate_id:
-          selectedRate.od_rate_id,
+        od_rate_id: selectedRate.od_rate_id,
 
-        od_rate_slab_id:
-          selectedRate.od_rate_slab_id ||
-          null,
+        od_rate_slab_id: selectedRate.od_rate_slab_id || null,
 
-        engine_cc_slab_id:
-          selectedRate.engine_cc_slab_id ||
-          null,
+        engine_cc_slab_id: selectedRate.engine_cc_slab_id || null,
 
-        gvw_slab_id:
-          selectedRate.gvw_slab_id ||
-          null,
+        gvw_slab_id: selectedRate.gvw_slab_id || null,
 
-        rate_type:
-          rateType,
+        rate_type: rateType,
 
-        base_od_rate:
-          Number(
-            baseRate.toFixed(4),
-          ),
+        base_od_rate: Number(baseRate.toFixed(4)),
 
-        basic_od_premium:
-          Number(
-            basicODPremium.toFixed(2),
-          ),
+        basic_od_premium: Number(basicODPremium.toFixed(2)),
 
-        ncb_percentage:
-          Number(
-            ncbPercentage.toFixed(2),
-          ),
+        ncb_percentage: Number(ncbPercentage.toFixed(2)),
 
-        ncb_amount:
-          Number(
-            ncbAmount.toFixed(2),
-          ),
+        ncb_amount: Number(ncbAmount.toFixed(2)),
 
-        premium_after_ncb:
-          Number(
-            premiumAfterNCB.toFixed(2),
-          ),
+        premium_after_ncb: Number(premiumAfterNCB.toFixed(2)),
 
-        discount_percentage:
-          Number(
-            discountPercentage.toFixed(2),
-          ),
+        discount_percentage: Number(discountPercentage.toFixed(2)),
 
-        discount_amount:
-          Number(
-            discountAmount.toFixed(2),
-          ),
+        discount_amount: Number(discountAmount.toFixed(2)),
 
-        final_od_premium:
-          Number(
-            finalODPremium.toFixed(2),
-          ),
+        final_od_premium: Number(finalODPremium.toFixed(2)),
       });
     } catch (error) {
       return callback(error);
     }
   },
 
+
+
+  
   // =========================================================
   // COMPLETE CALCULATION DATA
   // =========================================================
-  getCalculationData: (
-    data,
-    callback,
-  ) => {
+  getCalculationData: (data, callback) => {
     const {
       insurance_company_id,
       product_id,
@@ -1947,8 +1742,7 @@ const MotorCalculationService = {
           return callback(err);
         }
 
-        result.od_rate =
-          odRate;
+        result.od_rate = odRate;
 
         // ===================================================
         // OD DEPRECIATION
@@ -1963,8 +1757,7 @@ const MotorCalculationService = {
               return callback(err);
             }
 
-            result.od_depreciation =
-              odDepreciation;
+            result.od_depreciation = odDepreciation;
 
             // =================================================
             // TP RATE
@@ -1986,8 +1779,7 @@ const MotorCalculationService = {
                   return callback(err);
                 }
 
-                result.tp_rate =
-                  tpRate;
+                result.tp_rate = tpRate;
 
                 // =============================================
                 // NCB RULE
@@ -2003,8 +1795,7 @@ const MotorCalculationService = {
                       return callback(err);
                     }
 
-                    result.ncb_rule =
-                      ncbRule;
+                    result.ncb_rule = ncbRule;
 
                     // =========================================
                     // DISCOUNT
@@ -2023,8 +1814,7 @@ const MotorCalculationService = {
                           return callback(err);
                         }
 
-                        result.discount_rule =
-                          discountRule;
+                        result.discount_rule = discountRule;
 
                         // =====================================
                         // CALCULATE OD PREMIUM
@@ -2040,8 +1830,7 @@ const MotorCalculationService = {
                               return callback(err);
                             }
 
-                            result.od_calculation =
-                              odCalculation;
+                            result.od_calculation = odCalculation;
 
                             // =================================
                             // ADDONS
@@ -2060,8 +1849,7 @@ const MotorCalculationService = {
                                   return callback(err);
                                 }
 
-                                result.addons =
-                                  addons;
+                                result.addons = addons;
 
                                 // ===============================
                                 // COVERS
@@ -2078,8 +1866,7 @@ const MotorCalculationService = {
                                       return callback(err);
                                     }
 
-                                    result.covers =
-                                      covers;
+                                    result.covers = covers;
 
                                     // =============================
                                     // COMMISSION
@@ -2096,8 +1883,7 @@ const MotorCalculationService = {
                                           return callback(err);
                                         }
 
-                                        result.commission =
-                                          commission;
+                                        result.commission = commission;
 
                                         // =========================
                                         // CASHBACK
@@ -2114,28 +1900,26 @@ const MotorCalculationService = {
                                               return callback(err);
                                             }
 
-                                            result.cashback =
-                                              cashback;
+                                            result.cashback = cashback;
 
                                             // =====================
                                             // TAX
                                             // =====================
 
-                                            MotorCalculationService.getTax(
+                                            MotorCalculationService.getTaxRules(
+                                              insurance_company_id,
+                                              product_id,
+                                              policy_type_id,
+                                              vehicle_category_id,
+                                              vehicle_class_id,
                                               (err, tax) => {
                                                 if (err) {
-                                                  return callback(
-                                                    err,
-                                                  );
+                                                  return callback(err);
                                                 }
 
-                                                result.tax =
-                                                  tax;
+                                                result.tax = tax;
 
-                                                return callback(
-                                                  null,
-                                                  result,
-                                                );
+                                                return callback(null, result);
                                               },
                                             );
                                           },
@@ -2161,5 +1945,4 @@ const MotorCalculationService = {
   },
 };
 
-module.exports =
-  MotorCalculationService;
+module.exports = MotorCalculationService;
