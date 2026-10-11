@@ -10,4 +10,11 @@ router.post(
     MotorCalculationController.getCalculationData
 );
 
+// CREATE MOTOR QUOTATION
+router.post(
+  "/create",
+  verifyAccessToken,
+  MotorCalculationController.createQuotation
+);
+
 module.exports = router;
