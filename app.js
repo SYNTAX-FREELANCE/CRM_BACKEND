@@ -134,6 +134,7 @@ const motorQuotationOptionCoverRoutes = require("./api/MotorCalculator/MotorQuot
 const motorvehicleinputfielsRoutes = require("./api/MotorCalculator/MotorVehicleInputFields/motorVehicleInputField.router");
 const motorodrateslabRoute = require("./api/MotorCalculator/MotorOdRateSlab/motorOdRateSlab.routes");
 const motorTaxRuleRoutes = require("./api/MotorCalculator/MotorTaxRule/motorTaxRule.routes");
+const motorProfitMasterRoutes = require("./api/MotorCalculator/MotorProfitMaster/motorProfit.router");
 const calculator = require("./api/Calculator/calculator.router");
 
 const validateToken = require("./Validate/validateToken");
@@ -608,6 +609,13 @@ app.use(
   routeTrackerMiddleware("MOTOR_TAX_RULE_FIELD_ROUTER"),
   socketMiddleware,
   motorTaxRuleRoutes,
+);
+
+app.use(
+  "/api/motor/profit",
+  routeTrackerMiddleware("MOTOR_PROFIT_MASTER_ROUTER"),
+  socketMiddleware,
+  motorProfitMasterRoutes,
 );
 
 app.use(

@@ -11,12 +11,13 @@ const MotorCommissionRuleService = {
       vehicle_class_id,
       commission_type,
       commission_value,
+      max_commission_amount,
       min_premium,
       max_premium,
       effective_from,
       effective_to,
       description,
-      is_active
+      is_active,
     } = data;
 
     const query = `
@@ -28,6 +29,7 @@ const MotorCommissionRuleService = {
         vehicle_class_id,
         commission_type,
         commission_value,
+        max_commission_amount,
         min_premium,
         max_premium,
         effective_from,
@@ -35,7 +37,7 @@ const MotorCommissionRuleService = {
         description,
         is_active
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
     `;
 
     pool.query(
@@ -48,14 +50,15 @@ const MotorCommissionRuleService = {
         vehicle_class_id || null,
         commission_type,
         commission_value,
+        max_commission_amount,
         min_premium ?? null,
         max_premium ?? null,
         effective_from,
         effective_to || null,
         description || null,
-        is_active
+        is_active,
       ],
-      callback
+      callback,
     );
   },
 
@@ -86,6 +89,7 @@ const MotorCommissionRuleService = {
 
         cr.commission_type,
         cr.commission_value,
+        cr.max_commission_amount,
 
         cr.min_premium,
         cr.max_premium,
@@ -150,6 +154,7 @@ const MotorCommissionRuleService = {
 
         cr.commission_type,
         cr.commission_value,
+        cr.max_commission_amount,
 
         cr.min_premium,
         cr.max_premium,
@@ -197,12 +202,13 @@ const MotorCommissionRuleService = {
       vehicle_class_id,
       commission_type,
       commission_value,
+      max_commission_amount,
       min_premium,
       max_premium,
       effective_from,
       effective_to,
       description,
-      is_active
+      is_active,
     } = data;
 
     const query = `
@@ -215,6 +221,7 @@ const MotorCommissionRuleService = {
         vehicle_class_id = ?,
         commission_type = ?,
         commission_value = ?,
+        max_commission_amount = ?,
         min_premium = ?,
         max_premium = ?,
         effective_from = ?,
@@ -234,6 +241,7 @@ const MotorCommissionRuleService = {
         vehicle_class_id || null,
         commission_type,
         commission_value,
+        max_commission_amount,
         min_premium ?? null,
         max_premium ?? null,
         effective_from,
@@ -242,7 +250,7 @@ const MotorCommissionRuleService = {
         is_active,
         commission_rule_id,
       ],
-      callback
+      callback,
     );
   },
 
