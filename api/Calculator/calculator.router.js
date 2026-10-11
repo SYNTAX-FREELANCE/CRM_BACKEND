@@ -17,4 +17,12 @@ router.post(
   MotorCalculationController.createQuotation
 );
 
+
+router.get(
+    "/getbylead/:lead_id",
+    verifyAccessToken,
+    MotorCalculationController.getQuotationByLeadId
+);
+
 module.exports = router;
+

@@ -2459,6 +2459,231 @@ const MotorCalculationService = {
         });
     });
   },
+
+  // GET ALL QUOTATIONS BY LEAD ID
+  getQuotationByLeadId: (lead_id, callback) => {
+    const quotationQuery = `
+       SELECT
+    q.*,
+    um.name AS quotation_taken_employee,
+    um.mobile_number_1,
+    um.email,
+    v.registration_number,
+    c.customer_name
+FROM motor_quotations q
+LEFT JOIN users_master um
+    ON um.user_id = q.created_by
+LEFT JOIN vehicles v
+    ON v.vehicle_id = q.vehicle_id
+LEFT JOIN customers c
+    ON c.customer_id = q.customer_id   
+WHERE q.lead_id = ?
+ORDER BY q.motor_quotation_id DESC;
+    `;
+
+    pool.query(quotationQuery, [lead_id], (quotationError, quotationRows) => {
+      if (quotationError) {
+        return callback(quotationError);
+      }
+
+      if (!quotationRows || quotationRows.length === 0) {
+        return callback(null, []);
+      }
+
+      const quotations = quotationRows.map((quotation) => ({
+        quotation,
+        input: null,
+        options: [],
+      }));
+
+      let quotationCompleted = 0;
+      let hasError = false;
+
+      const handleError = (error) => {
+        if (hasError) return;
+        hasError = true;
+        return callback(error);
+      };
+
+      quotationRows.forEach((quotation, quotationIndex) => {
+        const quotationId = quotation.motor_quotation_id;
+
+        // ============================================
+        // GET QUOTATION INPUT
+        // ============================================
+
+        const inputQuery = `
+                    SELECT i.*,
+                    mci.category_code as category_name,
+                    mvc.class_code as class_name
+                    FROM motor_quotation_input i
+                    LEFT JOIN motor_vehicle_categories mci on mci.vehicle_category_id  = i.vehicle_category_id
+                    LEFT JOIN motor_vehicle_classes mvc on mvc.vehicle_class_id  = i.vehicle_class_id
+                    
+                    WHERE i.motor_quotation_id = ?
+                `;
+
+        pool.query(inputQuery, [quotationId], (inputError, inputRows) => {
+          if (inputError) {
+            return handleError(inputError);
+          }
+
+          quotations[quotationIndex].input = inputRows?.[0] || null;
+
+          // ============================================
+          // GET OPTIONS + INSURANCE COMPANY DETAILS
+          // ============================================
+
+          const optionQuery = `
+                            SELECT
+                                o.*,
+
+                                ic.company_name
+                                    AS insurance_company_name,
+
+                                ic.contact_number
+                                    AS insurance_company_contact,
+
+                                ic.email
+                                    AS insurance_company_email,
+
+                                ic.is_active
+                                    AS insurance_company_is_active
+
+                            FROM motor_quotation_options o
+
+                            LEFT JOIN insurance_companies ic
+                                ON ic.insurance_company_id =
+                                   o.insurance_company_id
+
+                            WHERE o.motor_quotation_id = ?
+
+                            ORDER BY o.quotation_option_id ASC
+                        `;
+
+          pool.query(optionQuery, [quotationId], (optionError, optionRows) => {
+            if (optionError) {
+              return handleError(optionError);
+            }
+
+            const options = (optionRows || []).map((option) => ({
+              ...option,
+              covers: [],
+              addons: [],
+            }));
+
+            quotations[quotationIndex].options = options;
+
+            if (options.length === 0) {
+              quotationCompleted++;
+
+              if (quotationCompleted === quotationRows.length && !hasError) {
+                return callback(null, quotations);
+              }
+
+              return;
+            }
+
+            let optionCompleted = 0;
+
+            options.forEach((option, optionIndex) => {
+              const optionId = option.quotation_option_id;
+
+              // ============================================
+              // GET COVERS + COVER MASTER DETAILS
+              // ============================================
+
+              const coversQuery = `
+                                        SELECT
+                                            c.*,
+
+                                            cm.cover_code,
+                                            cm.cover_name,
+                                            cm.cover_type,
+
+                                            cm.description
+                                                AS cover_description,
+
+                                            cm.is_active
+                                                AS cover_is_active
+
+                                        FROM motor_quotation_option_covers c
+
+                                        LEFT JOIN motor_cover_master cm
+                                            ON cm.cover_id = c.cover_id
+
+                                        WHERE c.quotation_option_id = ?
+
+                                        ORDER BY
+                                            c.quotation_option_cover_id ASC
+                                    `;
+
+              pool.query(coversQuery, [optionId], (coversError, coversRows) => {
+                if (coversError) {
+                  return handleError(coversError);
+                }
+
+                options[optionIndex].covers = coversRows || [];
+
+                // ============================================
+                // GET ADDONS + ADDON MASTER DETAILS
+                // ============================================
+
+                const addonsQuery = `
+                                                SELECT
+                                                    a.*,
+
+                                                    am.addon_code,
+                                                    am.addon_name,
+
+                                                    am.description
+                                                        AS addon_description,
+
+                                                    am.is_active
+                                                        AS addon_is_active
+
+                                                FROM motor_quotation_option_addons a
+
+                                                LEFT JOIN motor_addon_master am
+                                                    ON am.addon_id = a.addon_id
+
+                                                WHERE a.quotation_option_id = ?
+
+                                                ORDER BY
+                                                    a.quotation_option_addon_id ASC
+                                            `;
+
+                pool.query(
+                  addonsQuery,
+                  [optionId],
+                  (addonsError, addonsRows) => {
+                    if (addonsError) {
+                      return handleError(addonsError);
+                    }
+
+                    options[optionIndex].addons = addonsRows || [];
+
+                    optionCompleted++;
+
+                    if (optionCompleted === options.length) {
+                      quotationCompleted++;
+
+                      if (
+                        quotationCompleted === quotationRows.length &&
+                        !hasError
+                      ) {
+                        return callback(null, quotations);
+                      }
+                    }
+                  },
+                );
+              });
+            });
+          });
+        });
+      });
+    });
+  },
 };
 
 module.exports = MotorCalculationService;
