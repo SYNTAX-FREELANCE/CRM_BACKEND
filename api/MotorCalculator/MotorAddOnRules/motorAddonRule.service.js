@@ -3,6 +3,11 @@ const pool = require("../../../dbconfig/dbconfig");
 const MotorAddonRuleService = {
   // CREATE
   createAddonRule: (data, callback) => {
+    console.log({
+      data
+    });
+    
+
     const {
       addon_id,
       insurance_company_id,
@@ -16,6 +21,9 @@ const MotorAddonRuleService = {
       max_idv,
       rate_type,
       rate_value,
+      discount_type,
+      discount_value,
+      max_discount_value,
       effective_from,
       effective_to,
       description,
@@ -36,12 +44,15 @@ const MotorAddonRuleService = {
         max_idv,
         rate_type,
         rate_value,
+        discount_type,
+        discount_value,
+        max_discount_value,
         effective_from,
         effective_to,
         description,
         is_active
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     pool.query(
@@ -59,6 +70,9 @@ const MotorAddonRuleService = {
         max_idv ?? null,
         rate_type,
         rate_value,
+        discount_type,
+        discount_value,
+        max_discount_value,
         effective_from,
         effective_to || null,
         description || null,
@@ -101,6 +115,10 @@ const MotorAddonRuleService = {
 
         ar.rate_type,
         ar.rate_value,
+
+        ar.discount_type,
+        ar.discount_value,
+        ar.max_discount_value,
 
         ar.effective_from,
         ar.effective_to,
@@ -173,6 +191,10 @@ const MotorAddonRuleService = {
         ar.rate_type,
         ar.rate_value,
 
+        ar.discount_type,
+        ar.discount_value,
+        ar.max_discount_value,
+
         ar.effective_from,
         ar.effective_to,
 
@@ -223,6 +245,9 @@ const MotorAddonRuleService = {
       max_idv,
       rate_type,
       rate_value,
+      discount_type,
+      discount_value,
+      max_discount_value,
       effective_from,
       effective_to,
       description,
@@ -244,6 +269,9 @@ const MotorAddonRuleService = {
         max_idv = ?,
         rate_type = ?,
         rate_value = ?,
+        discount_type = ?,
+        discount_value = ?,
+        max_discount_value = ?,
         effective_from = ?,
         effective_to = ?,
         description = ?,
@@ -266,6 +294,9 @@ const MotorAddonRuleService = {
         max_idv ?? null,
         rate_type,
         rate_value,
+        discount_type,
+        discount_value,
+        max_discount_value,
         effective_from,
         effective_to || null,
         description || null,
