@@ -16,6 +16,9 @@ const MotorAddonRuleController = {
       max_idv,
       rate_type,
       rate_value,
+      discount_type,
+      discount_value,
+      max_discount_value,
       effective_from,
       effective_to,
       description,
@@ -182,6 +185,9 @@ const MotorAddonRuleController = {
       });
     }
 
+
+
+
     if (
       rate_type === "PERCENTAGE" &&
       Number(rate_value) > 100
@@ -191,6 +197,18 @@ const MotorAddonRuleController = {
         message: "Percentage rate value cannot exceed 100",
       });
     }
+
+
+    if (
+      discount_type === "PERCENTAGE" &&
+      Number(discount_value) > 100
+    ) {
+      return res.status(200).json({
+        success: 0,
+        message: "Percentage rate value cannot exceed 100",
+      });
+    }
+
 
     if (!effective_from) {
       return res.status(200).json({
@@ -230,6 +248,9 @@ const MotorAddonRuleController = {
         max_idv,
         rate_type,
         rate_value,
+        discount_type,
+        discount_value,
+        max_discount_value,
         effective_from,
         effective_to,
         description,
@@ -332,6 +353,9 @@ const MotorAddonRuleController = {
       max_idv,
       rate_type,
       rate_value,
+      discount_type,
+      discount_value,
+      max_discount_value,
       effective_from,
       effective_to,
       description,
@@ -554,6 +578,9 @@ const MotorAddonRuleController = {
         max_idv,
         rate_type,
         rate_value,
+        discount_type,
+        discount_value,
+        max_discount_value,
         effective_from,
         effective_to,
         description,

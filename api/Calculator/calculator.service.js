@@ -37,6 +37,11 @@ const MotorCalculationService = {
         r.rate_type,
         r.rate_value,
 
+        -- Add-on discount configuration
+        r.discount_type,
+        r.discount_value,
+        r.max_discount_value,
+
         r.effective_from,
         r.effective_to,
 
@@ -388,8 +393,8 @@ const MotorCalculationService = {
 
     const age =
       vehicle_age_months !== "" &&
-      vehicle_age_months !== undefined &&
-      vehicle_age_months !== null
+        vehicle_age_months !== undefined &&
+        vehicle_age_months !== null
         ? Number(vehicle_age_months)
         : null;
 
@@ -403,8 +408,8 @@ const MotorCalculationService = {
 
     const seating =
       seating_capacity !== "" &&
-      seating_capacity !== undefined &&
-      seating_capacity !== null
+        seating_capacity !== undefined &&
+        seating_capacity !== null
         ? Number(seating_capacity)
         : null;
 
@@ -757,20 +762,20 @@ const MotorCalculationService = {
       // SEATING
 
       seating_capacity !== "" &&
-      seating_capacity !== undefined &&
-      seating_capacity !== null
+        seating_capacity !== undefined &&
+        seating_capacity !== null
         ? Number(seating_capacity)
         : null,
 
       seating_capacity !== "" &&
-      seating_capacity !== undefined &&
-      seating_capacity !== null
+        seating_capacity !== undefined &&
+        seating_capacity !== null
         ? Number(seating_capacity)
         : null,
 
       seating_capacity !== "" &&
-      seating_capacity !== undefined &&
-      seating_capacity !== null
+        seating_capacity !== undefined &&
+        seating_capacity !== null
         ? Number(seating_capacity)
         : null,
     ];

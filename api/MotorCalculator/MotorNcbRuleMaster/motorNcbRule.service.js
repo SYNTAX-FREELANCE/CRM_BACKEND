@@ -141,7 +141,6 @@ const MotorNcbRuleService = {
 
     // UPDATE
     updateNcbRule: (id, data, callback) => {
-
         const query = `
             UPDATE motor_ncb_rule_master
             SET
@@ -157,7 +156,6 @@ const MotorNcbRuleService = {
                 is_active = ?
             WHERE ncb_rule_id = ?
         `;
-
         const values = [
             data.product_id,
             data.policy_type_id || null,
@@ -173,8 +171,7 @@ const MotorNcbRuleService = {
             data.is_active,
             id
         ];
-
-        pool.query(query, values, (err, result) => {
+        pool.query(query, values, (err, result) => { 
             if (err) return callback(err, null);
 
             callback(null, result);
@@ -184,7 +181,6 @@ const MotorNcbRuleService = {
 
     // DELETE
     deleteNcbRule: (id, callback) => {
-
         const query = `
             UPDATE motor_ncb_rule_master
             SET is_active = 0
