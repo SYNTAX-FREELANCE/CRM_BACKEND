@@ -89,7 +89,8 @@ const MotorVehicleInputFieldController = {
             "DATE",
             "SELECT",
             "DECIMAL",
-            "BOOLEAN"
+            "BOOLEAN",
+            "CHECKBOX"
         ];
 
         if (!allowedFieldTypes.includes(field_type)) {
@@ -214,8 +215,8 @@ const MotorVehicleInputFieldController = {
 
             vehicle_class_id:
                 vehicle_class_id !== undefined &&
-                vehicle_class_id !== null &&
-                vehicle_class_id !== ""
+                    vehicle_class_id !== null &&
+                    vehicle_class_id !== ""
                     ? Number(vehicle_class_id)
                     : null,
 
@@ -227,13 +228,13 @@ const MotorVehicleInputFieldController = {
 
             is_required:
                 is_required !== undefined &&
-                is_required !== null
+                    is_required !== null
                     ? Number(is_required)
                     : 1,
 
             is_visible:
                 is_visible !== undefined &&
-                is_visible !== null
+                    is_visible !== null
                     ? Number(is_visible)
                     : 1,
 
@@ -241,15 +242,15 @@ const MotorVehicleInputFieldController = {
 
             min_value:
                 min_value !== undefined &&
-                min_value !== null &&
-                min_value !== ""
+                    min_value !== null &&
+                    min_value !== ""
                     ? Number(min_value)
                     : null,
 
             max_value:
                 max_value !== undefined &&
-                max_value !== null &&
-                max_value !== ""
+                    max_value !== null &&
+                    max_value !== ""
                     ? Number(max_value)
                     : null,
 
@@ -260,7 +261,7 @@ const MotorVehicleInputFieldController = {
 
             is_active:
                 is_active !== undefined &&
-                is_active !== null
+                    is_active !== null
                     ? Number(is_active)
                     : 1
         };
@@ -485,7 +486,8 @@ const MotorVehicleInputFieldController = {
             "DATE",
             "SELECT",
             "DECIMAL",
-            "BOOLEAN"
+            "BOOLEAN",
+            "CHECKBOX"
         ];
 
         if (!allowedFieldTypes.includes(field_type)) {
@@ -584,8 +586,8 @@ const MotorVehicleInputFieldController = {
 
             vehicle_class_id:
                 vehicle_class_id !== undefined &&
-                vehicle_class_id !== null &&
-                vehicle_class_id !== ""
+                    vehicle_class_id !== null &&
+                    vehicle_class_id !== ""
                     ? Number(vehicle_class_id)
                     : null,
 
@@ -597,13 +599,13 @@ const MotorVehicleInputFieldController = {
 
             is_required:
                 is_required !== undefined &&
-                is_required !== null
+                    is_required !== null
                     ? Number(is_required)
                     : 1,
 
             is_visible:
                 is_visible !== undefined &&
-                is_visible !== null
+                    is_visible !== null
                     ? Number(is_visible)
                     : 1,
 
@@ -611,15 +613,15 @@ const MotorVehicleInputFieldController = {
 
             min_value:
                 min_value !== undefined &&
-                min_value !== null &&
-                min_value !== ""
+                    min_value !== null &&
+                    min_value !== ""
                     ? Number(min_value)
                     : null,
 
             max_value:
                 max_value !== undefined &&
-                max_value !== null &&
-                max_value !== ""
+                    max_value !== null &&
+                    max_value !== ""
                     ? Number(max_value)
                     : null,
 
@@ -630,7 +632,7 @@ const MotorVehicleInputFieldController = {
 
             is_active:
                 is_active !== undefined &&
-                is_active !== null
+                    is_active !== null
                     ? Number(is_active)
                     : 1
         };
