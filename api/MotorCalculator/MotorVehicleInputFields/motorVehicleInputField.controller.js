@@ -485,7 +485,8 @@ const MotorVehicleInputFieldController = {
             "DATE",
             "SELECT",
             "DECIMAL",
-            "BOOLEAN"
+            "BOOLEAN",
+            "CHECKBOX"
         ];
 
         if (!allowedFieldTypes.includes(field_type)) {
