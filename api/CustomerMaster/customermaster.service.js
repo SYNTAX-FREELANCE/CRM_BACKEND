@@ -650,6 +650,7 @@ module.exports = {
     c.customer_name,
     c.mobile_number_1,
     v.vehicle_id,
+    v.model,
     v.registration_number,
     v.registration_date,
     v.vehicle_category,

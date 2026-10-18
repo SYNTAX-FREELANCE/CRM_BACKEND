@@ -41,6 +41,7 @@ const MotorCalculationService = {
         r.discount_type,
         r.discount_value,
         r.max_discount_value,
+        r.calculation_basis,
 
         r.effective_from,
         r.effective_to,
