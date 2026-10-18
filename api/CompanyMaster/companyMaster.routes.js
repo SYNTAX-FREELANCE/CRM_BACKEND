@@ -3,11 +3,19 @@ const express = require("express");
 const router = express.Router();
 const companyMasterController = require("./companyMaster.controller");
 const verifyAccessToken = require("../../middleware/verifyAccessToken");
+const companyuploads = require('./companyUpload')
 
 // ==================== COMPANY MASTER ROUTES ====================
 
 // Create company
-router.post("/create", verifyAccessToken, companyMasterController.createCompany);
+// router.post("/create", verifyAccessToken, companyMasterController.createCompany);
+
+router.post(
+    "/create",
+    verifyAccessToken,
+    companyuploads.single("company_image"),
+    companyMasterController.createCompany
+);
 
 // Get all companies
 router.get("/getall", verifyAccessToken, companyMasterController.getAllCompanies);
@@ -16,7 +24,14 @@ router.get("/getall", verifyAccessToken, companyMasterController.getAllCompanies
 router.get("/getbyid/:companyId", verifyAccessToken, companyMasterController.getCompanyById);
 
 // Update company
-router.patch("/update/:companyId", verifyAccessToken, companyMasterController.updateCompany);
+// router.patch("/update/:companyId", verifyAccessToken, companyMasterController.updateCompany);
+
+router.patch(
+    "/update/:companyId",
+    verifyAccessToken,
+    companyuploads.single("company_image"),
+    companyMasterController.updateCompany
+);
 
 // Delete company (soft delete)
 router.delete("/delete/:companyId", verifyAccessToken, companyMasterController.deleteCompany);

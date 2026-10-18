@@ -6,15 +6,18 @@ module.exports = {
   createCompany: (companyData, callback) => {
     pool.query(
       `INSERT INTO companies 
-            (company_name, location, email, address, is_active,employee_prefix, created_at)
-            VALUES (?, ?, ?, ?, ?,?, CURRENT_TIMESTAMP)`,
+            (company_name, location, email, address, is_active,employee_prefix,company_color,company_image,display_order, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
       [
         companyData.company_name,
-        companyData.company_location,
-        companyData.company_email,
-        companyData.company_address,
+        companyData.location,
+        companyData.email,
+        companyData.address,
         companyData.is_active,
-        companyData.employee_prefix
+        companyData.employee_prefix,
+        companyData.company_color,
+        companyData.company_image,
+        companyData.display_order
       ],
       (err, result) => {
         if (err) {
@@ -61,30 +64,47 @@ module.exports = {
   },
 
   // ==================== UPDATE COMPANY ====================
+
   updateCompany: (companyId, companyData, callback) => {
     pool.query(
-      `UPDATE companies 
-            SET company_name = ?, location = ?, email = ?, 
-                address = ?, is_active = ?, employee_prefix = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE company_id = ?`,
+      `UPDATE companies
+         SET
+            company_name = ?,
+            location = ?,
+            email = ?,
+            address = ?,
+            is_active = ?,
+            employee_prefix = ?,
+            company_color = ?,
+            company_image = COALESCE(?, company_image),
+            display_order = ?,  
+            updated_at = CURRENT_TIMESTAMP
+         WHERE company_id = ?`,
       [
         companyData.company_name,
-        companyData.company_location,
-        companyData.company_email,
-        companyData.company_address,
+        companyData.location,
+        companyData.email,
+        companyData.address,
         companyData.is_active,
         companyData.employee_prefix,
+        companyData.company_color,
+        companyData.company_image === undefined
+          ? null
+          : companyData.company_image,
+        companyData.display_order,
         companyId,
       ],
       (err, result) => {
         if (err) {
+          console.error("updateCompany service error:", err);
           return callback(err, null);
         }
-        callback(null, result);
-      },
+
+        return callback(null, result);
+      }
     );
   },
+
 
   // ==================== DELETE COMPANY (SOFT DELETE) ====================
   deleteCompany: (companyId, callback) => {

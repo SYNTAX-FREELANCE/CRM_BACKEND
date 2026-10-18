@@ -413,8 +413,8 @@ GROUP BY
         ROUND(SUM(ua.productivity_hours), 2) AS productivity_hours, 
         MAX(ua.system_ip) AS system_ip
       FROM user_attendance ua
-      LEFT JOIN users_master um ON ua.username = um.employee_id
-      WHERE ua.username = ? AND DATE(ua.login_time) BETWEEN ? AND ?
+      LEFT JOIN users_master um ON ua.user_id = um.user_id
+      WHERE ua.user_id = ? AND DATE(ua.login_time) BETWEEN ? AND ?
       GROUP BY DATE(ua.login_time), ua.user_id, ua.username, um.name
       ORDER BY attendance_date DESC
     `;
@@ -433,6 +433,7 @@ GROUP BY
     toDate,
     callback,
   ) => {
+    
     const query = `
       SELECT 
         ua.id, 
@@ -445,8 +446,8 @@ GROUP BY
         ua.system_ip,
         um.name AS employee_name
       FROM user_attendance ua
-      LEFT JOIN users_master um ON ua.username = um.employee_id
-      WHERE ua.username = ? AND DATE(ua.login_time) BETWEEN ? AND ?
+      LEFT JOIN users_master um ON ua.user_id = um.user_id
+      WHERE ua.user_id = ? AND DATE(ua.login_time) BETWEEN ? AND ?
       ORDER BY ua.login_time DESC
     `;
 

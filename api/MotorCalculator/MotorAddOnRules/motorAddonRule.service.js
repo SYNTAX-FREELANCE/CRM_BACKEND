@@ -3,11 +3,6 @@ const pool = require("../../../dbconfig/dbconfig");
 const MotorAddonRuleService = {
   // CREATE
   createAddonRule: (data, callback) => {
-    console.log({
-      data
-    });
-    
-
     const {
       addon_id,
       insurance_company_id,
@@ -24,6 +19,7 @@ const MotorAddonRuleService = {
       discount_type,
       discount_value,
       max_discount_value,
+      calculation_basis,
       effective_from,
       effective_to,
       description,
@@ -47,12 +43,13 @@ const MotorAddonRuleService = {
         discount_type,
         discount_value,
         max_discount_value,
+        calculation_basis,
         effective_from,
         effective_to,
         description,
         is_active
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
     `;
 
     pool.query(
@@ -73,6 +70,7 @@ const MotorAddonRuleService = {
         discount_type,
         discount_value,
         max_discount_value,
+        calculation_basis,
         effective_from,
         effective_to || null,
         description || null,
@@ -119,6 +117,7 @@ const MotorAddonRuleService = {
         ar.discount_type,
         ar.discount_value,
         ar.max_discount_value,
+        ar.calculation_basis,
 
         ar.effective_from,
         ar.effective_to,
@@ -194,6 +193,7 @@ const MotorAddonRuleService = {
         ar.discount_type,
         ar.discount_value,
         ar.max_discount_value,
+        ar.calculation_basis,
 
         ar.effective_from,
         ar.effective_to,
@@ -248,6 +248,7 @@ const MotorAddonRuleService = {
       discount_type,
       discount_value,
       max_discount_value,
+      calculation_basis,
       effective_from,
       effective_to,
       description,
@@ -272,6 +273,7 @@ const MotorAddonRuleService = {
         discount_type = ?,
         discount_value = ?,
         max_discount_value = ?,
+        calculation_basis = ?,
         effective_from = ?,
         effective_to = ?,
         description = ?,
@@ -297,6 +299,7 @@ const MotorAddonRuleService = {
         discount_type,
         discount_value,
         max_discount_value,
+        calculation_basis,
         effective_from,
         effective_to || null,
         description || null,
