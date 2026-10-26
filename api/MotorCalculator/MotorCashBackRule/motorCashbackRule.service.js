@@ -14,6 +14,8 @@ const MotorCashbackRuleService = {
       max_cashback_amount,
       min_premium,
       max_premium,
+      min_gvw,
+      max_gvw,
       effective_from,
       effective_to,
       description,
@@ -32,12 +34,14 @@ const MotorCashbackRuleService = {
         max_cashback_amount,
         min_premium,
         max_premium,
+        min_gvw,
+        max_gvw,        
         effective_from,
         effective_to,
         description,
         is_active
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)
     `;
 
     pool.query(
@@ -53,6 +57,8 @@ const MotorCashbackRuleService = {
         max_cashback_amount,
         min_premium ?? null,
         max_premium ?? null,
+        min_gvw ?? null,
+        max_gvw ?? null,
         effective_from,
         effective_to || null,
         description || null,
@@ -93,6 +99,9 @@ const MotorCashbackRuleService = {
 
         cr.min_premium,
         cr.max_premium,
+
+        cr.min_gvw,
+        cr.max_gvw,
 
         cr.effective_from,
         cr.effective_to,
@@ -159,6 +168,9 @@ const MotorCashbackRuleService = {
         cr.min_premium,
         cr.max_premium,
 
+        cr.min_gvw,
+        cr.max_gvw,
+
         cr.effective_from,
         cr.effective_to,
         cr.description,
@@ -205,6 +217,8 @@ const MotorCashbackRuleService = {
       max_cashback_amount,
       min_premium,
       max_premium,
+      min_gvw,
+      max_gvw,
       effective_from,
       effective_to,
       description,
@@ -224,6 +238,8 @@ const MotorCashbackRuleService = {
         max_cashback_amount = ?,
         min_premium = ?,
         max_premium = ?,
+        min_gvw = ?,
+        max_gvw = ?,
         effective_from = ?,
         effective_to = ?,
         description = ?,
@@ -244,6 +260,8 @@ const MotorCashbackRuleService = {
         max_cashback_amount,
         min_premium ?? null,
         max_premium ?? null,
+        min_gvw ?? null,
+        max_gvw ?? null,
         effective_from,
         effective_to || null,
         description || null,

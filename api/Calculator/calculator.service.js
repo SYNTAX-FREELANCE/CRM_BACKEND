@@ -1229,6 +1229,7 @@ const MotorCalculationService = {
     policy_type_id,
     vehicle_category_id,
     vehicle_class_id,
+    gvw,
     callback,
   ) => {
     const sql = `
@@ -1246,7 +1247,8 @@ const MotorCalculationService = {
 
       min_premium,
       max_premium,
-
+      min_gvw,
+      max_gvw,
       effective_from,
       effective_to,
       description
@@ -1276,6 +1278,16 @@ const MotorCalculationService = {
         OR vehicle_class_id = ?
       )
 
+      AND (
+        min_gvw IS NULL
+        OR ? >= min_gvw
+      )
+
+      AND (
+        max_gvw IS NULL
+        OR ? <= max_gvw
+      )
+
       AND effective_from <= CURDATE()
 
       AND (
@@ -1288,10 +1300,17 @@ const MotorCalculationService = {
       policy_type_id IS NOT NULL DESC,
       vehicle_category_id IS NOT NULL DESC,
       vehicle_class_id IS NOT NULL DESC,
+      min_gvw IS NOT NULL DESC,
+      max_gvw IS NOT NULL ASC,
       effective_from DESC
 
     LIMIT 1
   `;
+
+    const vehicleGvw =
+      gvw !== "" && gvw !== undefined && gvw !== null
+        ? Number(gvw)
+        : null;
 
     const params = [
       Number(product_id),
@@ -1299,6 +1318,8 @@ const MotorCalculationService = {
       policy_type_id ? Number(policy_type_id) : null,
       vehicle_category_id ? Number(vehicle_category_id) : null,
       vehicle_class_id ? Number(vehicle_class_id) : null,
+      vehicleGvw,
+      vehicleGvw,
     ];
 
     pool.query(sql, params, callback);
@@ -1313,6 +1334,7 @@ const MotorCalculationService = {
     policy_type_id,
     vehicle_category_id,
     vehicle_class_id,
+    gvw,
     callback,
   ) => {
     const sql = `
@@ -1332,6 +1354,8 @@ const MotorCalculationService = {
 
         min_premium,
         max_premium,
+        min_gvw,
+        max_gvw,
 
         effective_from,
         effective_to,
@@ -1364,6 +1388,16 @@ const MotorCalculationService = {
           OR vehicle_class_id = ?
         )
 
+        AND (
+        min_gvw IS NULL
+        OR ? >= min_gvw
+        )
+
+        AND (
+        max_gvw IS NULL
+        OR ? <= max_gvw
+        )
+
         AND effective_from <= CURDATE()
 
         AND (
@@ -1376,10 +1410,17 @@ const MotorCalculationService = {
         policy_type_id IS NOT NULL DESC,
         vehicle_category_id IS NOT NULL DESC,
         vehicle_class_id IS NOT NULL DESC,
+        min_gvw IS NOT NULL DESC,
+        max_gvw IS NOT NULL ASC,
         effective_from DESC
 
       LIMIT 1
     `;
+
+    const vehicleGvw =
+      gvw !== "" && gvw !== undefined && gvw !== null
+        ? Number(gvw)
+        : null;
 
     const params = [
       Number(product_id),
@@ -1391,6 +1432,9 @@ const MotorCalculationService = {
       vehicle_category_id ? Number(vehicle_category_id) : null,
 
       vehicle_class_id ? Number(vehicle_class_id) : null,
+
+      vehicleGvw,
+      vehicleGvw,
     ];
 
     pool.query(sql, params, callback);
@@ -1891,6 +1935,7 @@ const MotorCalculationService = {
                                       policy_type_id,
                                       vehicle_category_id,
                                       vehicle_class_id,
+                                      gvw,
                                       (err, commission) => {
                                         if (err) {
                                           return callback(err);
@@ -1908,6 +1953,7 @@ const MotorCalculationService = {
                                           policy_type_id,
                                           vehicle_category_id,
                                           vehicle_class_id,
+                                          gvw,
                                           (err, cashback) => {
                                             if (err) {
                                               return callback(err);
