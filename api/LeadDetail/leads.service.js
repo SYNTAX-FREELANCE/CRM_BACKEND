@@ -1589,6 +1589,7 @@ LIMIT 10
     v.vehicle_class,
     v.vehicle_category,
     v.fuel_type,
+    v.known_policy_expiry_date,
 
     -- Employee Details
     um.user_id,
