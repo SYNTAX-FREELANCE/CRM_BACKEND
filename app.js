@@ -5,16 +5,26 @@ const http = require("http");
 const cors = require("cors");
 const path = require("path");
 const cookieParser = require("cookie-parser");
-
+const helmet = require("helmet");
 const corsConfig = require("./config/cors");
 const { initSocket } = require("./config/socket");
+const {
+  globalApiLimiter
+} = require("./middleware/rateLimiter");
 
 const app = express();
 const server = http.createServer(app);
 
+
 // middlewares
 app.use(cors(corsConfig));
 app.use(cookieParser());
+
+
+app.use(helmet());
+
+app.set("trust proxy", 1);
+
 app.use(
   express.json({
     limit: "100mb",
@@ -27,6 +37,7 @@ app.use(
     limit: "100mb",
   }),
 );
+
 
 const uploadsPath = process.env.UPLOADS_PATH || path.join(__dirname, "uploads");
 
@@ -127,16 +138,22 @@ const motorQuotationOptionRoutes = require("./api/MotorCalculator/MotorQuotatinO
 const motorQuotationOptionAddonRoutes = require("./api/MotorCalculator/MotorQuotationOptionAddon/motor_quotation_option_addon.routes");
 const motorQuotationOptionCoverRoutes = require("./api/MotorCalculator/MotorQuotationOptionCover/motor_quotation_option_cover.routes");
 
+
+
 const motorvehicleinputfielsRoutes = require("./api/MotorCalculator/MotorVehicleInputFields/motorVehicleInputField.router");
 const motorodrateslabRoute = require("./api/MotorCalculator/MotorOdRateSlab/motorOdRateSlab.routes");
 const motorTaxRuleRoutes = require("./api/MotorCalculator/MotorTaxRule/motorTaxRule.routes");
 const motorProfitMasterRoutes = require("./api/MotorCalculator/MotorProfitMaster/motorProfit.router");
 const calculator = require("./api/Calculator/calculator.router");
 
+
 const validateToken = require("./Validate/validateToken");
 const verifyAccessToken = require("./middleware/verifyAccessToken");
 
 // socket allowed only here
+
+app.use("/api", globalApiLimiter);
+
 app.use(
   "/api/user",
   routeTrackerMiddleware("USER_LOGIN_ROUTER"),
@@ -345,6 +362,8 @@ app.use(
   socketMiddleware,
   policyclaim,
 );
+
+
 
 // MOTOR CALCULATOR
 
@@ -586,12 +605,14 @@ app.use(
   motorQuotationOptionCoverRoutes,
 );
 
+
 app.use(
   "/api/motor/vehicle-input-field",
   routeTrackerMiddleware("MOTOR_VEHICLE_INPUT_FIELD_ROUTER"),
   socketMiddleware,
   motorvehicleinputfielsRoutes,
 );
+
 
 app.use(
   "/api/motor/od-rate-slab",
@@ -614,6 +635,7 @@ app.use(
   motorProfitMasterRoutes,
 );
 
+
 app.use(
   "/api/motor/calculation",
   routeTrackerMiddleware("MOTOR_VEHICLE_CALCULATOR"),
@@ -630,6 +652,8 @@ fileuploadRouter.get(
   verifyAccessToken,
   employeemasterController.getMedicalDocFile,
 );
+
+
 
 app.use("/api/fileupload", fileuploadRouter);
 

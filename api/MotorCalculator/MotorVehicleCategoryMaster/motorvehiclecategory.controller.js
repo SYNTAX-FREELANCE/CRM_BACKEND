@@ -83,7 +83,7 @@ const MotorVehicleCategoryController = {
               success: 0,
               message: "Invalid vehicle type",
             });
-          }
+          } 
 
           return res.status(500).json({
             success: 0,
