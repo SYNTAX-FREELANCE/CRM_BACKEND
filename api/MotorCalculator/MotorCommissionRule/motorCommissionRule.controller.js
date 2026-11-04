@@ -13,6 +13,8 @@ const MotorCommissionRuleController = {
       commission_value,
       min_premium,
       max_premium,
+      min_gvw,
+      max_gvw,
       effective_from,
       effective_to,
       description,

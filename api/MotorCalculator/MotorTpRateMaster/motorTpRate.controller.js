@@ -13,6 +13,7 @@ const MotorTpRateController = {
             vehicle_category_id,
             vehicle_class_id,
             usage_id,
+            fuel_type_id,
             rate_type,
             description,
             effective_from,
@@ -188,6 +189,13 @@ const MotorTpRateController = {
                     : Number(usage_id),
 
             rate_type: rateType,
+
+            fuel_type_id:
+                fuel_type_id === undefined ||
+                    fuel_type_id === null ||
+                    fuel_type_id === ""
+                    ? null
+                    : Number(fuel_type_id),
 
             description: description || null,
 
@@ -297,6 +305,7 @@ const MotorTpRateController = {
             vehicle_category_id,
             vehicle_class_id,
             usage_id,
+            fuel_type_id,
             rate_type,
             description,
             effective_from,
@@ -472,6 +481,13 @@ const MotorTpRateController = {
                     : Number(usage_id),
 
             rate_type: rateType,
+
+            fuel_type_id:
+                fuel_type_id === undefined ||
+                    fuel_type_id === null ||
+                    fuel_type_id === ""
+                    ? null
+                    : Number(fuel_type_id),
 
             description: description || null,
 

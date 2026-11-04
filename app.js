@@ -5,17 +5,17 @@ const http = require("http");
 const cors = require("cors");
 const path = require("path");
 const cookieParser = require("cookie-parser");
-
+const helmet = require("helmet");
 const corsConfig = require("./config/cors");
 const { initSocket } = require("./config/socket");
+const {
+  globalApiLimiter
+} = require("./middleware/rateLimiter");
 
 const app = express();
 const server = http.createServer(app);
 
-// Serve the C:\uploads folder at /uploads URL
-// app.use("/uploads", express.static("C:/uploads"));
-// app.use("/policy-documents", express.static("C:/CRM/PolicyDocuments"));
-// app.use("/lead-documents", express.static("C:/CRM/LeadDocuments"));
+
 
 const uploadsPath = process.env.UPLOADS_PATH || path.join(__dirname, "uploads");
 
@@ -34,6 +34,9 @@ app.use("/lead-documents", express.static(leadDocumentsPath));
 // middlewares
 app.use(cors(corsConfig));
 app.use(cookieParser());
+
+app.use(helmet());
+
 app.use(
   express.json({
     limit: "100mb",
@@ -139,6 +142,10 @@ const calculator = require("./api/Calculator/calculator.router");
 
 const validateToken = require("./Validate/validateToken");
 const verifyAccessToken = require("./middleware/verifyAccessToken");
+
+
+
+app.use("/api", globalApiLimiter);
 
 // socket allowed only here
 app.use(

@@ -542,6 +542,253 @@ const MotorCalculationService = {
   // =========================================================
   // TP RATE + TP SLAB
   // =========================================================
+  // getTPRate: (
+  //   insurance_company_id,
+  //   product_id,
+  //   policy_type_id,
+  //   policy_term_id,
+  //   vehicle_category_id,
+  //   vehicle_class_id,
+  //   usage_id,
+  //   engine_cc,
+  //   gvw,
+  //   seating_capacity,
+  //   callback,
+  // ) => {
+  //   const sql = `
+  //     SELECT
+  //       r.tp_rate_id,
+
+  //       r.insurance_company_id,
+  //       r.product_id,
+  //       r.policy_type_id,
+  //       r.policy_term_id,
+
+  //       r.vehicle_category_id,
+  //       r.vehicle_class_id,
+  //       r.usage_id,
+
+  //       r.rate_type,
+
+  //       r.effective_from,
+  //       r.effective_to,
+
+  //       r.description,
+
+  //       s.tp_rate_slab_id,
+
+  //       s.engine_cc_slab_id,
+
+  //       ecs.slab_code AS engine_cc_slab_code,
+  //       ecs.slab_name AS engine_cc_slab_name,
+  //       ecs.min_cc,
+  //       ecs.max_cc,
+
+  //       s.gvw_slab_id,
+
+  //       gs.slab_code AS gvw_slab_code,
+  //       gs.slab_name AS gvw_slab_name,
+  //       gs.min_gvw,
+  //       gs.max_gvw,
+
+  //       s.min_seating_capacity,
+  //       s.max_seating_capacity,
+
+  //       s.rate_value
+
+  //     FROM motor_tp_rate_master r
+
+  //     INNER JOIN motor_tp_rate_slab s
+  //       ON s.tp_rate_id = r.tp_rate_id
+  //       AND s.is_active = 1
+
+  //     LEFT JOIN motor_engine_cc_slabs ecs
+  //       ON ecs.engine_cc_slab_id = s.engine_cc_slab_id
+  //       AND ecs.is_active = 1
+
+  //     LEFT JOIN motor_gvw_slabs gs
+  //       ON gs.gvw_slab_id = s.gvw_slab_id
+  //       AND gs.is_active = 1
+
+  //     WHERE r.is_active = 1
+
+  //       AND r.product_id = ?
+  //       AND r.policy_type_id = ?
+
+  //       AND (
+  //         r.policy_term_id IS NULL
+  //         OR r.policy_term_id = ?
+  //       )
+
+  //       AND (
+  //         r.insurance_company_id IS NULL
+  //         OR r.insurance_company_id = ?
+  //       )
+
+  //       AND (
+  //         r.vehicle_category_id IS NULL
+  //         OR r.vehicle_category_id = ?
+  //       )
+
+  //       AND (
+  //         r.vehicle_class_id IS NULL
+  //         OR r.vehicle_class_id = ?
+  //       )
+
+  //       AND (
+  //         r.usage_id IS NULL
+  //         OR r.usage_id = ?
+  //       )
+
+  //       AND (
+  //         r.fuel_type_id IS NULL
+  //         OR r.fuel_type_id = ?
+  //       )
+
+  //       AND r.effective_from <= CURDATE()
+
+  //       AND (
+  //         r.effective_to IS NULL
+  //         OR r.effective_to >= CURDATE()
+  //       )
+
+  //       /* ENGINE CC */
+
+  //       AND (
+  //         s.engine_cc_slab_id IS NULL
+
+  //         OR (
+  //           ? IS NOT NULL
+
+  //           AND ecs.min_cc <= CAST(? AS DECIMAL(12,2))
+
+  //           AND (
+  //             ecs.max_cc IS NULL
+  //             OR ecs.max_cc >= CAST(? AS DECIMAL(12,2))
+  //           )
+  //         )
+  //       )
+
+  //       /* GVW */
+
+  //       AND (
+  //         s.gvw_slab_id IS NULL
+
+  //         OR (
+  //           ? IS NOT NULL
+
+  //           AND gs.min_gvw <= CAST(? AS DECIMAL(12,2))
+
+  //           AND (
+  //             gs.max_gvw IS NULL
+  //             OR gs.max_gvw >= CAST(? AS DECIMAL(12,2))
+  //           )
+  //         )
+  //       )
+
+  //       /* SEATING CAPACITY */
+
+  //       AND (
+  //         (
+  //           s.min_seating_capacity IS NULL
+  //           AND s.max_seating_capacity IS NULL
+  //         )
+
+  //         OR (
+  //           ? IS NOT NULL
+
+  //           AND (
+  //             s.min_seating_capacity IS NULL
+  //             OR CAST(? AS DECIMAL(12,2)) >= s.min_seating_capacity
+  //           )
+
+  //           AND (
+  //             s.max_seating_capacity IS NULL
+  //             OR CAST(? AS DECIMAL(12,2)) <= s.max_seating_capacity
+  //           )
+  //         )
+  //       )
+
+  //     ORDER BY
+
+  //       r.insurance_company_id IS NOT NULL DESC,
+  //       r.vehicle_category_id IS NOT NULL DESC,
+  //       r.vehicle_class_id IS NOT NULL DESC,
+  //       r.policy_term_id IS NOT NULL DESC,
+  //       r.usage_id IS NOT NULL DESC,
+
+  //       s.engine_cc_slab_id IS NOT NULL DESC,
+  //       s.gvw_slab_id IS NOT NULL DESC,
+
+  //       s.min_seating_capacity IS NOT NULL DESC,
+  //       s.max_seating_capacity IS NOT NULL DESC,
+
+  //       r.effective_from DESC
+
+  //     LIMIT 1
+  //   `;
+
+  //   const params = [
+  //     // MASTER
+
+  //     Number(product_id),
+  //     Number(policy_type_id),
+  //     Number(policy_term_id),
+
+  //     insurance_company_id ? Number(insurance_company_id) : null,
+
+  //     vehicle_category_id ? Number(vehicle_category_id) : null,
+
+  //     vehicle_class_id ? Number(vehicle_class_id) : null,
+
+  //     usage_id ? Number(usage_id) : null,
+
+  //     // ENGINE CC
+
+  //     engine_cc !== "" && engine_cc !== undefined && engine_cc !== null
+  //       ? Number(engine_cc)
+  //       : null,
+
+  //     engine_cc !== "" && engine_cc !== undefined && engine_cc !== null
+  //       ? Number(engine_cc)
+  //       : null,
+
+  //     engine_cc !== "" && engine_cc !== undefined && engine_cc !== null
+  //       ? Number(engine_cc)
+  //       : null,
+
+  //     // GVW
+
+  //     gvw !== "" && gvw !== undefined && gvw !== null ? Number(gvw) : null,
+
+  //     gvw !== "" && gvw !== undefined && gvw !== null ? Number(gvw) : null,
+
+  //     gvw !== "" && gvw !== undefined && gvw !== null ? Number(gvw) : null,
+
+  //     // SEATING
+
+  //     seating_capacity !== "" &&
+  //       seating_capacity !== undefined &&
+  //       seating_capacity !== null
+  //       ? Number(seating_capacity)
+  //       : null,
+
+  //     seating_capacity !== "" &&
+  //       seating_capacity !== undefined &&
+  //       seating_capacity !== null
+  //       ? Number(seating_capacity)
+  //       : null,
+
+  //     seating_capacity !== "" &&
+  //       seating_capacity !== undefined &&
+  //       seating_capacity !== null
+  //       ? Number(seating_capacity)
+  //       : null,
+  //   ];
+
+  //   pool.query(sql, params, callback);
+  // },
+
   getTPRate: (
     insurance_company_id,
     product_id,
@@ -550,235 +797,236 @@ const MotorCalculationService = {
     vehicle_category_id,
     vehicle_class_id,
     usage_id,
+    fuel_type_id,
     engine_cc,
     gvw,
     seating_capacity,
     callback,
   ) => {
     const sql = `
-      SELECT
-        r.tp_rate_id,
+    SELECT
+      r.tp_rate_id,
 
-        r.insurance_company_id,
-        r.product_id,
-        r.policy_type_id,
-        r.policy_term_id,
+      r.insurance_company_id,
+      r.product_id,
+      r.policy_type_id,
+      r.policy_term_id,
 
-        r.vehicle_category_id,
-        r.vehicle_class_id,
-        r.usage_id,
+      r.vehicle_category_id,
+      r.vehicle_class_id,
+      r.usage_id,
+      r.fuel_type_id,
 
-        r.rate_type,
+      r.rate_type,
 
-        r.effective_from,
-        r.effective_to,
+      r.effective_from,
+      r.effective_to,
 
-        r.description,
+      r.description,
 
-        s.tp_rate_slab_id,
+      s.tp_rate_slab_id,
 
-        s.engine_cc_slab_id,
+      s.engine_cc_slab_id,
 
-        ecs.slab_code AS engine_cc_slab_code,
-        ecs.slab_name AS engine_cc_slab_name,
-        ecs.min_cc,
-        ecs.max_cc,
+      ecs.slab_code AS engine_cc_slab_code,
+      ecs.slab_name AS engine_cc_slab_name,
+      ecs.min_cc,
+      ecs.max_cc,
 
-        s.gvw_slab_id,
+      s.gvw_slab_id,
 
-        gs.slab_code AS gvw_slab_code,
-        gs.slab_name AS gvw_slab_name,
-        gs.min_gvw,
-        gs.max_gvw,
+      gs.slab_code AS gvw_slab_code,
+      gs.slab_name AS gvw_slab_name,
+      gs.min_gvw,
+      gs.max_gvw,
 
-        s.min_seating_capacity,
-        s.max_seating_capacity,
+      s.min_seating_capacity,
+      s.max_seating_capacity,
 
-        s.rate_value
+      s.rate_value
 
-      FROM motor_tp_rate_master r
+    FROM motor_tp_rate_master r
 
-      INNER JOIN motor_tp_rate_slab s
-        ON s.tp_rate_id = r.tp_rate_id
-        AND s.is_active = 1
+    INNER JOIN motor_tp_rate_slab s
+      ON s.tp_rate_id = r.tp_rate_id
+      AND s.is_active = 1
 
-      LEFT JOIN motor_engine_cc_slabs ecs
-        ON ecs.engine_cc_slab_id = s.engine_cc_slab_id
-        AND ecs.is_active = 1
+    LEFT JOIN motor_engine_cc_slabs ecs
+      ON ecs.engine_cc_slab_id = s.engine_cc_slab_id
+      AND ecs.is_active = 1
 
-      LEFT JOIN motor_gvw_slabs gs
-        ON gs.gvw_slab_id = s.gvw_slab_id
-        AND gs.is_active = 1
+    LEFT JOIN motor_gvw_slabs gs
+      ON gs.gvw_slab_id = s.gvw_slab_id
+      AND gs.is_active = 1
 
-      WHERE r.is_active = 1
+    WHERE r.is_active = 1
 
-        AND r.product_id = ?
-        AND r.policy_type_id = ?
+      AND r.product_id = ?
+      AND r.policy_type_id = ?
 
-        AND (
-          r.policy_term_id IS NULL
-          OR r.policy_term_id = ?
-        )
+      AND (
+        r.policy_term_id IS NULL
+        OR r.policy_term_id = ?
+      )
 
-        AND (
-          r.insurance_company_id IS NULL
-          OR r.insurance_company_id = ?
-        )
+      AND (
+        r.insurance_company_id IS NULL
+        OR r.insurance_company_id = ?
+      )
 
-        AND (
-          r.vehicle_category_id IS NULL
-          OR r.vehicle_category_id = ?
-        )
+      AND (
+        r.vehicle_category_id IS NULL
+        OR r.vehicle_category_id = ?
+      )
 
-        AND (
-          r.vehicle_class_id IS NULL
-          OR r.vehicle_class_id = ?
-        )
+      AND (
+        r.vehicle_class_id IS NULL
+        OR r.vehicle_class_id = ?
+      )
 
-        AND (
-          r.usage_id IS NULL
-          OR r.usage_id = ?
-        )
+      AND (
+        r.usage_id IS NULL
+        OR r.usage_id = ?
+      )
 
-        AND r.effective_from <= CURDATE()
+      /* FUEL TYPE */
 
-        AND (
-          r.effective_to IS NULL
-          OR r.effective_to >= CURDATE()
-        )
+      AND (
+        r.fuel_type_id IS NULL
+        OR r.fuel_type_id = ?
+      )
 
-        /* ENGINE CC */
+      /* EFFECTIVE DATE */
 
-        AND (
-          s.engine_cc_slab_id IS NULL
+      AND r.effective_from <= CURDATE()
 
-          OR (
-            ? IS NOT NULL
+      AND (
+        r.effective_to IS NULL
+        OR r.effective_to >= CURDATE()
+      )
 
-            AND ecs.min_cc <= CAST(? AS DECIMAL(12,2))
+      /* ENGINE CC */
 
-            AND (
-              ecs.max_cc IS NULL
-              OR ecs.max_cc >= CAST(? AS DECIMAL(12,2))
-            )
+      AND (
+        s.engine_cc_slab_id IS NULL
+
+        OR (
+          ? IS NOT NULL
+
+          AND ecs.min_cc <= CAST(? AS DECIMAL(12,2))
+
+          AND (
+            ecs.max_cc IS NULL
+            OR ecs.max_cc >= CAST(? AS DECIMAL(12,2))
           )
         )
+      )
 
-        /* GVW */
+      /* GVW */
 
-        AND (
-          s.gvw_slab_id IS NULL
+      AND (
+        s.gvw_slab_id IS NULL
 
-          OR (
-            ? IS NOT NULL
+        OR (
+          ? IS NOT NULL
 
-            AND gs.min_gvw <= CAST(? AS DECIMAL(12,2))
+          AND gs.min_gvw <= CAST(? AS DECIMAL(12,2))
 
-            AND (
-              gs.max_gvw IS NULL
-              OR gs.max_gvw >= CAST(? AS DECIMAL(12,2))
-            )
+          AND (
+            gs.max_gvw IS NULL
+            OR gs.max_gvw >= CAST(? AS DECIMAL(12,2))
           )
         )
+      )
 
-        /* SEATING CAPACITY */
+      /* SEATING CAPACITY */
 
-        AND (
-          (
+      AND (
+        (
+          s.min_seating_capacity IS NULL
+          AND s.max_seating_capacity IS NULL
+        )
+
+        OR (
+          ? IS NOT NULL
+
+          AND (
             s.min_seating_capacity IS NULL
-            AND s.max_seating_capacity IS NULL
+            OR CAST(? AS DECIMAL(12,2)) >= s.min_seating_capacity
           )
 
-          OR (
-            ? IS NOT NULL
-
-            AND (
-              s.min_seating_capacity IS NULL
-              OR CAST(? AS DECIMAL(12,2)) >= s.min_seating_capacity
-            )
-
-            AND (
-              s.max_seating_capacity IS NULL
-              OR CAST(? AS DECIMAL(12,2)) <= s.max_seating_capacity
-            )
+          AND (
+            s.max_seating_capacity IS NULL
+            OR CAST(? AS DECIMAL(12,2)) <= s.max_seating_capacity
           )
         )
+      )
 
-      ORDER BY
+    ORDER BY
 
-        r.insurance_company_id IS NOT NULL DESC,
-        r.vehicle_category_id IS NOT NULL DESC,
-        r.vehicle_class_id IS NOT NULL DESC,
-        r.policy_term_id IS NOT NULL DESC,
-        r.usage_id IS NOT NULL DESC,
+      /* MASTER RULE SPECIFICITY */
 
-        s.engine_cc_slab_id IS NOT NULL DESC,
-        s.gvw_slab_id IS NOT NULL DESC,
+      (r.insurance_company_id IS NOT NULL) DESC,
+      (r.vehicle_category_id IS NOT NULL) DESC,
+      (r.vehicle_class_id IS NOT NULL) DESC,
+      (r.policy_term_id IS NOT NULL) DESC,
+      (r.usage_id IS NOT NULL) DESC,
+      (r.fuel_type_id IS NOT NULL) DESC,
 
-        s.min_seating_capacity IS NOT NULL DESC,
-        s.max_seating_capacity IS NOT NULL DESC,
+      /* SLAB SPECIFICITY */
 
-        r.effective_from DESC
+      (s.engine_cc_slab_id IS NOT NULL) DESC,
+      (s.gvw_slab_id IS NOT NULL) DESC,
 
-      LIMIT 1
-    `;
+      (
+        s.min_seating_capacity IS NOT NULL
+        OR s.max_seating_capacity IS NOT NULL
+      ) DESC,
+
+      /* LATEST EFFECTIVE RULE */
+
+      r.effective_from DESC,
+      s.tp_rate_slab_id DESC
+
+    LIMIT 1
+  `;
+
+    const toNumberOrNull = (value) =>
+      value !== "" && value !== undefined && value !== null
+        ? Number(value)
+        : null;
+
+    const cc = toNumberOrNull(engine_cc);
+    const vehicleGvw = toNumberOrNull(gvw);
+    const seating = toNumberOrNull(seating_capacity);
 
     const params = [
       // MASTER
-
       Number(product_id),
       Number(policy_type_id),
-      Number(policy_term_id),
+      toNumberOrNull(policy_term_id),
+      toNumberOrNull(insurance_company_id),
+      toNumberOrNull(vehicle_category_id),
+      toNumberOrNull(vehicle_class_id),
+      toNumberOrNull(usage_id),
 
-      insurance_company_id ? Number(insurance_company_id) : null,
-
-      vehicle_category_id ? Number(vehicle_category_id) : null,
-
-      vehicle_class_id ? Number(vehicle_class_id) : null,
-
-      usage_id ? Number(usage_id) : null,
+      // FUEL TYPE
+      toNumberOrNull(fuel_type_id),
 
       // ENGINE CC
-
-      engine_cc !== "" && engine_cc !== undefined && engine_cc !== null
-        ? Number(engine_cc)
-        : null,
-
-      engine_cc !== "" && engine_cc !== undefined && engine_cc !== null
-        ? Number(engine_cc)
-        : null,
-
-      engine_cc !== "" && engine_cc !== undefined && engine_cc !== null
-        ? Number(engine_cc)
-        : null,
+      cc,
+      cc,
+      cc,
 
       // GVW
+      vehicleGvw,
+      vehicleGvw,
+      vehicleGvw,
 
-      gvw !== "" && gvw !== undefined && gvw !== null ? Number(gvw) : null,
-
-      gvw !== "" && gvw !== undefined && gvw !== null ? Number(gvw) : null,
-
-      gvw !== "" && gvw !== undefined && gvw !== null ? Number(gvw) : null,
-
-      // SEATING
-
-      seating_capacity !== "" &&
-        seating_capacity !== undefined &&
-        seating_capacity !== null
-        ? Number(seating_capacity)
-        : null,
-
-      seating_capacity !== "" &&
-        seating_capacity !== undefined &&
-        seating_capacity !== null
-        ? Number(seating_capacity)
-        : null,
-
-      seating_capacity !== "" &&
-        seating_capacity !== undefined &&
-        seating_capacity !== null
-        ? Number(seating_capacity)
-        : null,
+      // SEATING CAPACITY
+      seating,
+      seating,
+      seating,
     ];
 
     pool.query(sql, params, callback);
@@ -1828,6 +2076,7 @@ const MotorCalculationService = {
               vehicle_category_id,
               vehicle_class_id,
               usage_id,
+              fuel_type_id,
               engine_cc,
               gvw,
               seating_capacity,

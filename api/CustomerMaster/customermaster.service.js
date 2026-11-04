@@ -669,7 +669,7 @@ WHERE DATE_FORMAT(v.known_policy_expiry_date, '%Y-%m') = ?
     pool.query(query, [month], (err, results) => {
       if (err) {
         return callback(err, null);
-      }
+      } 
       callback(null, results || null);
     });
   },

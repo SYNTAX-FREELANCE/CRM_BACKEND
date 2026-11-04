@@ -33,7 +33,15 @@ const createUpload = (folderPath, allowedTypes = [], maxCount = 10) => {
     }
   };
 
-  return multer({ storage, fileFilter });
+  return multer({
+    storage, fileFilter,
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10 MB per file
+      files: maxCount,             // Maximum files per request
+      fields: 10,                  // Maximum non-file fields
+      parts: 20                    // Maximum total parts
+    }
+  });
 };
 
 module.exports = createUpload;

@@ -15,12 +15,13 @@ const MotorTpRateService = {
                 vehicle_class_id,
                 usage_id,
                 rate_type,
+                fuel_type_id,
                 description,
                 effective_from,
                 effective_to,
                 is_active
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
         `;
 
         const values = [
@@ -32,6 +33,7 @@ const MotorTpRateService = {
             data.vehicle_class_id || null,
             data.usage_id || null,
             data.rate_type || "FIXED",
+            data.fuel_type_id || null,
             data.description || null,
             data.effective_from,
             data.effective_to || null,
@@ -81,7 +83,10 @@ const MotorTpRateService = {
                 tr.usage_id,
                 vu.usage_name,
 
-                tr.rate_type,
+                tr.rate_type,   
+                
+                tr.fuel_type_id,
+                ft.fuel_name,
 
                 tr.description,
 
@@ -114,6 +119,9 @@ const MotorTpRateService = {
 
             LEFT JOIN motor_vehicle_usages vu
                 ON vu.usage_id = tr.usage_id
+
+            LEFT JOIN motor_fuel_types ft
+                ON ft.fuel_type_id = tr.fuel_type_id
 
             ORDER BY
                 tr.effective_from DESC,
@@ -161,6 +169,9 @@ const MotorTpRateService = {
 
                 tr.rate_type,
 
+                tr.fuel_type_id,
+                ft.fuel_name,
+
                 tr.description,
 
                 tr.effective_from,
@@ -193,6 +204,9 @@ const MotorTpRateService = {
             LEFT JOIN motor_vehicle_usages vu
                 ON vu.usage_id = tr.usage_id
 
+            LEFT JOIN motor_fuel_types ft
+                ON ft.fuel_type_id = tr.fuel_type_id
+
             WHERE tr.tp_rate_id = ?
         `;
 
@@ -221,6 +235,7 @@ const MotorTpRateService = {
                 vehicle_class_id = ?,
                 usage_id = ?,
                 rate_type = ?,
+                fuel_type_id= ?,
                 description = ?,
                 effective_from = ?,
                 effective_to = ?,
@@ -238,6 +253,7 @@ const MotorTpRateService = {
             data.vehicle_class_id || null,
             data.usage_id || null,
             data.rate_type || "FIXED",
+            data.fuel_type_id || null,
             data.description || null,
             data.effective_from,
             data.effective_to || null,
