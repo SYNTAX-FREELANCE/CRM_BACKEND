@@ -394,8 +394,8 @@ const MotorCalculationService = {
 
     const age =
       vehicle_age_months !== "" &&
-        vehicle_age_months !== undefined &&
-        vehicle_age_months !== null
+      vehicle_age_months !== undefined &&
+      vehicle_age_months !== null
         ? Number(vehicle_age_months)
         : null;
 
@@ -409,8 +409,8 @@ const MotorCalculationService = {
 
     const seating =
       seating_capacity !== "" &&
-        seating_capacity !== undefined &&
-        seating_capacity !== null
+      seating_capacity !== undefined &&
+      seating_capacity !== null
         ? Number(seating_capacity)
         : null;
 
@@ -550,6 +550,7 @@ const MotorCalculationService = {
     vehicle_category_id,
     vehicle_class_id,
     usage_id,
+    fuel_type_id,
     engine_cc,
     gvw,
     seating_capacity,
@@ -567,6 +568,8 @@ const MotorCalculationService = {
         r.vehicle_category_id,
         r.vehicle_class_id,
         r.usage_id,
+
+        ft.fuel_name,
 
         r.rate_type,
 
@@ -610,6 +613,10 @@ const MotorCalculationService = {
         ON gs.gvw_slab_id = s.gvw_slab_id
         AND gs.is_active = 1
 
+      LEFT JOIN motor_fuel_types ft
+        ON ft.fuel_type_id = r.fuel_type_id
+        AND gs.is_active = 1
+
       WHERE r.is_active = 1
 
         AND r.product_id = ?
@@ -638,6 +645,11 @@ const MotorCalculationService = {
         AND (
           r.usage_id IS NULL
           OR r.usage_id = ?
+        )
+
+        AND (
+          r.fuel_type_id IS NULL
+          OR r.fuel_type_id = ?
         )
 
         AND r.effective_from <= CURDATE()
@@ -738,6 +750,8 @@ const MotorCalculationService = {
 
       usage_id ? Number(usage_id) : null,
 
+      fuel_type_id ? Number(fuel_type_id) : null,
+
       // ENGINE CC
 
       engine_cc !== "" && engine_cc !== undefined && engine_cc !== null
@@ -763,20 +777,20 @@ const MotorCalculationService = {
       // SEATING
 
       seating_capacity !== "" &&
-        seating_capacity !== undefined &&
-        seating_capacity !== null
+      seating_capacity !== undefined &&
+      seating_capacity !== null
         ? Number(seating_capacity)
         : null,
 
       seating_capacity !== "" &&
-        seating_capacity !== undefined &&
-        seating_capacity !== null
+      seating_capacity !== undefined &&
+      seating_capacity !== null
         ? Number(seating_capacity)
         : null,
 
       seating_capacity !== "" &&
-        seating_capacity !== undefined &&
-        seating_capacity !== null
+      seating_capacity !== undefined &&
+      seating_capacity !== null
         ? Number(seating_capacity)
         : null,
     ];
@@ -1784,6 +1798,7 @@ const MotorCalculationService = {
               vehicle_category_id,
               vehicle_class_id,
               usage_id,
+              fuel_type_id,
               engine_cc,
               gvw,
               seating_capacity,

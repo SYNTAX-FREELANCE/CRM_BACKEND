@@ -32,9 +32,6 @@ const handleDatabaseError = (res, err, operation) => {
 };
 
 const validateCompany = (body) => {
-    console.log({
-        body
-    });
 
     const company_name = body.company_name?.trim();
     const location = body.company_location?.trim() || "";

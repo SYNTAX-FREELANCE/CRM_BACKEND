@@ -1,11 +1,9 @@
 const pool = require("../../../dbconfig/dbconfig");
 
 const MotorTpRateService = {
-
-    // CREATE
-    createTpRate: (data, callback) => {
-
-        const query = `
+  // CREATE
+  createTpRate: (data, callback) => {
+    const query = `
             INSERT INTO motor_tp_rate_master (
                 insurance_company_id,
                 product_id,
@@ -14,45 +12,44 @@ const MotorTpRateService = {
                 vehicle_category_id,
                 vehicle_class_id,
                 usage_id,
+                fuel_type_id,
                 rate_type,
                 description,
                 effective_from,
                 effective_to,
                 is_active
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        const values = [
-            data.insurance_company_id || null,
-            data.product_id,
-            data.policy_type_id,
-            data.policy_term_id || null,
-            data.vehicle_category_id || null,
-            data.vehicle_class_id || null,
-            data.usage_id || null,
-            data.rate_type || "FIXED",
-            data.description || null,
-            data.effective_from,
-            data.effective_to || null,
-            data.is_active
-        ];
+    const values = [
+      data.insurance_company_id || null,
+      data.product_id,
+      data.policy_type_id,
+      data.policy_term_id || null,
+      data.vehicle_category_id || null,
+      data.vehicle_class_id || null,
+      data.usage_id || null,
+      data.fuel_type_id || null,
+      data.rate_type || "FIXED",
+      data.description || null,
+      data.effective_from,
+      data.effective_to || null,
+      data.is_active,
+    ];
 
-        pool.query(query, values, (err, result) => {
+    pool.query(query, values, (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
+      callback(null, result);
+    });
+  },
 
-            callback(null, result);
-        });
-    },
-
-
-    // GET ALL
-    getAllTpRates: (callback) => {
-
-        const query = `
+  // GET ALL
+  getAllTpRates: (callback) => {
+    const query = `
             SELECT
                 tr.tp_rate_id,
 
@@ -80,6 +77,9 @@ const MotorTpRateService = {
 
                 tr.usage_id,
                 vu.usage_name,
+            
+                tr.fuel_type_id,
+                ft.fuel_name,
 
                 tr.rate_type,
 
@@ -114,27 +114,27 @@ const MotorTpRateService = {
 
             LEFT JOIN motor_vehicle_usages vu
                 ON vu.usage_id = tr.usage_id
+            
+            LEFT JOIN motor_fuel_types ft
+                ON ft.fuel_type_id = tr.fuel_type_id
 
             ORDER BY
                 tr.effective_from DESC,
                 tr.tp_rate_id DESC
         `;
 
-        pool.query(query, (err, result) => {
+    pool.query(query, (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
+      callback(null, result);
+    });
+  },
 
-            callback(null, result);
-        });
-    },
-
-
-    // GET BY ID
-    getTpRateById: (id, callback) => {
-
-        const query = `
+  // GET BY ID
+  getTpRateById: (id, callback) => {
+    const query = `
             SELECT
                 tr.tp_rate_id,
 
@@ -159,6 +159,9 @@ const MotorTpRateService = {
                 tr.usage_id,
                 vu.usage_name,
 
+                tr.fuel_type_id,
+                ft.fuel_name,
+
                 tr.rate_type,
 
                 tr.description,
@@ -193,24 +196,24 @@ const MotorTpRateService = {
             LEFT JOIN motor_vehicle_usages vu
                 ON vu.usage_id = tr.usage_id
 
+            LEFT JOIN motor_fuel_types ft
+                ON ft.fuel_type_id = tr.fuel_type_id
+
             WHERE tr.tp_rate_id = ?
         `;
 
-        pool.query(query, [id], (err, result) => {
+    pool.query(query, [id], (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
+      callback(null, result);
+    });
+  },
 
-            callback(null, result);
-        });
-    },
-
-
-    // UPDATE
-    updateTpRate: (id, data, callback) => {
-
-        const query = `
+  // UPDATE
+  updateTpRate: (id, data, callback) => {
+    const query = `
             UPDATE motor_tp_rate_master
             SET
                 insurance_company_id = ?,
@@ -220,6 +223,7 @@ const MotorTpRateService = {
                 vehicle_category_id = ?,
                 vehicle_class_id = ?,
                 usage_id = ?,
+                fuel_type_id = ?,
                 rate_type = ?,
                 description = ?,
                 effective_from = ?,
@@ -229,57 +233,52 @@ const MotorTpRateService = {
             WHERE tp_rate_id = ?
         `;
 
-        const values = [
-            data.insurance_company_id || null,
-            data.product_id,
-            data.policy_type_id,
-            data.policy_term_id || null,
-            data.vehicle_category_id || null,
-            data.vehicle_class_id || null,
-            data.usage_id || null,
-            data.rate_type || "FIXED",
-            data.description || null,
-            data.effective_from,
-            data.effective_to || null,
-            data.is_active,
-            id
-        ];
+    const values = [
+      data.insurance_company_id || null,
+      data.product_id,
+      data.policy_type_id,
+      data.policy_term_id || null,
+      data.vehicle_category_id || null,
+      data.vehicle_class_id || null,
+      data.usage_id || null,
+      data.fuel_type_id || null,
+      data.rate_type || "FIXED",
+      data.description || null,
+      data.effective_from,
+      data.effective_to || null,
+      data.is_active,
+      id,
+    ];
 
-        pool.query(query, values, (err, result) => {
+    pool.query(query, values, (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
+      callback(null, result);
+    });
+  },
 
-            callback(null, result);
-        });
-    },
-
-
-    // DELETE
-    deleteTpRate: (id, callback) => {
-
-        const query = `
+  // DELETE
+  deleteTpRate: (id, callback) => {
+    const query = `
             UPDATE motor_tp_rate_master
             SET is_active = 0
             WHERE tp_rate_id = ?
         `;
 
-        pool.query(query, [id], (err, result) => {
+    pool.query(query, [id], (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
+      callback(null, result);
+    });
+  },
 
-            callback(null, result);
-        });
-    },
-
-
-    // GET ACTIVE
-    getActiveTpRates: (callback) => {
-
-        const query = `
+  // GET ACTIVE
+  getActiveTpRates: (callback) => {
+    const query = `
             SELECT
                 tr.tp_rate_id,
 
@@ -345,15 +344,14 @@ const MotorTpRateService = {
                 tr.tp_rate_id DESC
         `;
 
-        pool.query(query, (err, result) => {
+    pool.query(query, (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
-
-            callback(null, result);
-        });
-    }
+      callback(null, result);
+    });
+  },
 };
 
 module.exports = MotorTpRateService;
