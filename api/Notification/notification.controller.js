@@ -1,4 +1,5 @@
 const { sendPushNotification } = require("../../service/notificationService");
+
 const {
   registerDevice,
   getActiveDeviceTokens,
@@ -75,7 +76,7 @@ module.exports = {
         }
 
         return res.status(200).json({
-          success: true,
+          success: 1,
           message: "Notification sent successfully",
           devices: notificationResults,
         });
@@ -83,11 +84,12 @@ module.exports = {
         console.error("❌ Test notification error:", error);
 
         return res.status(500).json({
-          success: false,
+          success: 0,
           message: "Failed to send notification",
         });
       }
     });
+    
   },
   registerDevice: (req, res) => {
     const userId = req.user.user_id;
@@ -118,5 +120,6 @@ module.exports = {
         deviceId: result.deviceId,
       });
     });
+
   },
 };
