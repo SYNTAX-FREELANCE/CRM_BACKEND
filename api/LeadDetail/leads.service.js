@@ -1590,8 +1590,8 @@ LIMIT 10
     v.vehicle_category,
     v.fuel_type,
     v.known_policy_expiry_date,
-
-    -- Employee Details
+  
+    -- Employee Details 
     um.user_id,
     um.employee_id,
     um.name AS employee_name,
@@ -3250,4 +3250,70 @@ AND p.customer_id = ?`,
       });
     });
   },
+
+
+  updateCustomerMobileNumber: (data, callback) => {
+
+    const column = data.field === 'mobile1'
+      ? 'mobile_number_1'
+      : 'mobile_number_2';
+
+    const query = `
+        UPDATE customers
+        SET ${column} = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE customer_id = ?
+    `;
+
+    pool.query(
+      query,
+      [data.mobile_number, data.customer_id],
+      (err, result) => {
+        if (err) {
+          return callback(err, null);
+        }
+
+        if (result.affectedRows === 0) {
+          return callback(
+            new Error('Customer not found'),
+            null
+          );
+        }
+
+        callback(null, result);
+      }
+    );
+  },
+
+  switchCustomerMobileNumbers: (data, callback) => {
+    const query = `
+        UPDATE customers
+        SET
+            mobile_number_1 = mobile_number_2,
+            mobile_number_2 = mobile_number_1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE customer_id = ?
+    `;
+
+    pool.query(
+      query,
+      [data?.customer_id],
+      (err, result) => {
+
+        if (err) {
+          return callback(err, null);
+        }
+
+        if (result.affectedRows === 0) {
+          return callback(
+            new Error('Customer not found'),
+            null
+          );
+        }
+
+        callback(null, result);
+      }
+    );
+  },
+
 };
