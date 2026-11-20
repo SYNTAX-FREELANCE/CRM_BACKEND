@@ -2762,7 +2762,7 @@ const MotorCalculationService = {
   },
 
   // GET ALL QUOTATIONS BY LEAD ID
-  getQuotationByLeadId: (lead_id, callback) => {
+  getQuotationByLeadId: (lead_id, vehicle_id, callback) => {
     const quotationQuery = `
        SELECT
     q.*,
@@ -2778,11 +2778,11 @@ LEFT JOIN vehicles v
     ON v.vehicle_id = q.vehicle_id
 LEFT JOIN customers c
     ON c.customer_id = q.customer_id   
-WHERE q.lead_id = ?
+WHERE q.lead_id = ? AND q.vehicle_id = ?
 ORDER BY q.motor_quotation_id DESC;
     `;
 
-    pool.query(quotationQuery, [lead_id], (quotationError, quotationRows) => {
+    pool.query(quotationQuery, [lead_id, vehicle_id], (quotationError, quotationRows) => {
       if (quotationError) {
         return callback(quotationError);
       }

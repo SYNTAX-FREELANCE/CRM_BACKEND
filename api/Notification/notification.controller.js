@@ -48,9 +48,8 @@ module.exports = {
 
             title: "📞 Incoming CRM Call",
 
-            body: `${customerName || "Customer"} • ${
-              registrationNumber || phoneNumber || ""
-            }`,
+            body: `${customerName || "Customer"} • ${registrationNumber || phoneNumber || ""
+              }`,
 
             data: {
               type: "CRM_CALL",

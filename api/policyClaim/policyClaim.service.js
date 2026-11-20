@@ -79,7 +79,7 @@ const PolicyClaimService = {
                                 claim_number,
 
                                 claim_date,
-                                claim_status,
+                                claim_status_id,
 
                                 accident_date,
                                 accident_time,
@@ -108,7 +108,7 @@ const PolicyClaimService = {
                                 NULL,
 
                                 CURDATE(),
-                                'DRAFT',
+                                ?,
 
                                 ?,
                                 ?,
@@ -137,6 +137,7 @@ const PolicyClaimService = {
                         const values = [
 
                             data.policy_id,
+                            data.claim_status_id,
 
                             data.accident_date,
                             data.accident_time,
@@ -240,7 +241,7 @@ const PolicyClaimService = {
                                                         claim_id: claimId,
                                                         claim_number: claimNumber,
                                                         policy_id: data.policy_id,
-                                                        claim_status: "DRAFT"
+                                                        claim_status_id: "DRAFT"
                                                     }
                                                 );
                                             }
@@ -285,7 +286,8 @@ const PolicyClaimService = {
                 ic.company_name AS insurance_company_name,
 
                 pc.claim_date,
-                pc.claim_status,
+                pc.claim_status_id,
+                pcs.claim_status_name as claim_staus,
 
                 pc.accident_date,
                 pc.accident_time,
@@ -318,6 +320,10 @@ const PolicyClaimService = {
 
             INNER JOIN customers c
                 ON c.customer_id = p.customer_id
+
+
+            INNER JOIN policy_claim_status_master pcs
+                ON pcs.claim_status_id = pc.claim_status_id
 
             INNER JOIN vehicles v
                 ON v.vehicle_id = p.vehicle_id
@@ -372,7 +378,8 @@ const PolicyClaimService = {
                 ic.company_name AS insurance_company_name,
 
                 pc.claim_date,
-                pc.claim_status,
+                pc.claim_status_id,
+                pcs.claim_status_name as claim_staus,
 
                 pc.accident_date,
                 pc.accident_time,
@@ -408,6 +415,9 @@ const PolicyClaimService = {
 
             INNER JOIN vehicles v
                 ON v.vehicle_id = p.vehicle_id
+
+            INNER JOIN policy_claim_status_master pcs
+                ON pcs.claim_status_id = pc.claim_status_id
 
             INNER JOIN insurance_companies ic
                 ON ic.insurance_company_id =
@@ -461,7 +471,8 @@ const PolicyClaimService = {
                 ic.company_name AS insurance_company_name,
 
                 pc.claim_date,
-                pc.claim_status,
+                pc.claim_status_id,
+                pcs.claim_status_name as claim_status,
 
                 pc.accident_date,
                 pc.accident_time,
@@ -485,6 +496,9 @@ const PolicyClaimService = {
 
             INNER JOIN vehicles v
                 ON v.vehicle_id = p.vehicle_id
+
+            INNER JOIN policy_claim_status_master pcs
+                ON pcs.claim_status_id = pc.claim_status_id
 
             INNER JOIN insurance_companies ic
                 ON ic.insurance_company_id =
@@ -540,7 +554,7 @@ const PolicyClaimService = {
 
                 other_insurance_policy_no = ?,
 
-                claim_status = ?,
+                claim_status_id = ?,
 
                 remarks = ?,
                 is_active = ?,
@@ -571,7 +585,7 @@ const PolicyClaimService = {
 
             data.other_insurance_policy_no,
 
-            data.claim_status,
+            data.claim_status_id,
 
             data.remarks,
             data.is_active,
@@ -626,63 +640,19 @@ const PolicyClaimService = {
     },
 
 
-    // ======================================================
-    // GET ACTIVE CLAIMS
-    // ======================================================
-
-    getActivePolicyClaims: (callback) => {
+    updatePolicyClaimDetailsStatus: (claimId, statusId, callback) => {
 
         const query = `
-            SELECT
-
-                pc.claim_id,
-                pc.claim_number,
-
-                pc.policy_id,
-                p.policy_number,
-
-                c.customer_id,
-                c.customer_name,
-
-                v.vehicle_id,
-                v.registration_number,
-
-                ic.insurance_company_id,
-                ic.company_name AS insurance_company_name,
-
-                pc.claim_date,
-                pc.claim_status,
-
-                pc.accident_date,
-                pc.accident_place,
-
-                pc.driver_name,
-
-                pc.estimated_repair_cost
-
-            FROM policy_claims pc
-
-            INNER JOIN policies p
-                ON p.policy_id = pc.policy_id
-
-            INNER JOIN customers c
-                ON c.customer_id = p.customer_id
-
-            INNER JOIN vehicles v
-                ON v.vehicle_id = p.vehicle_id
-
-            INNER JOIN insurance_companies ic
-                ON ic.insurance_company_id =
-                   p.insurance_company_id
-
-            WHERE pc.is_active = 1
-
-            ORDER BY pc.claim_id DESC
+            UPDATE policy_claims
+            SET
+                claim_status_id = ?
+            WHERE claim_id = ?
         `;
 
 
         pool.query(
             query,
+            [statusId, claimId],
             (err, result) => {
 
                 if (err) {
@@ -692,7 +662,109 @@ const PolicyClaimService = {
                 callback(null, result);
             }
         );
-    }
+    },
+
+
+    // ======================================================
+    // GET ACTIVE CLAIMS
+    // ======================================================
+
+    getActivePolicyClaims: (callback) => {
+        const query = `
+        SELECT
+            /* Claim Information */
+            pc.claim_id,
+            pc.claim_number,
+            pc.policy_id,
+            pc.claim_date,
+            pc.claim_status_id,
+
+            pcs.claim_status_name AS claim_status,
+            pcs.claim_status_color,
+            pcs.claim_status_code,
+            pcs.is_initial AS status_is_initial,
+            pcs.is_final AS status_is_final,
+
+            /* Policy Information */
+            p.policy_number,
+            p.policy_type,
+            p.renewal_year,
+            p.renewal_cycle,
+            p.start_date,
+            p.expiry_date,
+            p.premium_amount,
+            p.insured_declared_value,
+            p.policy_status,
+
+            /* Customer Information */
+            c.customer_id,
+            c.customer_name,
+
+            /* Vehicle Information */
+            v.vehicle_id,
+            v.registration_number,
+
+            /* Insurance Company */
+            ic.insurance_company_id,
+            ic.company_name AS insurance_company_name,
+
+            /* Accident Information */
+            pc.accident_date,
+            pc.accident_time,
+            pc.accident_place,
+            pc.accident_description,
+
+            /* Driver Information */
+            pc.driver_name,
+            pc.driver_address,
+            pc.driver_age,
+            pc.driver_relationship,
+            pc.driving_license_no AS driver_license,
+
+            /* Inspection and Repair */
+            pc.inspection_location,
+            pc.estimated_repair_cost,
+
+            /* Other Information */
+            pc.other_insurance_policy_no,
+            pc.remarks,
+
+            /* Audit Information */
+            pc.created_by,
+            pc.created_at,
+            pc.updated_by,
+            pc.updated_at
+
+        FROM policy_claims pc
+
+        INNER JOIN policies p
+            ON p.policy_id = pc.policy_id
+
+        INNER JOIN customers c
+            ON c.customer_id = p.customer_id
+
+        INNER JOIN vehicles v
+            ON v.vehicle_id = p.vehicle_id
+
+        INNER JOIN insurance_companies ic
+            ON ic.insurance_company_id = p.insurance_company_id
+
+        INNER JOIN policy_claim_status_master pcs
+            ON pcs.claim_status_id = pc.claim_status_id
+
+        WHERE pc.is_active = 1
+
+        ORDER BY pc.claim_id DESC
+    `;
+
+        pool.query(query, (err, result) => {
+            if (err) {
+                return callback(err, null);
+            }
+
+            callback(null, result);
+        });
+    },
 
 };
 

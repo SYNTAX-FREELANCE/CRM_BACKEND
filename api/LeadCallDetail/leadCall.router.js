@@ -44,4 +44,28 @@ router.patch(
   leadCallLogsController.updateCallLog,
 );
 
+router.get(
+  "/daily-productivity",
+  verifyAccessToken,
+  leadCallLogsController.getDailyEmployeeProductivity
+);
+
+router.get(
+  "/employee-call-details",
+  verifyAccessToken,
+  leadCallLogsController.getEmployeeCallDetails
+);
+
+
+router.get(
+  "/export-daily-productivity-excel",
+  verifyAccessToken,
+  leadCallLogsController.exportDailyEmployeeProductivityExcel
+);
+
+router.get(
+  "/export-employee-call-details-excel",
+  verifyAccessToken,
+  leadCallLogsController.exportEmployeeCallDetailsExcel
+);
 module.exports = router;

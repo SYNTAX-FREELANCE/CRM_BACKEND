@@ -10,7 +10,7 @@ const PolicyClaimController = {
       policy_id,
 
       claim_date,
-
+      claim_status_id,
       accident_date,
       accident_time,
       accident_place,
@@ -75,7 +75,7 @@ const PolicyClaimController = {
       });
     }
 
-   
+
     // --------------------------------------------------
     // STRING LENGTH VALIDATIONS
     // --------------------------------------------------
@@ -145,6 +145,7 @@ const PolicyClaimController = {
       policy_id: Number(policy_id),
 
       claim_date: claim_date || null,
+      claim_status_id: claim_status_id || 1,
 
       accident_date: accident_date || null,
       accident_time: accident_time || null,
@@ -167,8 +168,8 @@ const PolicyClaimController = {
 
       estimated_repair_cost:
         estimated_repair_cost === "" ||
-        estimated_repair_cost === undefined ||
-        estimated_repair_cost === null
+          estimated_repair_cost === undefined ||
+          estimated_repair_cost === null
           ? null
           : Number(estimated_repair_cost),
 
@@ -323,7 +324,7 @@ const PolicyClaimController = {
 
     const {
       claim_date,
-
+      claim_status_id,
       accident_date,
       accident_time,
       accident_place,
@@ -427,6 +428,7 @@ const PolicyClaimController = {
 
     const data = {
       claim_date: claim_date || null,
+      claim_status_id: claim_status_id || 1,
 
       accident_date: accident_date || null,
       accident_time: accident_time || null,
@@ -449,8 +451,8 @@ const PolicyClaimController = {
 
       estimated_repair_cost:
         estimated_repair_cost === "" ||
-        estimated_repair_cost === undefined ||
-        estimated_repair_cost === null
+          estimated_repair_cost === undefined ||
+          estimated_repair_cost === null
           ? null
           : Number(estimated_repair_cost),
 
@@ -494,7 +496,7 @@ const PolicyClaimController = {
   // ======================================================
 
   deletePolicyClaim: (req, res) => {
-    const { claimId } = req.params;
+    const { claimId, } = req.params;
 
     if (!claimId) {
       return res.status(200).json({
@@ -502,6 +504,9 @@ const PolicyClaimController = {
         message: "Claim ID is required",
       });
     }
+
+
+
 
     PolicyClaimService.deletePolicyClaim(claimId, (err, result) => {
       if (err) {
@@ -526,6 +531,47 @@ const PolicyClaimController = {
       });
     });
   },
+
+
+  updatePolicyClaimDetailsStatus: (req, res) => {
+    const { claimId, statusId } = req.params;
+
+    if (!claimId) {
+      return res.status(200).json({
+        success: 0,
+        message: "Claim ID is required",
+      });
+    }
+    if (!statusId) {
+      return res.status(200).json({
+        success: 0,
+        message: "Status ID is required",
+      });
+    }
+    PolicyClaimService.updatePolicyClaimDetailsStatus(claimId, statusId, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Failed to Update claim",
+          error: err,
+        });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(200).json({
+          success: 0,
+          message: "Claim not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Claim Updated successfully",
+        data: result,
+      });
+    });
+  },
+
 
   // ======================================================
   // GET ACTIVE

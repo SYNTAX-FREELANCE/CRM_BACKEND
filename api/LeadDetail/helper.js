@@ -37,12 +37,13 @@ const getLeads = (connection, customerId, callback) => {
 
     const sql = `
 
-    SELECT
+SELECT
 
         l.*,
         ls.status_name,
-        u.name assigned_to_name
-
+        u.name assigned_to_name,
+		p.start_date,
+		p.expiry_date
     FROM leads l
 
     LEFT JOIN lead_status_master ls
@@ -50,10 +51,13 @@ const getLeads = (connection, customerId, callback) => {
 
     LEFT JOIN users_master u
     ON u.user_id=l.assigned_to
-
+    
+    LEFT JOIN policies p
+    ON p.policy_id=l.policy_id AND  p.is_active = 1
+    
     WHERE l.customer_id=?
 
-    ORDER BY l.created_at DESC
+    ORDER BY l.created_at DESC;
 
     `;
 

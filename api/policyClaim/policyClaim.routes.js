@@ -76,4 +76,12 @@ router.get(
   PolicyClaimController.getActivePolicyClaims,
 );
 
+
+
+router.patch(
+  "/update-status/:claimId/:statusId",
+  verifyAccessToken,
+  PolicyClaimController.updatePolicyClaimDetailsStatus,
+);
+
 module.exports = router;

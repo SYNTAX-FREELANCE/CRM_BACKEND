@@ -5,9 +5,9 @@ const MotorCalculationController = require("./calculator.controller");
 const verifyAccessToken = require("../../middleware/verifyAccessToken");
 
 router.post(
-    "/get-data",
-    verifyAccessToken,
-    MotorCalculationController.getCalculationData
+  "/get-data",
+  verifyAccessToken,
+  MotorCalculationController.getCalculationData
 );
 
 // CREATE MOTOR QUOTATION
@@ -19,9 +19,9 @@ router.post(
 
 
 router.get(
-    "/getbylead/:lead_id",
-    verifyAccessToken,
-    MotorCalculationController.getQuotationByLeadId
+  "/getbylead/:lead_id/:vehicle_id",
+  verifyAccessToken,
+  MotorCalculationController.getQuotationByLeadId
 );
 
 module.exports = router;
