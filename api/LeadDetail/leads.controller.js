@@ -742,4 +742,93 @@ module.exports = {
       });
     });
   },
+
+
+
+
+  updateCustomerMobileNumber: (req, res) => {
+    const { customer_id, field, mobile_number, user_id } = req.body;
+
+    if (!customer_id || !field || !mobile_number || !user_id) {
+      return res.status(400).json({
+        success: 0,
+        message: "Missing required fields"
+      });
+    }
+
+    // Allow only these two columns
+    const allowedFields = ["mobile1", "mobile2"];
+
+    if (!allowedFields.includes(field)) {
+      return res.status(400).json({
+        success: 0,
+        message: "Invalid mobile field"
+      });
+    }
+
+    if (!/^[6-9]\d{9}$/.test(mobile_number)) {
+      return res.status(400).json({
+        success: 0,
+        message: "Invalid mobile number"
+      });
+    }
+
+    const values = {
+      customer_id,
+      field,
+      mobile_number,
+      user_id
+    };
+
+    leadservie.updateCustomerMobileNumber(values, (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Failed to update mobile number"
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: "Mobile number updated successfully"
+      });
+    });
+  },
+
+
+
+  switchCustomerMobileNumbers: (req, res) => {
+
+    const { customer_id, user_id } = req.body;
+
+    if (!customer_id || !user_id) {
+      return res.status(400).json({
+        success: 0,
+        message: 'Missing required fields'
+      });
+    }
+
+    const data = {
+      customer_id,
+      user_id
+    };
+
+    leadservie.switchCustomerMobileNumbers(data, (err, result) => {
+
+      if (err) {
+        return res.status(
+          err.message === 'Customer not found' ? 404 : 500
+        ).json({
+          success: 0,
+          message: err.message
+        });
+      }
+
+      return res.status(200).json({
+        success: 1,
+        message: 'Mobile numbers switched successfully'
+      });
+    });
+  },
+
 };

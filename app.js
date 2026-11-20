@@ -147,6 +147,9 @@ const motorProfitMasterRoutes = require("./api/MotorCalculator/MotorProfitMaster
 const calculator = require("./api/Calculator/calculator.router");
 
 
+const policyClaimStatusMaster = require("./api/policyClaimStatusMaster/policyClaimStatus.routes");
+
+
 const validateToken = require("./Validate/validateToken");
 const verifyAccessToken = require("./middleware/verifyAccessToken");
 
@@ -642,6 +645,16 @@ app.use(
   socketMiddleware,
   calculator,
 );
+
+
+app.use(
+  "/api/policyclaimstatus",
+  routeTrackerMiddleware("POLICY_CLAIM_STATUS_MASTER"),
+  socketMiddleware,
+  policyClaimStatusMaster,
+);
+
+
 
 const fileuploadRouter = express.Router();
 

@@ -181,7 +181,7 @@ const MotorCalculationController = {
         idv,
       };
 
-    
+
 
       // =====================================================
       // CALCULATION
@@ -310,47 +310,47 @@ const MotorCalculationController = {
 
 
   // GET QUOTATION DETAILS BY LEAD ID
-    getQuotationByLeadId: (req, res) => {
-        const { lead_id } = req.params;
+  getQuotationByLeadId: (req, res) => {
+    const { lead_id, vehicle_id } = req.params;
 
-        if (!lead_id) {
-            return res.status(400).json({
-                success: 0,
-                message: "Lead ID is required",
-            });
+    if (!lead_id || !vehicle_id) {
+      return res.status(400).json({
+        success: 0,
+        message: "Lead ID is required",
+      });
+    }
+
+    MotorCalculationService.getQuotationByLeadId(
+      lead_id, vehicle_id,
+      (err, result) => {
+        if (err) {
+          console.error(
+            "Error fetching quotation by lead ID:",
+            err
+          );
+
+          return res.status(500).json({
+            success: 0,
+            message: "Failed to fetch quotation details",
+            error: err.message,
+          });
         }
 
-        MotorCalculationService.getQuotationByLeadId(
-            lead_id,
-            (err, result) => {
-                if (err) {
-                    console.error(
-                        "Error fetching quotation by lead ID:",
-                        err
-                    );
+        if (!result) {
+          return res.status(404).json({
+            success: 0,
+            message: "Quotation not found for this lead",
+          });
+        }
 
-                    return res.status(500).json({
-                        success: 0,
-                        message: "Failed to fetch quotation details",
-                        error: err.message,
-                    });
-                }
-
-                if (!result) {
-                    return res.status(404).json({
-                        success: 0,
-                        message: "Quotation not found for this lead",
-                    });
-                }
-
-                return res.status(200).json({
-                    success: 1,
-                    message: "Quotation details fetched successfully",
-                    data: result,
-                });
-            }
-        );
-    },
+        return res.status(200).json({
+          success: 1,
+          message: "Quotation details fetched successfully",
+          data: result,
+        });
+      }
+    );
+  },
 };
 
 module.exports = MotorCalculationController;

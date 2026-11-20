@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const leacontroller = require("./leads.controller");
 const verifyAccessToken = require("../../middleware/verifyAccessToken");
+const { sensitiveApiLimiter } = require("../../middleware/rateLimiter");
 // const validateTokenController = require('../controllers/validateToken.controller');
 
 // Public routes
@@ -162,10 +163,24 @@ router.get(
 
 
 router.post(
-    "/transfer-status",
-    verifyAccessToken,
-    leacontroller.updateTransferDetails
+  "/transfer-status",
+  verifyAccessToken,
+  leacontroller.updateTransferDetails
 );
 
+
+
+router.patch(
+  "/update-mobile-number",
+  sensitiveApiLimiter,
+  leacontroller.updateCustomerMobileNumber
+);
+
+
+router.patch(
+  '/switch-mobile-numbers',
+  sensitiveApiLimiter,
+  leacontroller.switchCustomerMobileNumbers
+);
 
 module.exports = router;

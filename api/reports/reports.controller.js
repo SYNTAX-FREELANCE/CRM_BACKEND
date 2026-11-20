@@ -275,10 +275,10 @@ module.exports = {
             [
               "Total Status Outcomes",
               capturedCount +
-                appointmentCount +
-                quoteCount +
-                callbackCount +
-                lostCount,
+              appointmentCount +
+              quoteCount +
+              callbackCount +
+              lostCount,
             ],
           ];
 
@@ -768,4 +768,6 @@ module.exports = {
       return res.status(500).send("Internal server error");
     }
   },
+
+
 };
