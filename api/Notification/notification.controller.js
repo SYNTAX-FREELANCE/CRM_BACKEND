@@ -92,16 +92,16 @@ module.exports = {
     
   },
   registerDevice: (req, res) => {
-    const userId = req.user.user_id;
-    const { pushToken, device_name } = req.body;
+    
+    const { pushToken, device_name,user_id } = req.body;
     if (!pushToken) {
       return res.status(400).json({
         success: false,
         message: "Push token is required",
       });
-    }
+    };
 
-    registerDevice(userId, pushToken, device_name, (error, result) => {
+    registerDevice(user_id, pushToken, device_name, (error, result) => {
       if (error) {
         console.error("❌ Register device error:", error);
 
