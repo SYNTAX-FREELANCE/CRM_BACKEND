@@ -15,7 +15,7 @@ function initSocket(server) {
 
     // JOIN ROOM
     socket.on("join", (userId) => {
-      socket.join(userId);
+      socket.join(String(userId));
       console.log(`User joined room: ${userId}`);
     });
 
