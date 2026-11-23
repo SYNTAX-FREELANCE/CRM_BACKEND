@@ -1,11 +1,9 @@
 const pool = require("../../../dbconfig/dbconfig");
 
 const MotorTpRateSlabService = {
-
-    // CREATE
-    createTpRateSlab: (data, callback) => {
-
-        const query = `
+  // CREATE
+  createTpRateSlab: (data, callback) => {
+    const query = `
             INSERT INTO motor_tp_rate_slab (
                 tp_rate_id,
                 engine_cc_slab_id,
@@ -19,32 +17,29 @@ const MotorTpRateSlabService = {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        const values = [
-            data.tp_rate_id,
-            data.engine_cc_slab_id || null,
-            data.gvw_slab_id || null,
-            data.min_seating_capacity || null,
-            data.max_seating_capacity || null,
-            data.rate_value,
-            data.description || null,
-            data.is_active
-        ];
+    const values = [
+      data.tp_rate_id,
+      data.engine_cc_slab_id || null,
+      data.gvw_slab_id || null,
+      data.min_seating_capacity || null,
+      data.max_seating_capacity || null,
+      data.rate_value,
+      data.description || null,
+      data.is_active,
+    ];
 
-        pool.query(query, values, (err, result) => {
+    pool.query(query, values, (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
+      callback(null, result);
+    });
+  },
 
-            callback(null, result);
-        });
-    },
-
-
-    // GET ALL
-    getAllTpRateSlabs: (callback) => {
-
-        const query = `
+  // GET ALL
+  getAllTpRateSlabs: (callback) => {
+    const query = `
            
     SELECT
         -- TP rate master
@@ -68,6 +63,8 @@ const MotorTpRateSlabService = {
         tr.usage_id,
         u.usage_name,
 
+        tr.fuel_type_id,
+        ft.fuel_name,
         tr.is_active AS master_is_active,
         tr.effective_from,
         tr.effective_to,
@@ -117,6 +114,9 @@ const MotorTpRateSlabService = {
 
     LEFT JOIN motor_vehicle_usages u
         ON u.usage_id = tr.usage_id
+    
+    LEFT JOIN motor_fuel_types ft
+        ON ft.fuel_type_id = tr.fuel_type_id
 
     LEFT JOIN motor_engine_cc_slabs ecs
         ON ecs.engine_cc_slab_id = s.engine_cc_slab_id
@@ -129,21 +129,18 @@ const MotorTpRateSlabService = {
         s.tp_rate_slab_id ASC
         `;
 
-        pool.query(query, (err, result) => {
+    pool.query(query, (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
+      callback(null, result);
+    });
+  },
 
-            callback(null, result);
-        });
-    },
-
-
-    // GET BY ID
-    getTpRateSlabById: (id, callback) => {
-
-        const query = `
+  // GET BY ID
+  getTpRateSlabById: (id, callback) => {
+    const query = `
             SELECT
                 s.tp_rate_slab_id,
 
@@ -180,21 +177,18 @@ const MotorTpRateSlabService = {
             WHERE s.tp_rate_slab_id = ?
         `;
 
-        pool.query(query, [id], (err, result) => {
+    pool.query(query, [id], (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
+      callback(null, result);
+    });
+  },
 
-            callback(null, result);
-        });
-    },
-
-
-    // UPDATE
-    updateTpRateSlab: (id, data, callback) => {
-
-        const query = `
+  // UPDATE
+  updateTpRateSlab: (id, data, callback) => {
+    const query = `
             UPDATE motor_tp_rate_slab
             SET
                 tp_rate_id = ?,
@@ -209,53 +203,47 @@ const MotorTpRateSlabService = {
             WHERE tp_rate_slab_id = ?
         `;
 
-        const values = [
-            data.tp_rate_id,
-            data.engine_cc_slab_id || null,
-            data.gvw_slab_id || null,
-            data.min_seating_capacity || null,
-            data.max_seating_capacity || null,
-            data.rate_value,
-            data.description || null,
-            data.is_active,
-            id
-        ];
+    const values = [
+      data.tp_rate_id,
+      data.engine_cc_slab_id || null,
+      data.gvw_slab_id || null,
+      data.min_seating_capacity || null,
+      data.max_seating_capacity || null,
+      data.rate_value,
+      data.description || null,
+      data.is_active,
+      id,
+    ];
 
-        pool.query(query, values, (err, result) => {
+    pool.query(query, values, (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
+      callback(null, result);
+    });
+  },
 
-            callback(null, result);
-        });
-    },
-
-
-    // DELETE
-    deleteTpRateSlab: (id, callback) => {
-
-        const query = `
+  // DELETE
+  deleteTpRateSlab: (id, callback) => {
+    const query = `
             UPDATE motor_tp_rate_slab
             SET is_active = 0
             WHERE tp_rate_slab_id = ?
         `;
 
-        pool.query(query, [id], (err, result) => {
+    pool.query(query, [id], (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
+      callback(null, result);
+    });
+  },
 
-            callback(null, result);
-        });
-    },
-
-
-    // GET ACTIVE
-    getActiveTpRateSlabs: (callback) => {
-
-        const query = `
+  // GET ACTIVE
+  getActiveTpRateSlabs: (callback) => {
+    const query = `
             SELECT
                 s.tp_rate_slab_id,
 
@@ -296,15 +284,14 @@ const MotorTpRateSlabService = {
                 s.tp_rate_slab_id ASC
         `;
 
-        pool.query(query, (err, result) => {
+    pool.query(query, (err, result) => {
+      if (err) {
+        return callback(err, null);
+      }
 
-            if (err) {
-                return callback(err, null);
-            }
-
-            callback(null, result);
-        });
-    }
+      callback(null, result);
+    });
+  },
 };
 
 module.exports = MotorTpRateSlabService;

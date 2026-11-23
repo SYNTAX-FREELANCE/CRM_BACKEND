@@ -16,6 +16,28 @@ const app = express();
 const server = http.createServer(app);
 
 
+// middlewares
+app.use(cors(corsConfig));
+app.use(cookieParser());
+
+
+app.use(helmet());
+
+app.set("trust proxy", 1);
+
+app.use(
+  express.json({
+    limit: "100mb",
+  }),
+);
+
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "100mb",
+  }),
+);
+
 
 const uploadsPath = process.env.UPLOADS_PATH || path.join(__dirname, "uploads");
 
@@ -31,24 +53,6 @@ app.use("/policy-documents", express.static(policyDocumentsPath));
 
 app.use("/lead-documents", express.static(leadDocumentsPath));
 
-// middlewares
-app.use(cors(corsConfig));
-app.use(cookieParser());
-
-app.use(helmet());
-
-app.use(
-  express.json({
-    limit: "100mb",
-  }),
-);
-
-app.use(
-  express.urlencoded({
-    extended: true,
-    limit: "100mb",
-  }),
-);
 // init socket
 initSocket(server);
 
@@ -134,22 +138,25 @@ const motorQuotationOptionRoutes = require("./api/MotorCalculator/MotorQuotatinO
 const motorQuotationOptionAddonRoutes = require("./api/MotorCalculator/MotorQuotationOptionAddon/motor_quotation_option_addon.routes");
 const motorQuotationOptionCoverRoutes = require("./api/MotorCalculator/MotorQuotationOptionCover/motor_quotation_option_cover.routes");
 
+
+
 const motorvehicleinputfielsRoutes = require("./api/MotorCalculator/MotorVehicleInputFields/motorVehicleInputField.router");
 const motorodrateslabRoute = require("./api/MotorCalculator/MotorOdRateSlab/motorOdRateSlab.routes");
 const motorTaxRuleRoutes = require("./api/MotorCalculator/MotorTaxRule/motorTaxRule.routes");
 const motorProfitMasterRoutes = require("./api/MotorCalculator/MotorProfitMaster/motorProfit.router");
 const calculator = require("./api/Calculator/calculator.router");
 
+
 const policyClaimStatusMaster = require("./api/policyClaimStatusMaster/policyClaimStatus.routes");
+
 
 const validateToken = require("./Validate/validateToken");
 const verifyAccessToken = require("./middleware/verifyAccessToken");
 
-
+// socket allowed only here
 
 app.use("/api", globalApiLimiter);
 
-// socket allowed only here
 app.use(
   "/api/user",
   routeTrackerMiddleware("USER_LOGIN_ROUTER"),
@@ -358,6 +365,8 @@ app.use(
   socketMiddleware,
   policyclaim,
 );
+
+
 
 // MOTOR CALCULATOR
 
@@ -599,12 +608,14 @@ app.use(
   motorQuotationOptionCoverRoutes,
 );
 
+
 app.use(
   "/api/motor/vehicle-input-field",
   routeTrackerMiddleware("MOTOR_VEHICLE_INPUT_FIELD_ROUTER"),
   socketMiddleware,
   motorvehicleinputfielsRoutes,
 );
+
 
 app.use(
   "/api/motor/od-rate-slab",
@@ -626,6 +637,7 @@ app.use(
   socketMiddleware,
   motorProfitMasterRoutes,
 );
+
 
 app.use(
   "/api/motor/calculation",
@@ -653,6 +665,8 @@ fileuploadRouter.get(
   verifyAccessToken,
   employeemasterController.getMedicalDocFile,
 );
+
+
 
 app.use("/api/fileupload", fileuploadRouter);
 
