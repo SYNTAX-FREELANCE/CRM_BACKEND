@@ -75,9 +75,9 @@ router.put(
 );
 
 router.get(
-    "/received/:userId",
-    verifyAccessToken,
-    notificationcontroller.getReceivedNotifications
+  "/received/:userId",
+  verifyAccessToken,
+  notificationcontroller.getReceivedNotifications
 );
 
 module.exports = router;

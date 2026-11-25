@@ -379,18 +379,65 @@ module.exports = {
     );
   },
   UpdateFetchStatusService: (lead_id, edited_by, callback) => {
-    pool.query(
-      `UPDATE leads
-     SET
-        work_status = 'NOT_STARTED' ,
-        edited_by = ?
-     WHERE lead_id = ?`,
-      [edited_by, lead_id],
-      (err, result) => {
-        if (err) return callback(err, null);
-        callback(null, result);
-      },
-    );
+    pool.getConnection((err, connection) => {
+      if (err) return callback(err, null);
+
+      connection.beginTransaction((err) => {
+        if (err) {
+          connection.release();
+          return callback(err, null);
+        }
+
+        connection.query(
+          `UPDATE leads
+         SET work_status = 'NOT_STARTED',
+             edited_by = ?
+         WHERE lead_id = ?`,
+          [edited_by, lead_id],
+          (err) => {
+            if (err) {
+              return connection.rollback(() => {
+                connection.release();
+                callback(err, null);
+              });
+            }
+
+            connection.query(
+              `UPDATE employee_active_batches
+             SET status = 'COMPLETED'
+             WHERE empid = ?
+               AND lead_id = ?
+               AND status = 'ACTIVE'`,
+              [edited_by, lead_id],
+              (err, batchResult) => {
+                if (err) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    callback(err, null);
+                  });
+                }
+
+                connection.commit((err) => {
+                  if (err) {
+                    return connection.rollback(() => {
+                      connection.release();
+                      callback(err, null);
+                    });
+                  }
+
+                  connection.release();
+
+                  callback(null, {
+                    success: true,
+                    batchUpdated: batchResult.affectedRows,
+                  });
+                });
+              }
+            );
+          }
+        );
+      });
+    });
   },
 
   updateLeadFollowupDetail: (data, callback) => {
